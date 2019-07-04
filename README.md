@@ -1,3 +1,7 @@
+<div  align="center">  
+<img src="docs/kae-logo-light.png" width = "100%" height = "100%" alt="icon"/>  
+</div>
+
 # KAmalEngine
 
 KAmalEngine is a software system that implements Knowledge Amalgamation algorithms. In knowledge amalgamation, we use trained deep network models available online to do a model-reusing task. Given multiple pretrained teacher networks, which specializes in different vision problems, the goal of knowledge amalgamation is to learn a lightweight student model capable of handling the comprehensive tasks, without human-labeled annotations. It is written in Python and powered by the Pytorch deep learning framework.
@@ -44,3 +48,4 @@ Build a new multi-task model by combining&pruning weight matrixs from distinct-t
 
 ## Help
 For more information, see `docs` and `examples`
+
