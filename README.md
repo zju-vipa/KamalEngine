@@ -1,5 +1,5 @@
 <div  align="center">  
-<img src="docs/kae-logo-light.png" width = "100%" height = "100%" alt="icon"/>  
+<img src="docs/kae-logo-light.png" width = "30%" height = "30%" alt="logo"/>  
 </div>
 
 # KAmalEngine
