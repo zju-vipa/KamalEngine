@@ -1,8 +1,8 @@
 # Recombination
 Build a new multi-task model by combining&pruning weight matrixs from distinct-task teachers.
-![recombination-framework](examples/recombination/recombination-framework.png)
+![recombination-framework](recombination-framework.png)
 
-![recombination-results](examples/recombination/recombination-results.png)
+![recombination-results](recombination-results.png)
 
 ## Quick Start
 ```bash

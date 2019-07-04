@@ -4,9 +4,9 @@ Extract common features from multiple teacher models.
 
 Feature Space             |  Common Space
 :-------------------------:|:-------------------------:
-![cfl-feature-space](examples/cfl/tsne_results/feature_space_tsne_0.png)  |  ![cfl-feature-space](examples/cfl/tsne_results/common_space_tsne_0.png)
+![cfl-feature-space](tsne_results/feature_space_tsne_0.png)  |  ![cfl-feature-space](tsne_results/common_space_tsne_0.png)
 
-![cfl-accuracy-curve](examples/cfl/cfl-results.png)
+![cfl-accuracy-curve](cfl-results.png)
 
 ## Quick Start
 This example shows how to extract common features from dog&brid classifiers (120+200=320 classes totally).

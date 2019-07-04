@@ -21,6 +21,6 @@ Use `train_offline.py` to combine one pretrained joint teacher and one single te
 Set `indices` to choose where to branch out for each task.
 Set `phase` to choose from training block by block or finetune all network finally.
 
-![sbm-demo](examples/sbm/demo.png)
+![sbm-demo](demo.png)
 Demo of combining a semantic teacher and a normal teacher.
  
