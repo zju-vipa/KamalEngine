@@ -24,7 +24,7 @@ class StanfordDogs(data.Dataset):
         if download:
             self.download()
 
-        list_file = os.path.join(self.root, 'lists', self.split+'_list.mat')
+        list_file = os.path.join(self.root, self.split+'_list.mat')
         mat_file = loadmat(list_file)
 
         size = len(mat_file['file_list'])
