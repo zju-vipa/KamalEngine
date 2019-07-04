@@ -21,7 +21,7 @@ This repo provides some algorithms of KA.
 
 
 ### Student Becoming the Master
-Knowledge amalgamation for multiple teachers by feature projecting.  
+Knowledge amalgamation for multiple teachers by feature projection.  
 [Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) -- *CVPR 2019*  
 ![sbm-demo](examples/sbm/demo.png)
 
