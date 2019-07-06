@@ -55,7 +55,7 @@ GongFan Fang - [VainF](https://github.com/VainF)
 YiXin Ji - [Ssssseason](https://github.com/Ssssseason)  
 YanLing Yin - [ylyinzju](https://github.com/ylyinzju)  
 
-[Homepage of VIPA Group](https://www.vipazoo.cn/), Zhejiang University, China
+[Homepage of VIPA Group](https://www.vipazoo.cn/index_en.html), Zhejiang University, China
 
 <div  align="left">  
 <img src="docs/vipa-logo.png" width = "40%" height = "40%" alt="icon"/>  
