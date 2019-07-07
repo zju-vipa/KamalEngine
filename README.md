@@ -60,3 +60,32 @@ YanLing Yin - [ylyinzju](https://github.com/ylyinzju)
 <div  align="left">  
 <img src="docs/vipa-logo.png" width = "40%" height = "40%" alt="icon"/>  
 </div>
+
+## Citation
+```
+@article{shen2018amalgamating,
+  title={Amalgamating knowledge towards comprehensive classification},
+  author={Shen, Chengchao and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
+  journal={arXiv preprint arXiv:1811.02796},
+  year={2018}
+}
+```
+
+```
+@inproceedings{ye2019student,
+  title={Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More},
+  author={Ye, Jingwen and Ji, Yixin and Wang, Xinchao and Ou, Kairi and Tao, Dapeng and Song, Mingli},
+  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+  pages={2829--2838},
+  year={2019}
+}
+```
+
+```
+@article{luo2019knowledge,
+  title={Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning},
+  author={Luo, Sihui and Wang, Xinchao and Fang, Gongfan and Hu, Yao and Tao, Dapeng and Song, Mingli},
+  journal={arXiv preprint arXiv:1906.10546},
+  year={2019}
+}
+```
