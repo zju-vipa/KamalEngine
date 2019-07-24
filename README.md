@@ -17,6 +17,7 @@ The goal of KamalEngine is to provide a high-quality, high-performance code fram
 - [Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) -- *AAAI 2019*
 - [Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) -- *CVPR 2019*
 - [Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](http://arxiv.org/abs/1906.10546) -- *IJCAI 2019*
+- [Customizing student networks from heterogeneous teachers via adaptive knowledge amalgamation]() (Comming soon) -- *ICCV 2019*
 - [Learning Semantic Image Compression from Distinct-task Teachers]()
 
 
@@ -66,7 +67,7 @@ YanLing Yin - [ylyinzju](https://github.com/ylyinzju)
 
 ## Citation
 ```
-@inproceedings{shen2018amalgamating,
+@inproceedings{shen2019amalgamating,
   author={Shen, Chengchao and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
   title={Amalgamating Knowledge towards Comprehensive Classification},
   booktitle={AAAI Conference on Artificial Intelligence (AAAI)},
