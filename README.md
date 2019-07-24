@@ -66,11 +66,12 @@ YanLing Yin - [ylyinzju](https://github.com/ylyinzju)
 
 ## Citation
 ```
-@article{shen2018amalgamating,
-  title={Amalgamating knowledge towards comprehensive classification},
+@inproceedings{shen2018amalgamating,
   author={Shen, Chengchao and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
-  journal={arXiv preprint arXiv:1811.02796},
-  year={2018}
+  title={Amalgamating Knowledge towards Comprehensive Classification},
+  booktitle={AAAI Conference on Artificial Intelligence (AAAI)},
+  pages={3068--3075},
+  year={2019}
 }
 ```
 
