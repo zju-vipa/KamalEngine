@@ -42,6 +42,9 @@ Layer-wise amalgamation
 [Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) -- *AAAI 2019*  
 ![layerwise-ka-framework](examples/layer_wise_ka/layerwise-ka-framework.png)
 
+### Customizing student networks from heterogeneous teachers via adaptive knowledge amalgamation (In Progress)
+![adaptive-ka-framework](examples/adaptive_ka/adaptive-ka-framework.jpg)
+
 ### Recombination
 Build a new multi-task model by combining&pruning weight matrixs from distinct-task teachers.
 ![recombination-framework](examples/recombination/recombination-framework.png)
@@ -87,5 +90,14 @@ YanLing Yin - [ylyinzju](https://github.com/ylyinzju)
   author={Luo, Sihui and Wang, Xinchao and Fang, Gongfan and Hu, Yao and Tao, Dapeng and Song, Mingli},
   booktitle={Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI)},
   year={2019},
+}
+```
+
+```
+@inproceedings{shen2019customizing,
+  author={Shen, Chengchao and Xue, Mengqi and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
+  title={Customizing student networks from heterogeneous teachers via adaptive knowledge amalgamation},
+  booktitle={The IEEE International Conference on Computer Vision (ICCV)},
+  year={2019}
 }
 ```
