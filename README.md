@@ -53,7 +53,9 @@ Build a new multi-task model by combining&pruning weight matrixs from distinct-t
 ### Amalgamating Filtered Knowledge
 Amalgamate knowledge from a pool of multi- or single-task teachers working on different tasks. The TargetNet after training, at a reasonably compact size, handles multiple customized tasks.
 
-![afk-targetnet](examples/afk/targetnet.png)
+<div  align="center">  
+<img src="examples/afk/targetnet.png" width = "400" alt="icon"/>  
+</div>
 
 ## Help
 For more information, see `docs` and `examples`
