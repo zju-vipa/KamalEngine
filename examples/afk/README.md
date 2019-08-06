@@ -17,7 +17,9 @@ Use `train_teacher.py` to train teachers.
 To change the basic net structure, just comment corresponding code.
 
 ## Amalgamation
-![afk-targetnet](targetnet.png)
+<div  align="center">  
+<img src="targetnet.png" width = "400" alt="icon"/>  
+</div>
 
 Use `train.py` to combine teachers.
 - `--init_ckpt`: A list of string. The first two checkpoints are pre-trained teacher models, and the last one is to recover target joint student model.
