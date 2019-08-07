@@ -1,4 +1,5 @@
-from .resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from .resnet import *
 from .vgg import *
 from .alexnet import *
 from .seg import *
+from .densenet import *
