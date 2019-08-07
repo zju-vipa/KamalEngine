@@ -203,7 +203,7 @@ class JointDenseNet(nn.Module):
     def forward(self, x):
         num_b = len(self.denseblocks)
         x = self.preprocess(x)
-        features_list = [x for i in range(len(self.indices))]
+        features_list = [None for i in range(len(self.indices))]
 
         out_idx = max(self.indices)
         for i in range(out_idx):
@@ -221,6 +221,7 @@ class JointDenseNet(nn.Module):
                 if j < num_b-1:
                     features_list[i] = self.teacher_transitions_list[i][j](features_list[i])
 
+        features_list = [self.norm_finals[i](f) for i,f in enumerate(features_list)]
         outs = [F.relu(f, inplace=True) for f in features_list]
         outs = [F.adaptive_avg_pool2d(out, (1,1)).view(features_list[0].size(0), -1) for out in outs]
         outs = [self.fcs[i](outs[i]) for i in range(len(self.indices))]
