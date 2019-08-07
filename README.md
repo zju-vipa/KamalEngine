@@ -17,8 +17,8 @@ The goal of KamalEngine is to provide a high-quality, high-performance code fram
 - [Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) -- *AAAI 2019*
 - [Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) -- *CVPR 2019*
 - [Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](http://arxiv.org/abs/1906.10546) -- *IJCAI 2019*
+- [Amalgamating Filtered Knowledge: Learning Task-customized Student from Multi-task Teachers](https://arxiv.org/abs/1905.11569) -- *IJCAI 2019*
 - [Customizing student networks from heterogeneous teachers via adaptive knowledge amalgamation]() (Comming soon) -- *ICCV 2019*
-- [Learning Semantic Image Compression from Distinct-task Teachers]()
 
 
 ## Algorithms
@@ -49,6 +49,13 @@ Layer-wise amalgamation
 ### Recombination
 Build a new multi-task model by combining&pruning weight matrixs from distinct-task teachers.
 ![recombination-framework](examples/recombination/recombination-framework.png)
+
+### Amalgamating Filtered Knowledge
+Amalgamate knowledge from a pool of multi- or single-task teachers working on different tasks. The TargetNet after training, at a reasonably compact size, handles multiple customized tasks.
+
+<div  align="center">  
+<img src="examples/afk/targetnet.png" width = "400" alt="icon"/>  
+</div>
 
 ## Help
 For more information, see `docs` and `examples`
@@ -101,5 +108,15 @@ YanLing Yin - [ylyinzju](https://github.com/ylyinzju)
   title={Customizing student networks from heterogeneous teachers via adaptive knowledge amalgamation},
   booktitle={The IEEE International Conference on Computer Vision (ICCV)},
   year={2019}
+}
+```
+
+```
+@inproceedings{Ye_Amalgamating_2019,
+  year={2019},
+  author={Ye, Jingwen and Wang, Xinchao and Ji, Yixin and Ou, Kairi and Song, Mingli},
+  title={Amalgamating Filtered Knowledge: Learning Task-customized Student from Multi-task Teachers}
+  booktitle={Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI)},
+  year={2019},
 }
 ```
