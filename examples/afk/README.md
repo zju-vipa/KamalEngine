@@ -7,7 +7,7 @@ Example codes are all in the folder `examples/afk`.
 
 ## Pre-Trained Teacher Networks
 
-The net structure of teachers (semantic parsing, depth prediction, surface normal prediction) is either ResNet or DenseNet.
+The net structure of teachers is either ResNet or DenseNet.
 
 Use `train_teacher.py` to train teachers.
 
