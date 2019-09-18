@@ -139,4 +139,61 @@ def download_extract(url, root, filename):
     with tarfile.open(os.path.join(root, filename), "r") as tar:
         tar.extractall(path=root)
 
-#
+CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
+            'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+
+class VOCClassification(data.Dataset):
+    def __init__(self,
+                 root,
+                 year='2010',
+                 split='train',
+                 download=False,
+                 transforms=None,
+                 target_transforms=None):
+
+        voc_root = os.path.join(root, 'VOC{}'.format(year))
+        if not os.path.isdir(voc_root):
+            raise RuntimeError('Dataset not found or corrupted.' +
+                               ' You can use download=True to download it')
+
+        self.transforms = transforms
+        self.target_transforms = target_transforms
+        image_dir = os.path.join(voc_root, 'JPEGImages')
+        label_dir = os.path.join(voc_root, 'ImageSets/Main')
+        self.labels_list = []
+
+        fname = os.path.join(label_dir, '{}.txt'.format(split))
+        with open(fname) as f:
+            self.images = [os.path.join(image_dir, line.split()[0]+'.jpg') for line in f]
+
+        for clas in CLASSES:
+            labels = []
+            with open(os.path.join(label_dir, '{}_{}.txt'.format(clas, split))) as f:
+                labels = [int(line.split()[1]) for line in f]
+                self.labels_list.append(labels)
+
+        assert (len(self.images) == len(self.labels_list[0]))
+        
+
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is the image segmentation.
+        """
+        img = Image.open(self.images[index]).convert('RGB')
+        labels = [labels[index] for labels in self.labels_list]
+
+        if self.transforms is not None:
+            img = self.transforms(img)
+
+        if self.target_transforms is not None:
+            labels = self.target_transforms(labels)
+
+        return img, labels
+
+    def __len__(self):
+        return len(self.images)
+
