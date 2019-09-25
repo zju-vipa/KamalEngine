@@ -61,15 +61,15 @@ Amalgamate knowledge from a pool of multi- or single-task teachers working on di
 For more information, see `docs` and `examples`
 
 ## Authors
-
-[Gongfan Fang](https://github.com/VainF) - fgfvain97@zju.edu.cn  
-[Yixin Ji](https://github.com/Ssssseason) - jiyixin@zju.edu.cn  
-[Yanling Yin](https://github.com/ylyinzju) - yanlingyin@zju.edu.cn  
-
-[Jingwen Ye]() - yejingwen@zju.edu.cn  
-[Sihui Luo]() - sihuiluo829@zju.edu.cn  
-[Chengchao Shen]() - chengchaoshen@zju.edu.cn  
-[Mengqi Xue]() - mqxue@zju.edu.cn  
+| | |
+|:--------------:|:-----:|
+[Gongfan Fang](https://github.com/VainF) | fgfvain97@zju.edu.cn  
+[Yixin Ji](https://github.com/Ssssseason) | jiyixin@zju.edu.cn  
+[Yanling Yin](https://github.com/ylyinzju) | yanlingyin@zju.edu.cn  
+[Jingwen Ye]() | yejingwen@zju.edu.cn  
+[Sihui Luo]() | sihuiluo829@zju.edu.cn  
+[Chengchao Shen]() | chengchaoshen@zju.edu.cn  
+[Mengqi Xue]() | mqxue@zju.edu.cn  
 
 [Homepage of VIPA Group](https://www.vipazoo.cn/index_en.html), Zhejiang University, China
 
