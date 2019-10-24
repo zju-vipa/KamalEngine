@@ -171,7 +171,7 @@ def main():
     train_loader = data.DataLoader(train_ds, batch_size=opts.batch_size, shuffle=True, num_workers=4)
     val_loader = data.DataLoader(val_ds, batch_size=opts.batch_size, shuffle=False, num_workers=4)
     
-    model = SegNet(n_classes=1, positive=True)
+    model = SegNet(n_classes=1)
     vgg16 = models.vgg16(pretrained=True)
     model.init_vgg16_params(vgg16)
     model = model.to(device)
