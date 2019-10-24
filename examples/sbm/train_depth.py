@@ -44,8 +44,9 @@ def train( cur_epoch, criterion, model, optim, train_loader, device, scheduler=N
         # N, C, H, W
         optim.zero_grad()
         outputs = model(images)
-        outputs = torch.clamp(outputs, min=1e-10, max=1e+10)
-        outputs = outputs.squeeze(1)
+        outputs = F.softmax(outputs, dim=1)
+        step = torch.range(1, 50).view(1,-1,1,1).to(device) * NYU_LENGTH_BIN
+        outputs = (outputs * step).sum(dim=1)
 
         loss = criterion(outputs, depths)
         
@@ -87,10 +88,11 @@ def validate( model, loader, device, metrics):
             depths = depths.to(device)
 
             outputs = model(images)
-            targets = depths.data.cpu().numpy()
+            outputs = F.softmax(outputs, dim=1)
+            step = torch.range(1, 50).view(1,-1,1,1).to(device) * NYU_LENGTH_BIN
+            outputs = (outputs * step).sum(dim=1).cpu().numpy()
 
-            outputs = torch.clamp(outputs, min=1e-10, max=1e+10)
-            outputs = outputs.squeeze(1).data.cpu().numpy()
+            targets = depths.data.cpu().numpy()
 
             metrics.update(targets, outputs)
     score = metrics.get_results()

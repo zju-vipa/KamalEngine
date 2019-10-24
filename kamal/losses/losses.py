@@ -106,8 +106,7 @@ class ScaleInvariantLoss(nn.Module):
             targets = targets.view(size[0], -1)
 
         inv_mask = targets.eq(self.ignore_index)
-        nums = (1-inv_mask.float()).sum()
-
+        nums = (1-inv_mask.float()).sum(1)
         log_d = torch.log(inputs) - torch.log(targets)
         log_d[inv_mask] = 0
 

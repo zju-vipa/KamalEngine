@@ -11,6 +11,8 @@ import glob
 from torchvision import transforms
 import random
 
+NYU_DEPTH_BIN = 50
+NYU_LENGTH_BIN = 0.14
 
 class NYUv2(data.Dataset):
     """NYUv2 depth dataset loader.
