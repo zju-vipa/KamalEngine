@@ -1,8 +1,8 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-from kamal.models import *
-from kamal.datasets import *
-from kamal.losses import ScaleInvariantLoss
+from kamal.vision.models import SegNet
+from kamal.vision.datasets import NYUv2
+from kamal.loss import ScaleInvariantLoss
 from kamal.metrics import StreamDepthMetrics
 
 import torch

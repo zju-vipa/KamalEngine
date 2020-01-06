@@ -1,12 +1,12 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-from kamal.layer_wise_ka import *
-from kamal.models import *
-from kamal.datasets import *
+
+from kamal.vision.models import SegNet
+from kamal.vision.datasets import NYUv2
 from kamal.metrics import StreamSegMetrics, StreamDepthMetrics, StreamAngleMetrics
-from kamal.losses import ScaleInvariantLoss, AngleLoss
-from joint_net import JointNet, JointNetOffline
+from kamal.loss import ScaleInvariantLoss, AngleLoss
+from kamal.amalgamation.sbm import JointNet, JointNetOffline
 from torchvision import transforms
 
 import torch
