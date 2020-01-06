@@ -1,25 +1,21 @@
-import random
-from visualizer import Visualizer
-from torch.utils import data
-from torchvision import transforms
 from tqdm import tqdm
 import numpy as np
-import os
 import argparse
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(
-                  os.path.dirname(os.path.realpath(__file__)))))
+import sys, os, random
 
-from kamal.metrics import MetrcisCompose
-from kamal.common_feature import CommonFeatureLearning, CFL_ConvBlock
-from kamal.core import AmalNet, LayerParser
-from kamal.metrics import StreamClsMetrics
-from kamal.datasets import StanfordDogs, CUB200
-from kamal.models import resnet18, resnet34
 import torch
 import torch.nn as nn
+import torch.nn.functional as F 
 
+from torchvision import transforms
+from torchvision.models import resnet18, resnet34
+
+from kamal.amalgamation.common_feature import CommonFeatureLearning
+from kamal.metrics import StreamClassificationMetrics
+from kamal.vision.datasets import StanfordDogs, CUB200
+from kamal.utils import VisdomPlotter
+from kamal.loss import KDLoss
+from kamal.core import train_tools
 
 def mkdir(path):
     if not os.path.isdir(path):
@@ -35,24 +31,22 @@ def get_parser():
     parser.add_argument("--download", action='store_true', default=False)
     parser.add_argument("--epochs", type=int, default=60)
     parser.add_argument("--ckpt", type=str, default=None)
-    parser.add_argument("--vis_port", type=str, default='13570')
-
     return parser
 
 def main():
     opts = get_parser().parse_args()
-
     os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_id
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # Set up random seed
+    vp = VisdomPlotter(port='15550', env='cfl')
 
+    # Set up random seed
     torch.manual_seed(opts.random_seed)
     torch.cuda.manual_seed(opts.random_seed)
     np.random.seed(opts.random_seed)
     random.seed(opts.random_seed)
 
-    ckpt_dir = './checkpoints'
+    ckpt_dir = 'checkpoints'
     transforms_train = transforms.Compose([
         transforms.Resize(size=224),
         transforms.RandomCrop(size=(224, 224)),
@@ -66,7 +60,7 @@ def main():
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])])
-
+    
     # Set up dataloader
     cub_root = os.path.join(opts.data_root, 'cub200')
     train_cub = CUB200(root=cub_root, split='train',
@@ -75,7 +69,6 @@ def main():
     val_cub = CUB200(root=cub_root, split='test',
                      transforms=transforms_val,
                      download=False, offset=0)
-
     dogs_root = os.path.join(opts.data_root, 'dogs')
     train_dogs = StanfordDogs(root=dogs_root, split='train',
                               transforms=transforms_train,
@@ -83,78 +76,88 @@ def main():
     val_dogs = StanfordDogs(root=dogs_root, split='test',
                             transforms=transforms_val,
                             download=False, offset=200)
-
-    train_dst = data.ConcatDataset([train_cub, train_dogs])
-    val_dst = data.ConcatDataset([val_cub, val_dogs])
-
-    train_loader = data.DataLoader(
-        train_dst, batch_size=opts.batch_size, drop_last=True,shuffle=True, num_workers=4)
-    val_loader = data.DataLoader(
-        val_dst, batch_size=opts.batch_size, drop_last=True,shuffle=False, num_workers=4)
-
+    train_dst = torch.utils.data.ConcatDataset([train_cub, train_dogs])
+    val_dst = torch.utils.data.ConcatDataset([val_cub, val_dogs])
+    train_loader = torch.utils.data.DataLoader(train_dst, batch_size=opts.batch_size, shuffle=True, num_workers=2)
+    val_loader = torch.utils.data.DataLoader(val_dst, batch_size=opts.batch_size, shuffle=False, num_workers=2)
+    
+    # Teachers and student
     print("Loading pretrained teachers ...")
-    cub_teacher_ckpt = 'checkpoints/cub200_resnet18_best.pth'
-    dogs_teacher_ckpt = 'checkpoints/dogs_resnet34_best.pth'
+    cub_teacher_ckpt = 'checkpoints/cub200_resnet18.pth'
+    dogs_teacher_ckpt = 'checkpoints/dogs_resnet34.pth'
     t_cub = resnet18(num_classes=200)
     t_dogs = resnet34(num_classes=120)
-    t_cub.load_state_dict(torch.load(cub_teacher_ckpt)['model_state'])
-    t_dogs.load_state_dict(torch.load(dogs_teacher_ckpt)['model_state'])
+    t_cub.load_state_dict(torch.load(cub_teacher_ckpt))
+    t_dogs.load_state_dict(torch.load(dogs_teacher_ckpt))
 
-    num_classes = 120+200
-    stu = resnet34(pretrained=True, num_classes=num_classes).to(device)
-    metrics = StreamClsMetrics(num_classes)
+    num_classes = 200+120
+    stu = resnet34(pretrained=True)
+    stu.fc = nn.Linear( stu.fc.in_features, num_classes )
 
-    t_cub = AmalNet(t_cub)
-    t_dogs = AmalNet(t_dogs)
-    stu = AmalNet(stu)
+    stu.train().to(device)
+    t_cub.eval().to(device)
+    t_dogs.eval().to(device)
+    # CFL block
+    cfl = CommonFeatureLearning( layers=(stu.layer4, t_cub.layer4, t_dogs.layer4), num_features=(512, 512, 512) ).train().to(device)
 
-    def resnet_parse_fn(resnet):
-        for l in [resnet.layer4]: #[resnet.layer3, resnet.layer4]:
-            yield l, l[-1].bn2.num_features
-    
-    t_cub.register_endpoints(parse_fn=resnet_parse_fn)
-    t_dogs.register_endpoints(parse_fn=resnet_parse_fn)
-    stu.register_endpoints(parse_fn=resnet_parse_fn)
-    teacher = [t_cub, t_dogs]
-
-    def get_cfl_block(student_model, teacher_model, channel_h=128):
-        t_channels = zip(*[t.endpoints_info for t in teacher_model])
-        s_channels = student_model.endpoints_info
-
-        cfl_blocks = list()
-        for s_ch, t_ch in zip(s_channels, t_channels):
-            cfl_blocks.append(CFL_ConvBlock(
-                channel_s=s_ch, channel_t=t_ch, channel_h=channel_h))
-        return cfl_blocks
-
-    cfl = CommonFeatureLearning(
-        stu, teacher, get_cfl_block(stu, teacher, channel_h=128)).to(device)
+    metrics = StreamClassificationMetrics()
 
     params_1x = []
     params_10x = []
-    for name, param in cfl.student.named_parameters():
+    for name, param in stu.named_parameters():
         if 'fc' in name:
             params_10x.append(param)
         else:
             params_1x.append(param)
-    params_cfl = cfl.cfl_blocks.parameters()
+
     optimizer = torch.optim.Adam([{'params': params_1x,         'lr': opts.lr},
                                   {'params': params_10x,        'lr': opts.lr*10},
-                                  {'params': params_cfl,        'lr':  opts.lr*10}],
-                                 lr=opts.lr, weight_decay=1e-4, betas=(0.8, 0.9)) 
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+                                  {'params': cfl.parameters(),  'lr': opts.lr}], 
+                                  lr=opts.lr, weight_decay=1e-4) 
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+
+    cur_epoch = 0
+    best_score = 0.0
     print("CFL Training ...")
-    cfl.fit(train_loader,
-            val_loader=val_loader,
-            metrics=MetrcisCompose([metrics]),
-            beta=10.0,
-            total_epochs=opts.epochs,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            enable_vis=True,
-            env='cfl',
-            port='13579',
-            gpu_id='0')
+    kd_criterion = KDLoss()
+    # ===== Train Loop =====#
+    while cur_epoch < opts.epochs:
+        stu.train()
+        for i, (data, _) in enumerate( train_loader ):
+            optimizer.zero_grad()
+            data = data.to(device)
+            t_cub_out = t_cub(data)
+            t_dog_out = t_dogs(data)
+            s_out = stu(data)
+
+            kd_loss = kd_criterion( s_out, torch.cat( [t_cub_out, t_dog_out], dim=1 ).detach() )
+            cfl_loss = cfl()
+            loss = kd_loss + 20*cfl_loss
+            
+            loss.backward()
+            optimizer.step()
+            if i%10==0:
+                print("Epoch %d/%d, Batch %d/%d Loss=%.4f (kd_loss=%.4f, cfl_loss=%.4f)" %(cur_epoch, opts.epochs, i, len(train_loader), loss.item(), kd_loss.item(), cfl_loss.item()))
+            
+        scheduler.step()
+        # =====  Validation  =====
+        print("validate on val set...")
+        stu.eval()
+        (metric_name, score), val_loss = train_tools.eval(model=stu,
+                                                            criterion=nn.CrossEntropyLoss(),
+                                                            test_loader=val_loader,
+                                                            metric=metrics, device=device)
+        print("%s: %.4f"%(metric_name, score))
+        vp.add_scalar( 'acc', cur_epoch+1, score )
+
+        # =====  Save Best Model  =====
+        if score > best_score:  # save best model
+            best_score = score
+            torch.save( stu.state_dict(), 'checkpoints/cfl_resnet34.pth')
+            torch.save( cfl.state_dict(), 'checkpoints/cfl_block.pth' )
+
+        vp.add_scalar('acc', cur_epoch + 1, score)
+        cur_epoch += 1
 
 if __name__ == '__main__':
     main()

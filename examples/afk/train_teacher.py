@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-from kamal.datasets import voc
-from kamal.models import resnet, densenet
+from kamal.vision.datasets import voc
+from kamal.vision.models import resnet, densenet
 from kamal.metrics import stream_metrics
 import sys
 import os

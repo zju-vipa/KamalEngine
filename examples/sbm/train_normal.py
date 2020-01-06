@@ -1,9 +1,9 @@
 from __future__ import division
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-from kamal.models import *
-from kamal.datasets import *
-from kamal.losses import AngleLoss
+from kamal.vision.models import SegNet
+from kamal.vision.datasets import NYUv2
+from kamal.loss import AngleLoss
 from kamal.metrics import StreamClsMetrics, StreamAngleMetrics
 
 import torch
