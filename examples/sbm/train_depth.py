@@ -100,7 +100,7 @@ def validate( model, loader, device, metrics):
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_root", type=str, default='../database/')
+    parser.add_argument("--data_root", type=str, default='../Datasets/NYUv2')
     parser.add_argument("--dataset", type=str, default='nyu')
     parser.add_argument("--batch_size", type=int, default=4 )
     parser.add_argument("--lr", type=float, default=1e-2 )
@@ -120,15 +120,12 @@ def main():
     os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_id
     device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
 
-    # Set up random seed
-    set_seed(opts.random_seed)
-
     ckpt_dir = os.path.join(opts.ckpt, 'lr{}_stepsize{}_gamma{}'.format(opts.lr, opts.step_size, opts.gamma))
     mkdir(ckpt_dir)
 
     if opts.dataset == 'nyu':
         num_classes = 40
-        train_ds = NYUv2(os.path.join(opts.data_root, 'NYU'), 'train', num_classes,
+        train_ds = NYUv2(opts.data_root, 'train', num_classes,
                     transforms=transforms.Compose([
                         transforms.RandomHorizontalFlip(),
                         transforms.ColorJitter(0.7),
@@ -152,7 +149,7 @@ def main():
                             transforms.ToTensor(),
                         ]),
                     ], ds_type='labeled')
-        val_ds = NYUv2(os.path.join(opts.data_root, 'NYU'), 'test', num_classes, 
+        val_ds = NYUv2(opts.data_root, 'test', num_classes, 
                     transforms=transforms.Compose([
                         transforms.ToTensor()
                     ]),
