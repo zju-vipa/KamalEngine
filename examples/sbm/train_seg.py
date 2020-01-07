@@ -2,7 +2,7 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 from kamal.vision.models import SegNet
 from kamal.vision.datasets import NYUv2
-from kamal.metrics import StreamSegMetrics
+from kamal.metrics import StreamSegmentationMetrics
 
 import torch
 import torch.nn as nn
@@ -91,7 +91,7 @@ def validate( model, loader, device, metrics):
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_root", type=str, default='../database/')
+    parser.add_argument("--data_root", type=str, default='~/Datasets/NYUv2')
     parser.add_argument("--dataset", type=str, default='nyu')
     parser.add_argument("--batch_size", type=int, default=5 )
     parser.add_argument("--lr", type=float, default=1e-2 )
@@ -109,15 +109,14 @@ def main():
 
     os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_id
     device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
-
-    # Set up random seed
-    set_seed(opts.random_seed)
+    opts.data_root = os.path.expanduser( opts.data_root )
+    
     ckpt_dir = os.path.join(opts.ckpt, 'lr{}_stepsize{}_gamma{}'.format(opts.lr, opts.step_size, opts.gamma))
-    mkdir(ckpt_dir)
+    os.makedirs(ckpt_dir, exist_ok=True)
 
     if opts.dataset == 'nyu':
         num_classes = 13
-        train_ds = NYUv2(os.path.join(opts.data_root, 'NYU'), 'train', num_classes,
+        train_ds = NYUv2(opts.data_root, 'train', num_classes,
                     transforms=transforms.Compose([
                         transforms.RandomHorizontalFlip(),
                         transforms.ColorJitter(0.7),
@@ -142,7 +141,7 @@ def main():
                             transforms.ToTensor(),
                         ]),
                     ], ds_type='labeled')
-        val_ds = NYUv2(os.path.join(opts.data_root, 'NYU'), 'test', num_classes, 
+        val_ds = NYUv2(opts.data_root, 'test', num_classes, 
                     transforms=transforms.Compose([
                         transforms.ToTensor()
                     ]),
@@ -166,7 +165,7 @@ def main():
     model.init_vgg16_params(vgg16)
     model = model.to(device)
 
-    metrics = StreamSegMetrics(num_classes)
+    metrics = StreamSegmentationMetrics(num_classes)
 
     params_1x = []
     params_10x = []
