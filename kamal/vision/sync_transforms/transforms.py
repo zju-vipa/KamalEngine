@@ -18,32 +18,6 @@ _pil_interpolation_to_str = {
 #
 #  Extended Transforms for Semantic Segmentation
 #
-class RandomHorizontalFlip(object):
-    """Horizontally flip the given PIL Image randomly with a given probability.
-
-    Args:
-        p (float): probability of the image being flipped. Default value is 0.5
-    """
-
-    def __init__(self, p=0.5):
-        self.p = p
-
-    def __call__(self, img, lbl):
-        """
-        Args:
-            img (PIL Image): Image to be flipped.
-
-        Returns:
-            PIL Image: Randomly flipped image.
-        """
-        if random.random() < self.p:
-            return F.hflip(img), F.hflip(lbl)
-        return img, lbl
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(p={})'.format(self.p)
-
-
 
 class Compose(object):
     """Composes several transforms together.
@@ -59,11 +33,11 @@ class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         for t in self.transforms:
-            img, lbl = t(img, lbl)
-        return img, lbl
-
+            imgs = t(*imgs)
+        return imgs
+    
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
         for t in self.transforms:
@@ -72,9 +46,8 @@ class Compose(object):
         format_string += '\n)'
         return format_string
 
-
 class CenterCrop(object):
-    """Crops the given PIL Image at the center.
+    """Crops the given PIL Images at the center.
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
@@ -87,14 +60,14 @@ class CenterCrop(object):
         else:
             self.size = size
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         """
         Args:
             img (PIL Image): Image to be cropped.
         Returns:
             PIL Image: Cropped image.
         """
-        return F.center_crop(img, self.size), F.center_crop(lbl, self.size)
+        return ( F.center_crop(img, self.size) for img in imgs )
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
@@ -105,22 +78,29 @@ class RandomScale(object):
         self.scale_range = scale_range
         self.interpolation = interpolation
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         """
         Args:
-            img (PIL Image): Image to be scaled.
-            lbl (PIL Image): Label to be scaled.
+            imgs (PIL Image): Images to be scaled.
+    
         Returns:
-            PIL Image: Rescaled image.
-            PIL Image: Rescaled label.
+            PIL Image: Rescaled images.
         """
         assert img.size == lbl.size
         scale = random.uniform(self.scale_range[0], self.scale_range[1])
         target_size = ( int(img.size[1]*scale), int(img.size[0]*scale) )
-        return F.resize(img, target_size, self.interpolation), F.resize(lbl, target_size, Image.NEAREST)
 
+        if isinstance(self.interpolation, (list, tuple) ):
+            return ( F.resize(img, target_size, interp) for (img, interp) in zip( imgs, self.interpolation ) )
+        else:
+            return ( F.resize(img, target_size, self.interpolation) for img in imgs )
+    
     def __repr__(self):
-        interpolate_str = _pil_interpolation_to_str[self.interpolation]
+        if isinstance( self.interpolation, (tuple, list) ):
+            interpolate_str = ""
+            interpolate_str+= (_pil_interpolation_to_str[interp] + ", ") for interp in self.interpolation
+        else:
+            interpolate_str = _pil_interpolation_to_str[self.interpolation]
         return self.__class__.__name__ + '(scale_range=({0}, {1}), interpolation={2})'.format(self.scale_range[0], self.scale_range[1], interpolate_str)
 
 class Scale(object):
@@ -135,21 +115,28 @@ class Scale(object):
         self.scale = scale
         self.interpolation = interpolation
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         """
         Args:
-            img (PIL Image): Image to be scaled.
-            lbl (PIL Image): Label to be scaled.
+            imgs (PIL Image): Images to be scaled.
+
         Returns:
-            PIL Image: Rescaled image.
-            PIL Image: Rescaled label.
+            PIL Image: Rescaled images.
         """
         assert img.size == lbl.size
         target_size = ( int(img.size[1]*self.scale), int(img.size[0]*self.scale) ) # (H, W)
-        return F.resize(img, target_size, self.interpolation), F.resize(lbl, target_size, Image.NEAREST)
+
+        if isinstance(self.interpolation, (list, tuple) ):
+            return ( F.resize(img, target_size, interp) for (img, interp) in zip( imgs, self.interpolation ) )
+        else:
+            return ( F.resize(img, target_size, self.interpolation) for img in imgs )
 
     def __repr__(self):
-        interpolate_str = _pil_interpolation_to_str[self.interpolation]
+        if isinstance( self.interpolation, (tuple, list) ):
+            interpolate_str = ""
+            interpolate_str+= (_pil_interpolation_to_str[interp] + ", ") for interp in self.interpolation
+        else:
+            interpolate_str = _pil_interpolation_to_str[self.interpolation]
         return self.__class__.__name__ + '(size={0}, interpolation={1})'.format(self.size, interpolate_str)
 
 
@@ -196,18 +183,14 @@ class RandomRotation(object):
 
         return angle
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         """
-            img (PIL Image): Image to be rotated.
-            lbl (PIL Image): Label to be rotated.
+            imgs (PIL Image): Images to be rotated.
         Returns:
-            PIL Image: Rotated image.
-            PIL Image: Rotated label.
+            PIL Image: Rotated images.
         """
-
         angle = self.get_params(self.degrees)
-
-        return F.rotate(img, angle, self.resample, self.expand, self.center), F.rotate(lbl, angle, self.resample, self.expand, self.center)
+        return ( F.rotate(img, angle, self.resample, self.expand, self.center) for img in imgs )
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
@@ -218,6 +201,7 @@ class RandomRotation(object):
         format_string += ')'
         return format_string
 
+
 class RandomHorizontalFlip(object):
     """Horizontally flip the given PIL Image randomly with a given probability.
     Args:
@@ -227,16 +211,16 @@ class RandomHorizontalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         """
         Args:
-            img (PIL Image): Image to be flipped.
+            imgs (PIL Image): Images to be flipped.
         Returns:
-            PIL Image: Randomly flipped image.
+            PIL Image: Randomly flipped images.
         """
         if random.random() < self.p:
-            return F.hflip(img), F.hflip(lbl)
-        return img, lbl
+            return ( F.hflip(img) for img in imgs )
+        return imgs
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={})'.format(self.p)
@@ -251,58 +235,91 @@ class RandomVerticalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         """
         Args:
-            img (PIL Image): Image to be flipped.
-            lbl (PIL Image): Label to be flipped.
+            imgs (PIL Image): Images to be flipped.
         Returns:
-            PIL Image: Randomly flipped image.
-            PIL Image: Randomly flipped label.
+            PIL Image: Randomly flipped images.
         """
+
         if random.random() < self.p:
-            return F.vflip(img), F.vflip(lbl)
-        return img, lbl
+            return ( F.vflip(img) for img in imgs )
+        return imgs
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
 class Pad(object):
-    def __init__(self, diviser=32):
-        self.diviser = diviser
-    
-    def __call__(self, img, lbl):
-        h, w = img.size
-        ph = (h//32+1)*32 - h if h%32!=0 else 0
-        pw = (w//32+1)*32 - w if w%32!=0 else 0
-        im = F.pad(img, ( pw//2, pw-pw//2, ph//2, ph-ph//2) )
-        lbl = F.pad(lbl, ( pw//2, pw-pw//2, ph//2, ph-ph//2))
-        return im, lbl
+    """Pad the given PIL Image on all sides with the given "pad" value.
+    Args:
+        padding (int or tuple): Padding on each border. If a single int is provided this
+            is used to pad all borders. If tuple of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+            this is the padding for the left, top, right and bottom borders
+            respectively.
+        fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+            length 3, it is used to fill R, G, B channels respectively.
+            This value is only used when the padding_mode is constant
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+            Default is constant.
+            - constant: pads with a constant value, this value is specified with fill
+            - edge: pads with the last value at the edge of the image
+            - reflect: pads with reflection of image without repeating the last value on the edge
+                For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+                will result in [3, 2, 1, 2, 3, 4, 3, 2]
+            - symmetric: pads with reflection of image repeating the last value on the edge
+                For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+                will result in [2, 1, 1, 2, 3, 4, 4, 3]
+    """
+
+    def __init__(self, padding, fill=0, padding_mode='constant'):
+        assert isinstance(padding, (numbers.Number, tuple))
+        assert isinstance(fill, (numbers.Number, str, tuple))
+        assert padding_mode in ['constant', 'edge', 'reflect', 'symmetric']
+        if isinstance(padding, Sequence) and len(padding) not in [2, 4]:
+            raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
+                             "{} element tuple".format(len(padding)))
+
+        self.padding = padding
+        self.fill = fill
+        self.padding_mode = padding_mode
+
+    def __call__(self, *imgs):
+        """
+        Args:
+            imgs (PIL Image): Images to be padded.
+        Returns:
+            PIL Image: Padded images.
+        """
+        return ( F.pad(img, self.padding, self.fill, self.padding_mode) for img in imgs )
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(padding={0}, fill={1}, padding_mode={2})'.\
+            format(self.padding, self.fill, self.padding_mode)
+
 
 class ToTensor(object):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
     [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0].
     """
-    def __init__(self, normalize=True, target_type='uint8'):
-        self.normalize = normalize
+    def __init__(self, do_transform):
+        self.do_transform = do_transform
         self.target_type = target_type
-    def __call__(self, pic, lbl):
+    
+    def __call__(self, *imgs):
         """
         Note that labels will not be normalized to [0, 1].
         Args:
-            pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
-            lbl (PIL Image or numpy.ndarray): Label to be converted to tensor. 
+            imgs (PIL Image or numpy.ndarray): Images to be converted to tensor.
         Returns:
-            Tensor: Converted image and label
+            Tensor: Converted images
         """
-        if self.normalize:
-            return F.to_tensor(pic), torch.from_numpy( np.array( lbl, dtype=self.target_type) )
-        else:
-            return torch.from_numpy( np.array( pic, dtype=np.float32).transpose(2, 0, 1) ), torch.from_numpy( np.array( lbl, dtype=self.target_type) )
+        return ( ( F.to_tensor( img ) if dt==True else torch.from_numpy( np.array( lbl ) )  )  for (img, dt) in zip(imgs, self.do_transform))
 
     def __repr__(self):
-        return self.__class__.__name__ + '()'
+        return self.__class__.__name__ + '(do_transform={})'.format( self.do_transform )
 
 class Normalize(object):
     """Normalize a tensor image with mean and standard deviation.
@@ -314,23 +331,22 @@ class Normalize(object):
         std (sequence): Sequence of standard deviations for each channel.
     """
 
-    def __init__(self, mean, std):
+    def __init__(self, mean, std, do_transform):
         self.mean = mean
         self.std = std
+        self.do_transform = do_transform
 
-    def __call__(self, tensor, lbl):
+    def __call__(self, *tensors):
         """
         Args:
-            tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
-            tensor (Tensor): Tensor of label. A dummy input for Compose
+            tensors (Tensor): Tensor images of size (C, H, W) to be normalized.
         Returns:
-            Tensor: Normalized Tensor image.
-            Tensor: Unchanged Tensor label
+            Tensor: Normalized Tensor images.
         """
-        return F.normalize(tensor, self.mean, self.std), lbl
+        return ( ( F.normalize(tensor, self.mean, self.std) if dt==True else tensor) for (tensor, dt) in zip(tensors, self.do_transform))
 
     def __repr__(self):
-        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+        return self.__class__.__name__ + '(mean={0}, std={1}, do_transform={2})'.format(self.mean, self.std, self.do_transform)
 
 
 class RandomCrop(object):
@@ -373,33 +389,27 @@ class RandomCrop(object):
         j = random.randint(0, w - tw)
         return i, j, th, tw
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         """
         Args:
-            img (PIL Image): Image to be cropped.
-            lbl (PIL Image): Label to be cropped.
+            imgs (PIL Image): Images to be cropped.
         Returns:
-            PIL Image: Cropped image.
-            PIL Image: Cropped label.
+            PIL Image: Cropped images.
         """
-        assert img.size == lbl.size, 'size of img and lbl should be the same. %s, %s'%(img.size, lbl.size)
         if self.padding > 0:
-            img = F.pad(img, self.padding)
-            lbl = F.pad(lbl, self.padding)
+            imgs = ( F.pad(img, self.padding) for img in imgs )
 
         # pad the width if needed
         if self.pad_if_needed and img.size[0] < self.size[1]:
-            img = F.pad(img, padding=int((1 + self.size[1] - img.size[0]) / 2))
-            lbl = F.pad(lbl, padding=int((1 + self.size[1] - lbl.size[0]) / 2))
+            imgs = ( F.pad(img, padding=int((1 + self.size[1] - img.size[0]) / 2)) for img in imgs)
 
         # pad the height if needed
         if self.pad_if_needed and img.size[1] < self.size[0]:
-            img = F.pad(img, padding=int((1 + self.size[0] - img.size[1]) / 2))
-            lbl = F.pad(lbl, padding=int((1 + self.size[0] - lbl.size[1]) / 2))
+            imgs = ( F.pad(img, padding=int((1 + self.size[0] - img.size[1]) / 2)) for img in imgs )
 
-        i, j, h, w = self.get_params(img, self.size)
+        i, j, h, w = self.get_params(imgs[0], self.size)
 
-        return F.crop(img, i, j, h, w), F.crop(lbl, i, j, h, w)
+        return ( F.crop(img, i, j, h, w) for img in imgs )
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
@@ -422,17 +432,26 @@ class Resize(object):
         self.size = size
         self.interpolation = interpolation
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         """
         Args:
-            img (PIL Image): Image to be scaled.
+            imgs (PIL Image): Images to be scaled.
         Returns:
-            PIL Image: Rescaled image.
+            PIL Image: Rescaled images.
         """
-        return F.resize(img, self.size, self.interpolation), F.resize(lbl, self.size, Image.NEAREST)
+
+        if isinstance(self.interpolation, (list, tuple) ):
+            return ( F.resize(img, self.size, interp) for (img, interp) in zip( imgs, self.interpolation ) )
+        else:
+            return ( F.resize(img, self.size, self.interpolation) for img in imgs )
 
     def __repr__(self):
-        interpolate_str = _pil_interpolation_to_str[self.interpolation]
+        if isinstance( self.interpolation, (tuple, list) ):
+            interpolate_str = ""
+            interpolate_str+= (_pil_interpolation_to_str[interp] + ", ") for interp in self.interpolation
+        else:
+            interpolate_str = _pil_interpolation_to_str[self.interpolation]
+
         return self.__class__.__name__ + '(size={0}, interpolation={1})'.format(self.size, interpolate_str) 
     
 class ColorJitter(object):
@@ -452,12 +471,13 @@ class ColorJitter(object):
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
     """
-    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+    def __init__(self, do_transform, brightness=0, contrast=0, saturation=0, hue=0):
         self.brightness = self._check_input(brightness, 'brightness')
         self.contrast = self._check_input(contrast, 'contrast')
         self.saturation = self._check_input(saturation, 'saturation')
         self.hue = self._check_input(hue, 'hue', center=0, bound=(-0.5, 0.5),
                                      clip_first_on_zero=False)
+        self.do_transform = do_transform
 
     def _check_input(self, value, name, center=1, bound=(0, float('inf')), clip_first_on_zero=True):
         if isinstance(value, numbers.Number):
@@ -511,7 +531,7 @@ class ColorJitter(object):
 
         return transform
 
-    def __call__(self, img, lbl):
+    def __call__(self, *imgs):
         """
         Args:
             img (PIL Image): Input image.
@@ -521,11 +541,12 @@ class ColorJitter(object):
         """
         transform = self.get_params(self.brightness, self.contrast,
                                     self.saturation, self.hue)
-        return transform(img), lbl
+        return ( (transform(img) if dt==True else img) for (img, dt) in zip(imgs, self.do_transform) )
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
-        format_string += 'brightness={0}'.format(self.brightness)
+        format_string += 'do_transform={0}'.format(self.do_transform)
+        format_string += ', brightness={0}'.format(self.brightness)
         format_string += ', contrast={0}'.format(self.contrast)
         format_string += ', saturation={0}'.format(self.saturation)
         format_string += ', hue={0})'.format(self.hue)
@@ -538,42 +559,13 @@ class Lambda(object):
         lambd (function): Lambda/function to be used for transform.
     """
 
-    def __init__(self, lambd):
+    def __init__(self, lambd, do_transform):
         assert callable(lambd), repr(type(lambd).__name__) + " object is not callable"
         self.lambd = lambd
+        self.do_transform=do_transform
 
-    def __call__(self, img):
-        return self.lambd(img)
-
+    def __call__(self, *imgs):
+        return ( (self.lambd(img) if dt==True else img) for (img,dt) in zip(imgs, self.do_transform)
+        
     def __repr__(self):
-        return self.__class__.__name__ + '()'
-
-
-class Compose(object):
-    """Composes several transforms together.
-
-    Args:
-        transforms (list of ``Transform`` objects): list of transforms to compose.
-
-    Example:
-        >>> transforms.Compose([
-        >>>     transforms.CenterCrop(10),
-        >>>     transforms.ToTensor(),
-        >>> ])
-    """
-
-    def __init__(self, transforms):
-        self.transforms = transforms
-
-    def __call__(self, img):
-        for t in self.transforms:
-            img = t(img)
-        return img
-
-    def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        for t in self.transforms:
-            format_string += '\n'
-            format_string += '    {0}'.format(t)
-        format_string += '\n)'
-        return format_string
+        return self.__class__.__name__ + '({0})'.format(self.do_transform)
