@@ -1,2 +1,2 @@
-from .segnet import SegNet, JointNet, JointNetOffline
+from .segnet import SegNet
 from .linknet import LinkNet
