@@ -15,9 +15,28 @@ _pil_interpolation_to_str = {
     Image.BOX: 'PIL.Image.BOX',
 }
 
+
 #
-#  Extended Transforms for Semantic Segmentation
+#  Extended Transforms for multiple inputs
 #
+
+class StandardTransform(object):
+    def __init__(self, *transforms):
+        self.transforms = transforms
+
+    def __call__(self, *inputs):
+        return ( (t(input) if t is not None else input) for (t, input) in zip( self.transforms, inputs ) )
+
+    def _format_transform_repr(self, transform, head):
+        lines = transform.__repr__().splitlines()
+        return (["{}{}".format(head, lines[0])] +
+                ["{}{}".format(" " * len(head), line) for line in lines[1:]])
+
+    def __repr__(self):
+        body = [self.__class__.__name__]
+        for t in self.transforms:
+            body += self._format_transform_repr(self.transform, "Transform: ")
+        return '\n'.join(body)
 
 class Compose(object):
     """Composes several transforms together.
