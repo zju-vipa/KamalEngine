@@ -71,7 +71,7 @@ class Cityscapes(VisionDataset):
     #id_to_train_id = np.array([c.category_id for c in classes], dtype='uint8') - 1
 
     def __init__(self, root, split='train', mode='fine', target_type='semantic', transform=None, target_transform=None, transforms=None):
-        super(Cityscapes, self).__init__( transform=transform, target_transform=target_transform, transforms=transforms )
+        super(Cityscapes, self).__init__( root, transform=transform, target_transform=target_transform, transforms=transforms )
         self.root = os.path.expanduser(root)
         self.mode = 'gtFine'
         self.target_type = target_type
