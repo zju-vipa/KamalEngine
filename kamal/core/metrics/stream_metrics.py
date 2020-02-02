@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from abc import ABC, abstractmethod
 
-class _StreamMetrics(ABC):
+class StreamMetricsBase(ABC):
     def __init__(self):
         """ Overridden by subclasses """
         raise NotImplementedError()

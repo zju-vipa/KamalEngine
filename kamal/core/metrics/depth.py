@@ -1,13 +1,14 @@
-from .stream_metrics import _StreamMetrics
+from .stream_metrics import StreamMetricsBase
 import numpy as np
 
-class StreamDepthMetrics(_StreamMetrics):
+class StreamDepthMetrics(StreamMetricsBase):
     """This metric is used in depth prediction task.
 
     **Parameters:**
         - **thresholds** (list of float)
         - **ignore_index** (int, optional): Value to ignore.
     """
+    PRIMARY_METRIC = 'absolute relative'
     def __init__(self, thresholds, ignore_index=0):
         self.thresholds = thresholds
         self.ignore_index = ignore_index
@@ -40,7 +41,7 @@ class StreamDepthMetrics(_StreamMetrics):
             string += "\tthreshold %f: %f\n"%(k, v)
         return string
 
-    def get_results(self, return_key_metric=False):
+    def get_results(self):
         """
         **Returns:**
             - **absolute relative error**
@@ -64,10 +65,7 @@ class StreamDepthMetrics(_StreamMetrics):
         threshold_percents = {}
         for threshold in self.thresholds:
             threshold_percents[threshold] = np.nansum((sigma < threshold)) / count
-
-        if return_key_metric:
-            return ('absolute relative', ard)
-
+        
         return {
             'absolute relative': ard,
             'squared relative': srd,

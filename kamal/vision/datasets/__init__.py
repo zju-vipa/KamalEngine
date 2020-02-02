@@ -1,12 +1,13 @@
-from .utils import *
+from .ade20k import ADE20K
+from .caltech import Caltech101, Caltech256
+from .camvid import CamVid
 from .cityscapes import Cityscapes
-from .voc import VOCSegmentation, VOCClassification
 from .cub200 import CUB200
 from .fgvc_aircraft import FGVCAircraft
 from .imagenet import ImageNet
-from .nyu import NYUv2
-from .stanford_dogs import StanfordDogs
-from .stanford_cars import StanfordCars
 from .kitti import Kitti
-from .camvid import CamVid
-from .ade20k import ADE20K
+from .nyu import NYUv2
+from .stanford_cars import StanfordCars
+from .stanford_dogs import StanfordDogs
+from .sunrgbd import SUNRGBD
+from .voc import VOCClassification, VOCSegmentation

@@ -5,11 +5,18 @@ import collections
 import torch.utils.data as data
 import shutil
 import numpy as np
+from .utils import DEFAULT_COLORMAP
 
 from PIL import Image
 from torchvision.datasets.utils import download_url, check_integrity
 
 DATASET_YEAR_DICT = {
+    '2012aug': {
+        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar',
+        'filename': 'VOCtrainval_11-May-2012.tar',
+        'md5': '6cd6e144f989b92b3379bac3b3de84fd',
+        'base_dir': 'VOCdevkit/VOC2012'
+    },
     '2012': {
         'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar',
         'filename': 'VOCtrainval_11-May-2012.tar',
@@ -48,27 +55,6 @@ DATASET_YEAR_DICT = {
     }
 }
 
-
-def voc_cmap(N=256, normalized=False):
-    def bitget(byteval, idx):
-        return ((byteval & (1 << idx)) != 0)
-
-    dtype = 'float32' if normalized else 'uint8'
-    cmap = np.zeros((N, 3), dtype=dtype)
-    for i in range(N):
-        r = g = b = 0
-        c = i
-        for j in range(8):
-            r = r | (bitget(c, 0) << 7-j)
-            g = g | (bitget(c, 1) << 7-j)
-            b = b | (bitget(c, 2) << 7-j)
-            c = c >> 3
-
-        cmap[i] = np.array([r, g, b])
-
-    cmap = cmap/255 if normalized else cmap
-    return cmap
-
 class VOCSegmentation(data.Dataset):
     """`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ Segmentation Dataset.
     Args:
@@ -81,7 +67,7 @@ class VOCSegmentation(data.Dataset):
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
     """
-    cmap = voc_cmap()
+    cmap = DEFAULT_COLORMAP
     def __init__(self,
                  root,
                  year='2012',
@@ -116,7 +102,7 @@ class VOCSegmentation(data.Dataset):
         if is_aug and image_set=='train':
             mask_dir = os.path.join(voc_root, 'SegmentationClassAug')
             assert os.path.exists(mask_dir), "SegmentationClassAug not found, please refer to README.md and prepare it manually"
-            split_f = os.path.join( self.root, 'train_aug.txt')#'./datasets/data/train_aug.txt'
+            split_f = os.path.join( self.root, 'train_aug.txt') 
         else:
             mask_dir = os.path.join(voc_root, 'SegmentationClass')
             splits_dir = os.path.join(voc_root, 'ImageSets/Segmentation')
