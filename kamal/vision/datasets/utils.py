@@ -11,7 +11,6 @@ def mkdir(dir):
     if not os.path.isdir(dir):
         os.mkdir(dir)
 
-
 def colormap(N=256, normalized=False):
     def bitget(byteval, idx):
         return ((byteval & (1 << idx)) != 0)
@@ -32,6 +31,7 @@ def colormap(N=256, normalized=False):
     cmap = cmap/255 if normalized else cmap
     return cmap
 
+DEFAULT_COLORMAP = colormap()
 
 def gen_bar_updater(pbar):
     def bar_update(count, block_size, total_size):
@@ -70,7 +70,6 @@ def makedir_exist_ok(dirpath):
             pass
         else:
             raise
-
 
 def download_url(url, root, filename=None, md5=None):
     """Download a file from a url and place it in root.
@@ -159,3 +158,4 @@ def set_seed(random_seed):
     torch.cuda.manual_seed(random_seed)
     np.random.seed(random_seed)
     random.seed(random_seed)
+

@@ -1,30 +1,33 @@
-from .stream_metrics import _StreamMetrics
+from .stream_metrics import StreamMetricsBase
 import numpy as np
+import torch
 
-class StreamClassificationMetrics(_StreamMetrics):
+class StreamClassificationMetrics(StreamMetricsBase):
+    PRIMARY_METRIC = 'acc'
     def __init__(self):
         self.correct = 0
         self.total = 0
 
-    def update(self, pred, target):
-        pred = pred.detach().cpu().numpy()
-        target = target.detach().cpu().numpy()
-        self.correct += (pred==target).sum()
-        self.total += len(target)
+    def update(self, preds, targets):
+        if isinstance(preds, torch.Tensor):
+            preds = preds.detach().cpu().numpy()
+            targets = targets.detach().cpu().numpy()
+
+        self.correct += (preds.flatten()==targets.flatten()).sum()
+        self.total += len(targets)
 
     @staticmethod
     def to_str(results):
         return "%s: %.4f"%( 'Acc', results['acc'] )
 
-    def get_results(self, return_key_metric=False):
-        if return_key_metric:
-            return ('acc', self.correct / self.total)
+    def get_results(self):
         return {"acc": self.correct / self.total }
     
     def reset(self):
         self.correct = self.total = 0
 
 class StreamCEMAPMetrics():
+    PRIMARY_METRIC = 'eap'
     def __init__(self):
         self.targets = None
         self.preds = None
@@ -45,7 +48,7 @@ class StreamCEMAPMetrics():
             string += '{}: {}\n'.format(k, v)
         return string
 
-    def get_results(self, return_key_metric=False):
+    def get_results(self):
         nTest = self.targets.shape[0]
         nLabel = self.targets.shape[1]
         eap = np.zeros(nTest)
@@ -70,9 +73,6 @@ class StreamCEMAPMetrics():
                     cap[i] = cap[i] + rb/(r*1.0)
             cap[i] = cap[i]/R
         # cmap = np.nanmean(ap)
-        if return_key_metric:
-            return ('eap', eap)
-
         return {
             'eap': eap,
             'emap': np.nanmean(eap),

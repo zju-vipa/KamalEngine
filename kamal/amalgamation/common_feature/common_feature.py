@@ -4,8 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 
 import torch
-from ...metrics import StreamClassificationMetrics
-from ...loss import CFLLoss
+from ...core.loss import CFLLoss
 from .blocks import CFL_ConvBlock
 
 class CommonFeatureLearning(nn.Module):

@@ -1,12 +1,13 @@
-from .stream_metrics import _StreamMetrics
+from .stream_metrics import StreamMetricsBase
 import numpy as np
 
-class StreamAngleMetrics(_StreamMetrics):
+class StreamAngleMetrics(StreamMetricsBase):
     """This metric is used in surface normal prediction task.
 
     **Parameters:**
         - **thresholds** (list of float)
     """
+    PRIMARY_METRIC = 'mean angle'
     def __init__(self, thresholds):
         self.thresholds = thresholds
         self.preds = None
@@ -42,7 +43,7 @@ class StreamAngleMetrics(_StreamMetrics):
             string += "\tthreshold %f: %f\n"%(k, v)
         return string
 
-    def get_results(self, return_key_metric=False):
+    def get_results(self):
         """
         **Returns:**
             - **mean angle**

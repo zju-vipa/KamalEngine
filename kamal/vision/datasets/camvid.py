@@ -39,11 +39,16 @@ class CamVid(VisionDataset):
                  transform=None,
                  target_transform=None,
                  transforms=None):
-        super( CamVid, self ).__init__(transforms=transforms, transform=transform, target_transform=target_transform)
+        assert split in ('train', 'val', 'test', 'trainval')
+        super( CamVid, self ).__init__(root=root, transforms=transforms, transform=transform, target_transform=target_transform)
         self.root = root
         self.split = split
-        self.images = glob(os.path.join(self.root, self.split, '*.png'))
-        self.labels = glob(os.path.join(self.root, self.split+'annot', '*.png'))
+        if split == 'trainval':
+            self.images = glob(os.path.join(self.root, 'train', '*.png')) + glob(os.path.join(self.root, 'val', '*.png'))
+            self.labels = glob(os.path.join(self.root, 'trainannot', '*.png')) + glob(os.path.join(self.root, 'valannot', '*.png'))
+        else:
+            self.images = glob(os.path.join(self.root, self.split, '*.png'))
+            self.labels = glob(os.path.join(self.root, self.split+'annot', '*.png'))
         self.images.sort()
         self.labels.sort()
 
@@ -57,7 +62,6 @@ class CamVid(VisionDataset):
         """
 
         img, label = Image.open(self.images[idx]), Image.open(self.labels[idx])
-
         if self.transforms is not None:
             img, label = self.transforms(img, label)
         label[label == 11] = 255  # ignore void

@@ -5,9 +5,11 @@ import numpy as np
 from PIL import Image
 import os
 from torchvision.datasets import VisionDataset
-from glob import glob
+from .utils import DEFAULT_COLORMAP
 
 class ADE20K(VisionDataset):
+    cmap = DEFAULT_COLORMAP
+
     def __init__(
         self,
         root,
@@ -22,39 +24,35 @@ class ADE20K(VisionDataset):
         self.split = split
         self.num_classes = 150
 
-        #self.img_size = img_size if isinstance(img_size, tuple) else (img_size, img_size)
-        #self.mean = np.array([104.00699, 116.66877, 122.67892])
-        #self.files = collections.defaultdict(list)
-        self.img_list = glob(os.path.join( self.root, 'images', self.split, '**', '*.jpg' ), recursive=True)
-        self.img_list.sort()
-        self.lbl_list = [ (p[:-4]+'.png').replace( 'images', 'annotations' ) for p in self.img_list  ]
+        img_list = []
+        lbl_list = []
+        img_dir = os.path.join( self.root, 'images', self.split )
+        lbl_dir = os.path.join( self.root, 'annotations', self.split )
+
+        for img_name in os.listdir( img_dir ):
+            img_list.append( os.path.join( img_dir, img_name ) )
+            lbl_list.append( os.path.join( lbl_dir, img_name[:-3]+'png') )
+
+        self.img_list = img_list
+        self.lbl_list = lbl_list
 
     def __len__(self):
-        return len(self.files[self.split])
+        return len(self.img_list)
 
     def __getitem__(self, index):
         img = Image.open( self.img_list[index] )
         lbl = Image.open( self.lbl_list[index] )
         if self.transforms:
             img, lbl = self.transforms(img, lbl)
-            lbl = np.array(lbl, dtype='uint8') - 1 # 1-150 => 0-149 + 255
+            lbl = np.array(lbl, dtype='uint8')-1 # 1-150 => 0-149 + 255
         return img, lbl
 
-    def decode_target(self, temp, plot=False):
-        # from @meetshah1995
-        r = temp.copy()
-        g = temp.copy()
-        b = temp.copy()
-        for l in range(0, self.n_classes):
-            r[temp == l] = 10 * (l % 10)
-            g[temp == l] = l
-            b[temp == l] = 0
-        rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
-        rgb[:, :, 0] = r / 255.0
-        rgb[:, :, 1] = g / 255.0
-        rgb[:, :, 2] = b / 255.0
-        return rgb
+    @classmethod
+    def decode_target(cls, mask):
+        """decode semantic mask to RGB image"""
+        return cls.cmap[mask+1]
 
 if __name__ == "__main__":
     dst = ADE20K('~/Datasets/ADEChallengeData2016/')
-    print(dst[0])
+    for i in range( 100 ):
+        print( np.unique( np.array(dst[i][1]) ) )
