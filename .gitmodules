@@ -1,3 +1,0 @@
-[submodule "kamal/vision/datasets/preprocess/nyuv2-python-toolkit"]
-	path = kamal/vision/datasets/preprocess/nyuv2-python-toolkit
-	url = https://github.com/VainF/nyuv2-python-toolkit.git

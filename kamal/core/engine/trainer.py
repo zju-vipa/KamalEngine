@@ -133,6 +133,53 @@ class SimpleTrainer(TrainerBase):
             if len(info) > 1:
                 self.history.put_scalars(**info)
 
+class KDTrainer(SimpleTrainer):
+    def __init__(   self, 
+                    task: TaskBase, 
+                    teacher: nn.Module,
+                    model: nn.Module, 
+                    train_loader, 
+                    optimizer, 
+                    device=None,
+                    logger=None, ):
+
+        super( KDTrainer, self ).__init__( task, model, train_loader, optimizer, device, logger )
+        self.teacher = teacher
+
+    def train(self, start_iter, max_iter, device=None):
+        self.device = device if device is not None else \
+            torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
+        
+        with train_ctx(self.model), device_ctx(self.model, self.device), device_ctx( self.teacher, self.device ):
+            super( KDTrainer, self ).train( start_iter, max_iter )
+
+    def step(self):
+        self.optimizer.zero_grad()
+        start_time = time.perf_counter()
+        # prepare data
+        try:
+            data = next( self._train_loader_iter )
+        except StopIteration:
+            # reset iterator
+            self._train_loader_iter = iter(self.train_loader)
+            data = next( self._train_loader_iter )
+        if not isinstance( data, typing.Iterable ):
+            data = [data, ]
+        data = [ d.to(self.device) for d in data ]
+
+        # get loss
+        loss_dict = self.task.get_loss( self.model, self.teacher, data[0] )
+        loss = sum( loss_dict.values() )
+        loss.backward()
+        # update weights
+        self.optimizer.step()
+        step_time = time.perf_counter() - start_time
+
+        # record training info
+        info = loss_dict
+        info['step_time'] = float(step_time)
+        self._gather_training_info( info )
+
 
 
 
