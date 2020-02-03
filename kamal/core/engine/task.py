@@ -2,6 +2,7 @@ import abc
 import torch
 import torch.nn as nn
 import torch.nn.functional as F 
+from ..loss import KDLoss
 
 class TaskBase(abc.ABC):
     def __init__(self, criterion):
@@ -32,6 +33,21 @@ class ClassificationTask(TaskBase):
 class SegmentationTask(ClassificationTask):
     def __init__( self, criterion=nn.CrossEntropyLoss() ):
         super(SegmentationTask, self).__init__(criterion)
+
+class KDClassificationTask(ClassificationTask):
+    def __init__(self, criterion=KDLoss()):
+        super(KDClassificationTask, self).__init__(criterion)
+    
+    def get_loss( self, model, teacher, inputs ):
+        s_logits = model( inputs )
+        t_logits = teacher( inputs )
+        loss = self.criterion( s_logits, t_logits )
+        return {'loss': loss }
+
+class KDSegmentationTask(SegmentationTask):
+    def __init__( self, criterion=KDLoss() ):
+        super(KDSegmentationTask, self).__init__(criterion)
+
 
 class ReconstructionTask( TaskBase ):
     def __init__(self, criterion=nn.MSELoss()):

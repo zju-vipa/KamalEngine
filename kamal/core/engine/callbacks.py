@@ -81,7 +81,7 @@ class SimpleValidationCallback(CallbackBase):
                 else:
                     viz.line([v, ], [current_iter, ], win=k,
                                 update='append', opts={'title': k})
-        trainer.logger.info( "[Val] Iter %d: %s"%(current_iter, val_results) )
+        trainer.logger.info( "[Val] Iter %d/%d: %s"%(current_iter, trainer.max_iter, val_results) )
 
         if self.save_model is not None:
             primary_metric = self.metrics.PRIMARY_METRIC

@@ -6,6 +6,11 @@ __pycache__
 *checkpoints/
 *.txt
 *.ipynb
-data/
+data
 *.zip
 .vscode
+
+modelzoo
+pruned_models
+models_old
+logs
