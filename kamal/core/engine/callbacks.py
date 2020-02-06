@@ -3,10 +3,11 @@ import os
 import torch
 from tqdm import tqdm
 from typing import Sequence, Iterable
+import random
 
 from .. import metrics
-from ... import utils
-from .ctx import eval_ctx, device_ctx
+from ...utils import denormalize
+from .trainer import set_mode
 
 
 class CallbackBase(abc.ABC):
@@ -25,21 +26,18 @@ class CallbackBase(abc.ABC):
     def after_train(self):
         pass
 
-    
 class SimpleValidationCallback(CallbackBase):
     def __init__(self,
-                 interval:     int,
-                 val_loader:   torch.utils.data.DataLoader,
-                 metrics:      metrics.StreamMetricsBase,
-                 save_model:   Sequence = ('best', 'latest'),
-                 ckpt_tag:     str = 'model',
-                 ckpt_dir:     str = 'checkpoints',
-                 weights_only: bool = True,
-                 viz               = None):
-
+                 interval,
+                 evaluator,
+                 save_model     = ('best', 'latest'),
+                 ckpt_tag       = 'model',
+                 ckpt_dir       = 'checkpoints',
+                 weights_only   = True,
+                 viz            = None):
+        
         self.interval = interval
-        self.metrics = metrics
-        self.val_loader = val_loader
+        self.evaluator = evaluator
         self.save_model = save_model
 
         self._ckpt_dir = ckpt_dir
@@ -53,52 +51,43 @@ class SimpleValidationCallback(CallbackBase):
                     'save_model should be None or a subset of (\"best\", \"latest\", \"interval\")'
             os.makedirs(self._ckpt_dir, exist_ok=True)
 
-        self._best_score = -99999
+        self.best_score = -99999
         self._best_ckpt = None
         self._latest_ckpt = None
 
     def after_step(self):
-        trainer = self.trainer()
-        current_iter = int(trainer.iter)
-        if current_iter == 0 or current_iter % self.interval != 0:
-            return
-        task, model, device = trainer.task, trainer.model, trainer.device
-        
-        self.metrics.reset()
-        with torch.no_grad(), eval_ctx(model):
-            for i, (inputs, targets) in enumerate(tqdm(self.val_loader)):
-                inputs, targets = inputs.to(device), targets.to(device)
-                infer_dict = task.inference(model, inputs)
-                self.metrics.update(preds=infer_dict['preds'], targets=targets)
-        val_results = self.metrics.get_results()
-        # history
-        trainer.history.put_scalars( **val_results )
+        trainer = self.trainer() # get the current trainer from weak reference
+        if trainer.iter == 0 or trainer.iter % self.interval != 0:
+            return   
+        results = self.evaluator.eval( trainer.model )  
+        trainer.history.put_scalars( **results )
 
+        trainer.logger.info( "[Val] Iter %d/%d: %s"%(trainer.iter, trainer.max_iter, results) )
+
+        # Visualization
         if self._viz is not None:
-            for k, v in val_results.items():
+            for k, v in results.items():
                 if isinstance(v, Iterable):  # skip non-scalar value
                     continue
                 else:
-                    viz.line([v, ], [current_iter, ], win=k,
+                    self._viz.line([v, ], [trainer.iter, ], win=k,
                                 update='append', opts={'title': k})
-        trainer.logger.info( "[Val] Iter %d/%d: %s"%(current_iter, trainer.max_iter, val_results) )
 
         if self.save_model is not None:
-            primary_metric = self.metrics.PRIMARY_METRIC
-            score = val_results[primary_metric]
-
+            primary_metric = self.evaluator.metrics.PRIMARY_METRIC
+            score = results[primary_metric]
             pth_path_list = []
 
             # interval model
             if 'interval' in self.save_model:
                 pth_path = os.path.join(self._ckpt_dir, "%s-%08d-%s-%.3f.pth"
-                                        % (self._ckpt_tag, current_iter, primary_metric, score))
+                                        % (self._ckpt_tag, trainer.iter, primary_metric, score))
                 pth_path_list.append(pth_path)
 
             # the latest model
             if 'latest' in self.save_model:
                 pth_path = os.path.join(self._ckpt_dir, "%s-latest-%08d-%s-%.3f.pth"
-                                        % (self._ckpt_tag, current_iter, primary_metric, score))
+                                        % (self._ckpt_tag, trainer.iter, primary_metric, score))
                 # remove existed weights
                 if self._latest_ckpt is not None and os.path.exists(self._latest_ckpt):
                     os.remove(self._latest_ckpt)
@@ -106,62 +95,58 @@ class SimpleValidationCallback(CallbackBase):
                 self._latest_ckpt = pth_path
 
             # the best model
-            if 'best' in self.save_model and score > self._best_score:
+            if 'best' in self.save_model and score > self.best_score:
                 pth_path = os.path.join(self._ckpt_dir, "%s-best-%08d-%s-%.3f.pth" %
-                                        (self._ckpt_tag, current_iter, primary_metric, score))
+                                        (self._ckpt_tag, trainer.iter, primary_metric, score))
                 # remove existed weights
                 if self._best_ckpt is not None and os.path.exists(self._best_ckpt):
                     os.remove(self._best_ckpt)
                 pth_path_list.append(pth_path)
-                self._best_score = score
+                self.best_score = score
                 self._best_ckpt = pth_path
 
             # save model
             trainer.logger.info("Model saved as:")
-            obj = model.state_dict() if self._weights_only else model
+            obj = trainer.model.state_dict() if self._weights_only else model
             for pth_path in pth_path_list:
                 torch.save(obj, pth_path)
                 trainer.logger.info("\t%s" % (pth_path))
 
-
 class LoggingCallback(CallbackBase):
-    def __init__(self, interval=10, names=('total_loss', ), smooth_window_size=None, viz=None):
+    def __init__(self, interval=10, names=('total_loss', 'lr' ), smooth_window_sizes=(10, None), viz=None):
         self.interval = interval
         self._names = names
-        self._smooth_window_size = smooth_window_size
+        self._smooth_window_sizes = [ None for _ in names ] if smooth_window_sizes is None else smooth_window_sizes
+        if isinstance( self._smooth_window_sizes, int):
+            self._smooth_window_sizes = [ self._smooth_window_sizes for _ in names ]
         self._viz = viz
 
     def after_step(self):
         trainer = self.trainer()
         if trainer.iter == 0 or trainer.iter % self.interval != 0:
             return
-        logger = trainer.logger
-        history = trainer.history
-        current_iter = trainer.iter
 
         num_batchs_per_epoch = len(trainer.train_loader)
-        current_epoch = current_iter // num_batchs_per_epoch
         total_epoch = trainer.max_iter // num_batchs_per_epoch
-        current_batch = current_iter % num_batchs_per_epoch
-
+        current_epoch = trainer.iter // num_batchs_per_epoch
+        current_batch = trainer.iter % num_batchs_per_epoch
+        
         # create log info
-        info_str = "Iter %d/%d (Epoch %d/%d, Batch %d/%d)"
+        format_str = "Iter %d/%d (Epoch %d/%d, Batch %d/%d)"
 
-        for name in self._names:
-            latest_value = history.get_scalar(name)
-            smoothed_value = history.get_scalar(name, self._smooth_window_size) if self._smooth_window_size else latest_value
-            info_str += " %s=%.4f" % ( name, smoothed_value )
+        for name, smooth in zip(self._names, self._smooth_window_sizes):
+            latest_value = trainer.history.get_scalar(name)
+            smoothed_value = trainer.history.get_scalar(name, smooth) if smooth is not None else latest_value
+            format_str += " %s=%.4f" % ( name, smoothed_value )
 
             if self._viz:
-                opts={'title': name, 'showlegend': ( self._smooth_window_size is not None ) }
+                opts={'title': name, 
+                      'showlegend': ( smooth is not None ) }
+                self._viz.line([latest_value, ], [trainer.iter, ], win=name, name='latest', update='append', opts=opts )
+                if smooth:
+                    self._viz.line( [smoothed_value, ], [trainer.iter, ], win=name, name='smoothed', update='append', opts=opts )
 
-                self._viz.line([latest_value, ], [current_iter, ], win=name, name='latest', 
-                        update='append', opts=opts )
-                if self._smooth_window_size:
-                    self._viz.line( [smoothed_value, ], [current_iter, ], win=name, name='smoothed',
-                        update='append', opts=opts )
-                    
-        logger.info(info_str % (
+        trainer.logger.info(format_str % (
             trainer.iter,      trainer.max_iter,
             current_epoch,     total_epoch,
             current_batch,     num_batchs_per_epoch
@@ -169,68 +154,61 @@ class LoggingCallback(CallbackBase):
 
 
 class LRSchedulerCallback(CallbackBase):
-    def __init__(self, scheduler, interval=1):
+    def __init__(self, interval=1, scheduler=None):
         self.scheduler = scheduler
         self.interval = interval
 
     def after_step(self):
         trainer = self.trainer()
-        if trainer.iter == 0 or trainer.iter % self.interval != 0:
+        if self.scheduler is None or trainer.iter == 0 or trainer.iter % self.interval != 0:
             return
         self.scheduler.step()
 
 
 class SegVisualizationCallback(CallbackBase):
-    def __init__(self, interval, data_loader, viz, norm_mean=None, norm_std=None, to_255=True):
+    def __init__(self, interval, viz, dst, idx_list_or_num_vis=5, 
+                        mean=None, std=None, scale_to_255=True):
         self.interval = interval
-
-        self.data_loader = data_loader
-
+        self.dst = dst
+        
+        if isinstance( idx_list_or_num_vis, int ):
+            self.idx_list = self._get_vis_idx_list( dst, idx_list_or_num_vis )
+        elif isinstance( idx_list_or_num_vis, Iterable ):
+            self.idx_list = idx_list_or_num_vis
+        
         self._viz = viz
-        self._norm_mean = norm_mean
-        self._norm_std = norm_std
-        self._to_255 = to_255
+        self._mean = mean
+        self._std = std
+        self._scale_to_255 = scale_to_255
+
+    def _get_vis_idx_list( self, dst, num_vis ):
+        return random.sample( list( range( len( dst ) ) ), num_vis )
 
     def after_step(self):
         trainer = self.trainer()  # get current chainer
-        task, model = trainer.task, trainer.model
         if trainer.iter == 0 or trainer.iter % self.interval != 0:
             return
-
         device = trainer.device
-        img_id = 0
 
-        with torch.no_grad(), eval_ctx(model):
-            for i, (inputs, targets) in enumerate(self.data_loader):
-                inputs, targets = inputs.to(device), targets.to(device)
-                infer_dict = task.inference(model, inputs)
+        with torch.no_grad(), set_mode(trainer.model, training=False):
+            for img_id, idx in enumerate(self.idx_list):
+                inputs, targets = self.dst[ idx ]
+                inputs, targets = inputs.unsqueeze(0).to(device), targets.unsqueeze(0).to(device)
 
-                if self._norm_mean is not None and self._norm_std is not None:
-                    inputs = utils.denormalize(
-                        inputs.detach(), self._norm_mean, self._norm_std)
-                if self._to_255:
-                    inputs = inputs*255
+                preds = trainer.model( inputs ).max(1)[1]
 
-                inputs = inputs.cpu().numpy().astype('uint8')
-                preds = infer_dict['preds'].detach().cpu().numpy()
-                targets = targets.detach().cpu().squeeze(1).numpy()
+                if self._mean is not None and self._std is not None:
+                    inputs = denormalize(inputs, self._mean, self._std)
+                inputs = inputs.cpu().numpy()
+                if self._scale_to_255:
+                    inputs = (inputs*255)
+                inputs = inputs.astype('uint8')
 
-                dataset = self.data_loader.dataset
-                if isinstance(dataset, torch.utils.data.Subset):
-                    dataset = dataset.dataset
+                preds = preds.detach().cpu().numpy().astype('uint8')
+                targets = targets.detach().cpu().squeeze(1).numpy().astype('uint8')
+                
+                inputs = inputs[0]
+                preds = self.dst.decode_seg_to_rgb(preds).transpose(0, 3, 1, 2)[0]  # nhwc => nchw
+                targets = self.dst.decode_seg_to_rgb(targets).transpose(0, 3, 1, 2)[0]
 
-                if hasattr(dataset, 'decode_target'):
-                    preds = dataset.decode_target(
-                        preds).transpose(0, 3, 1, 2)  # N, C, H, W
-                    targets = dataset.decode_target(
-                        targets).transpose(0, 3, 1, 2)
-                else:
-                    preds = utils.DEFAULT_COLORMAP[preds].transpose(0, 3, 1, 2)
-                    targets = utils.DEFAULT_COLORMAP[targets].transpose(0, 3, 1, 2)
-
-                for input, pred, target in zip(inputs, preds, targets):
-                    self._viz.images([input, pred, target],
-                                     nrow=3,
-                                     win=("segvis-%d" % img_id),
-                                     opts={'title': str(img_id)})
-                    img_id += 1
+                self._viz.images([inputs, preds, targets], nrow=3, win=("seg-%d" % img_id), opts={'title': str(img_id)})

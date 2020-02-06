@@ -1,4 +1,3 @@
-import torch.optim as optim
 import torch.nn as nn
 import torch
 import math
@@ -8,14 +7,18 @@ import typing
 import time
 import numpy as np 
 
-from .task import TaskBase
-from .callbacks import CallbackBase
 from ...utils.logger import get_logger
 from ...utils import comm
-from .ctx import train_ctx, device_ctx
-from .history import HistoryStorage
+from .history import History
 
+import contextlib
 
+@contextlib.contextmanager
+def set_mode(model, training=True):
+    ori_mode = model.training
+    model.train(training)
+    yield
+    model.train(ori_mode)
 
 class TrainerBase(abc.ABC):
     def __init__(self, logger=None):
@@ -26,7 +29,7 @@ class TrainerBase(abc.ABC):
         self.iter = start_iter
         self.start_iter, self.max_iter = start_iter, max_iter
 
-        self.history = HistoryStorage(start_iter)
+        self.history = History(start_iter)
         self.before_train()
         for self.iter in range( start_iter, max_iter ):
             self.before_step()
@@ -35,7 +38,7 @@ class TrainerBase(abc.ABC):
             self.history.step()
         self.after_train()
             
-    def add_callbacks(self, callbacks: typing.Sequence[ CallbackBase ]):
+    def add_callbacks(self, callbacks):
         for callback in callbacks:
             callback.trainer = weakref.ref(self)
         self._callbacks.extend( callbacks )
@@ -63,70 +66,72 @@ class TrainerBase(abc.ABC):
 
 class SimpleTrainer(TrainerBase):
     def __init__(   self, 
-                    task: TaskBase, 
-                    model: nn.Module, 
+                    task, 
+                    model, 
                     train_loader, 
                     optimizer, 
-                    device=None,
                     logger=None, ):
         super(SimpleTrainer, self).__init__(logger)
         self.task = task
         self.train_loader = train_loader
         self.optimizer = optimizer
         self.model = model
-
         self._train_loader_iter = iter(train_loader)
 
     def train(self, start_iter, max_iter, device=None):
         self.device = device if device is not None else \
             torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
-        
-        with train_ctx(self.model), device_ctx(self.model, self.device):
+        self.model.to(self.device)
+        with set_mode(self.model, training=True):
             super( SimpleTrainer, self ).train( start_iter, max_iter )
         
     def step(self):
         self.optimizer.zero_grad()
         start_time = time.perf_counter()
-        # prepare data
-        try:
+        
+        try: # prepare data
             data = next( self._train_loader_iter )
         except StopIteration:
-            # reset iterator
-            self._train_loader_iter = iter(self.train_loader)
+            self._train_loader_iter = iter(self.train_loader) # reset iterator
             data = next( self._train_loader_iter )
         if not isinstance( data, typing.Iterable ):
             data = [data, ]
         data = [ d.to(self.device) for d in data ]
 
-        # get loss
-        loss_dict = self.task.get_loss( self.model, *data )
+        loss_dict = self.task.get_loss( self.model, *data ) # get loss
         loss = sum( loss_dict.values() )
         loss.backward()
-        # update weights
+
+        # optimize
         self.optimizer.step()
         step_time = time.perf_counter() - start_time
 
         # record training info
         info = loss_dict
-        info['step_time'] = float(step_time)
+        info['total_loss'] = loss
+        info['step_time'] = step_time
+        info['lr'] = float( self.optimizer.param_groups[0]['lr'] )
         self._gather_training_info( info )
 
-    def _gather_training_info(self, info):
+    def _gather_training_info(self, info): 
         info = {
             k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v)
             for k, v in info.items()
         }
-
+        current_lr = info.pop('lr')
+    
         all_info = comm.gather(info)
         if comm.is_main_process():
             if "step_time" in all_info[0]:
                 step_time = np.max([x.pop("step_time") for x in all_info])
                 self.history.put_scalar("step_time", step_time)
-
+                self.history.put_scalar("lr", current_lr)
+            
             # average the rest metrics
             info = {
                 k: np.mean([x[k] for x in all_info]) for k in all_info[0].keys()
             }
+            
             total_losses_reduced = sum(loss for loss in info.values())
             self.history.put_scalar("total_loss", total_losses_reduced)
 
@@ -135,22 +140,22 @@ class SimpleTrainer(TrainerBase):
 
 class KDTrainer(SimpleTrainer):
     def __init__(   self, 
-                    task: TaskBase, 
-                    teacher: nn.Module,
-                    model: nn.Module, 
+                    task, 
+                    model,
+                    teacher,
                     train_loader, 
                     optimizer, 
-                    device=None,
                     logger=None, ):
 
-        super( KDTrainer, self ).__init__( task, model, train_loader, optimizer, device, logger )
+        super( KDTrainer, self ).__init__( task, model, train_loader, optimizer, logger )
         self.teacher = teacher
 
     def train(self, start_iter, max_iter, device=None):
         self.device = device if device is not None else \
             torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
-        
-        with train_ctx(self.model), device_ctx(self.model, self.device), device_ctx( self.teacher, self.device ):
+        self.model.to(self.device)
+        self.teacher.to(self.device)
+        with set_mode(self.model, training=True), set_mode(self.teacher, training=False):
             super( KDTrainer, self ).train( start_iter, max_iter )
 
     def step(self):
@@ -177,11 +182,20 @@ class KDTrainer(SimpleTrainer):
 
         # record training info
         info = loss_dict
+        info['total_loss'] = float(loss.item())
         info['step_time'] = float(step_time)
+        info['lr'] = float( self.optimizer.param_groups[0]['lr'] )
         self._gather_training_info( info )
 
 
 
+
+
+#
+#
+# Deprecated
+#
+#
 
 def eval(model, criterion, test_loader, metric, device=None, num_val_batch=None):
     if device is None:

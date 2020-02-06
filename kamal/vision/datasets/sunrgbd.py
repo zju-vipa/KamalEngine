@@ -1,31 +1,10 @@
 import os
-import torch.utils.data as data
 from glob import glob
 from PIL import Image
-import numpy as np
+from .utils import colormap
+from torchvision.datasets import VisionDataset
 
-def colormap(N=256, normalized=False):
-    def bitget(byteval, idx):
-        return ((byteval & (1 << idx)) != 0)
-
-    dtype = 'float32' if normalized else 'uint8'
-    cmap = np.zeros((N, 3), dtype=dtype)
-    for i in range(N):
-        r = g = b = 0
-        c = i
-        for j in range(8):
-            r = r | (bitget(c, 0) << 7-j)
-            g = g | (bitget(c, 1) << 7-j)
-            b = b | (bitget(c, 2) << 7-j)
-            c = c >> 3
-
-        cmap[i] = np.array([r, g, b])
-
-    cmap = cmap/255 if normalized else cmap
-    return cmap
-
-
-class SUNRGBD(data.Dataset):
+class SunRGBD(VisionDataset):
     """SUNRGBD dataset loader where the dataset is arranged as in https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid.
     
     **Parameters:**
@@ -41,10 +20,12 @@ class SUNRGBD(data.Dataset):
     def __init__(self,
                  root,
                  split='train',
-                 transform=None):
+                 transform=None,
+                 target_transform=None,
+                 transforms=None):
+        super( SunRGBD, self ).__init__( root, transform=transform, target_transform=target_transform, transforms=transforms )
         self.root = root
         self.split = split
-        self.transform = transform
 
         self.images = glob(os.path.join(self.root, 'SUNRGBD-%s_images'%self.split, '*.jpg'))
         self.labels = glob(os.path.join(self.root, '%s13labels'%self.split, '*.png'))
@@ -65,14 +46,14 @@ class SUNRGBD(data.Dataset):
 
         if self.transform is not None:
             img, label = self.transform(img, label)
-        label = label-1  # ignore void 0->255
+        label = label-1  # void 0=>255
         return img, label
 
     def __len__(self):
         return len(self.images)
 
     @classmethod
-    def decode_target(cls, mask):
+    def decode_seg_to_rgb(cls, mask):
         """decode semantic mask to RGB image"""
         #mask[mask == 255] = 11
         return cls.cmap[mask.astype('uint8')+1]

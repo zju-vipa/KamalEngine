@@ -8,20 +8,18 @@ from torchvision.datasets import VisionDataset
 class CamVid(VisionDataset):
     """CamVid dataset loader where the dataset is arranged as in https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid.
     
-    **Parameters:**
-        - **root_dir** (string): Root directory path.
-        - **mode** (string): The type of dataset: 'train' for training set, 'val'. for validation set, and 'test' for test set.
-        - **transform** (callable, optional): A function/transform that  takes in an PIL image and returns a transformed version. Default: None.
-        - **label_transform** (callable, optional): A function/transform that takes in the target and transform it. Default: None.
-        - **loader** (callable, optional): A function to load an image given its path. By default ``default_loader`` is used.
+    Args:
+        root (string): 
+        split (string): The type of dataset: 'train', 'val', 'trainval', or 'test'
+        transform (callable, optional): A function/transform that takes in an PIL image and returns a transformed version. Default: None.
+        target_transform (callable, optional): A function/transform that takes in the target and transform it. Default: None.
+        transforms (callable, optional): A function/transform that takes in both the image and target and transform them. Default: None.
     """
 
-    # Default encoding for pixel value, class name, and class color
     cmap = np.array([
         (128, 128, 128),
         (128, 0, 0),
         (192, 192, 128),
-        #(255, 69, 0),
         (128, 64, 128),
         (60, 40, 222),
         (128, 128, 0),
@@ -65,13 +63,13 @@ class CamVid(VisionDataset):
         if self.transforms is not None:
             img, label = self.transforms(img, label)
         label[label == 11] = 255  # ignore void
-        return img, label
+        return img, label.squeeze(0)
     
     def __len__(self):
         return len(self.images)
 
     @classmethod
-    def decode_target(cls, mask):
+    def decode_seg_to_rgb(cls, mask):
         """decode semantic mask to RGB image"""
         mask[mask == 255] = 11
         return cls.cmap[mask]

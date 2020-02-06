@@ -9,5 +9,5 @@ from .kitti import Kitti
 from .nyu import NYUv2
 from .stanford_cars import StanfordCars
 from .stanford_dogs import StanfordDogs
-from .sunrgbd import SUNRGBD
+from .sunrgbd import SunRGBD
 from .voc import VOCClassification, VOCSegmentation
