@@ -33,7 +33,7 @@ class HistoryBuffer(object):
     def values(self):
         return self._data
 
-class HistoryStorage(object):
+class History(object):
     def __init__(self, start_iter=0):
         self._history = defaultdict( HistoryBuffer )
 

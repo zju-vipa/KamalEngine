@@ -34,21 +34,6 @@ class SegmentationTask(ClassificationTask):
     def __init__( self, criterion=nn.CrossEntropyLoss() ):
         super(SegmentationTask, self).__init__(criterion)
 
-class KDClassificationTask(ClassificationTask):
-    def __init__(self, criterion=KDLoss()):
-        super(KDClassificationTask, self).__init__(criterion)
-    
-    def get_loss( self, model, teacher, inputs ):
-        s_logits = model( inputs )
-        t_logits = teacher( inputs )
-        loss = self.criterion( s_logits, t_logits )
-        return {'loss': loss }
-
-class KDSegmentationTask(SegmentationTask):
-    def __init__( self, criterion=KDLoss() ):
-        super(KDSegmentationTask, self).__init__(criterion)
-
-
 class ReconstructionTask( TaskBase ):
     def __init__(self, criterion=nn.MSELoss()):
         super(ReconstructionTask, self).__init__(criterion)
@@ -62,3 +47,17 @@ class ReconstructionTask( TaskBase ):
         outputs = model( inputs )
         return {'preds': preds}
     
+
+class KDClassificationTask(ClassificationTask):
+    def __init__(self, criterion=KDLoss()):
+        super(KDClassificationTask, self).__init__(criterion)
+    
+    def get_loss( self, model, teacher, inputs ):
+        s_logits = model( inputs )
+        t_logits = teacher( inputs )
+        loss = self.criterion( s_logits, t_logits )
+        return {'loss': loss }
+
+class KDSegmentationTask(SegmentationTask):
+    def __init__( self, criterion=KDLoss() ):
+        super(KDSegmentationTask, self).__init__(criterion)

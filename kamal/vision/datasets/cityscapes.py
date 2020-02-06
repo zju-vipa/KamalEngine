@@ -11,12 +11,12 @@ from torchvision.datasets import VisionDataset
 class Cityscapes(VisionDataset):
     """Cityscapes <http://www.cityscapes-dataset.com/> Dataset.
     
-    **Parameters:**
-        - **root** (string): Root directory of dataset where directory 'leftImg8bit' and 'gtFine' or 'gtCoarse' are located.
-        - **split** (string, optional): The image split to use, 'train', 'test' or 'val' if mode="gtFine" otherwise 'train', 'train_extra' or 'val'
-        - **mode** (string, optional): The quality mode to use, 'gtFine' or 'gtCoarse' or 'color'. Can also be a list to output a tuple with all specified target types.
-        - **transform** (callable, optional): A function/transform that takes in a PIL image and returns a transformed version. E.g, ``transforms.RandomCrop``
-        - **target_transform** (callable, optional): A function/transform that takes in the target and transforms it.
+    Args:
+        root (string): Root directory of dataset where directory 'leftImg8bit' and 'gtFine' or 'gtCoarse' are located.
+        split (string, optional): The image split to use, 'train', 'test' or 'val' if mode="gtFine" otherwise 'train', 'train_extra' or 'val'
+        mode (string, optional): The quality mode to use, 'gtFine' or 'gtCoarse' or 'color'. Can also be a list to output a tuple with all specified target types.
+        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the target and transforms it.
     """
 
     # Based on https://github.com/mcordts/cityscapesScripts
@@ -60,26 +60,21 @@ class Cityscapes(VisionDataset):
         CityscapesClass('license plate',        -1, 255, 'vehicle', 7, False, True, (0, 0, 142)),
     ]
 
-    train_id_to_color = [c.color for c in classes if (c.train_id != -1 and c.train_id != 255)]
-    train_id_to_color.append([0, 0, 0])
-    train_id_to_color = np.array(train_id_to_color)
-    id_to_train_id = np.array([c.train_id for c in classes])
+    _TRAIN_ID_TO_COLOR = [c.color for c in classes if (c.train_id != -1 and c.train_id != 255)]
+    _TRAIN_ID_TO_COLOR.append([0, 0, 0])
+    _TRAIN_ID_TO_COLOR = np.array(_TRAIN_ID_TO_COLOR)
+    _ID_TO_TRAIN_ID = np.array([c.train_id for c in classes])
     
-    #train_id_to_color = [(0, 0, 0), (128, 64, 128), (70, 70, 70), (153, 153, 153), (107, 142, 35),
-    #                      (70, 130, 180), (220, 20, 60), (0, 0, 142)]
-    #train_id_to_color = np.array(train_id_to_color)
-    #id_to_train_id = np.array([c.category_id for c in classes], dtype='uint8') - 1
-
-    def __init__(self, root, split='train', mode='fine', target_type='semantic', transform=None, target_transform=None, transforms=None):
+    def __init__(self, root, split='train', mode='gtfine', target_type='semantic', transform=None, target_transform=None, transforms=None):
         super(Cityscapes, self).__init__( root, transform=transform, target_transform=target_transform, transforms=transforms )
         self.root = os.path.expanduser(root)
-        self.mode = 'gtFine'
+        self.mode = mode
         self.target_type = target_type
+
         self.images_dir = os.path.join(self.root, 'leftImg8bit', split)
-
         self.targets_dir = os.path.join(self.root, self.mode, split)
-
         self.split = split
+
         self.images = []
         self.targets = []
 
@@ -100,16 +95,16 @@ class Cityscapes(VisionDataset):
                 target_name = '{}_{}'.format(file_name.split('_leftImg8bit')[0],
                                              self._get_target_suffix(self.mode, self.target_type))
                 self.targets.append(os.path.join(target_dir, target_name))
-
+    
     @classmethod
     def encode_target(cls, target):
-        return cls.id_to_train_id[np.array(target)]
+        return cls._ID_TO_TRAIN_ID[np.array(target)]
 
     @classmethod
-    def decode_target(cls, target):
+    def decode_seg_to_rgb(cls, target):
         target[target == 255] = 19
         #target = target.astype('uint8') + 1
-        return cls.train_id_to_color[target]
+        return cls._TRAIN_ID_TO_COLOR[target]
 
     def __getitem__(self, index):
         """

@@ -5,10 +5,10 @@ import numpy as np
 from PIL import Image
 import os
 from torchvision.datasets import VisionDataset
-from .utils import DEFAULT_COLORMAP
+from .utils import colormap
 
 class ADE20K(VisionDataset):
-    cmap = DEFAULT_COLORMAP
+    cmap = colormap()
 
     def __init__(
         self,
@@ -48,11 +48,6 @@ class ADE20K(VisionDataset):
         return img, lbl
 
     @classmethod
-    def decode_target(cls, mask):
+    def decode_seg_to_rgb(cls, mask):
         """decode semantic mask to RGB image"""
         return cls.cmap[mask+1]
-
-if __name__ == "__main__":
-    dst = ADE20K('~/Datasets/ADEChallengeData2016/')
-    for i in range( 100 ):
-        print( np.unique( np.array(dst[i][1]) ) )

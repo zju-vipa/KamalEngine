@@ -5,7 +5,8 @@ import collections
 import torch.utils.data as data
 import shutil
 import numpy as np
-from .utils import DEFAULT_COLORMAP
+from .utils import colormap
+from torchvision.datasets import VisionDataset
 
 from PIL import Image
 from torchvision.datasets.utils import download_url, check_integrity
@@ -55,7 +56,7 @@ DATASET_YEAR_DICT = {
     }
 }
 
-class VOCSegmentation(data.Dataset):
+class VOCSegmentation(VisionDataset):
     """`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ Segmentation Dataset.
     Args:
         root (string): Root directory of the VOC Dataset.
@@ -67,13 +68,17 @@ class VOCSegmentation(data.Dataset):
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
     """
-    cmap = DEFAULT_COLORMAP
+    cmap = colormap()
     def __init__(self,
                  root,
                  year='2012',
                  image_set='train',
                  download=False,
-                 transform=None):
+                 transform=None,
+                 target_transform=None,
+                 transforms=None,
+                 ):
+        super( VOCSegmentation, self ).__init__( root, transform=transform, target_transform=target_transform, transforms=transforms )
 
         is_aug=False
         if year=='2012_aug':
@@ -131,15 +136,13 @@ class VOCSegmentation(data.Dataset):
         target = Image.open(self.masks[index])
         if self.transform is not None:
             img, target = self.transform(img, target)
-
         return img, target
-
 
     def __len__(self):
         return len(self.images)
 
     @classmethod
-    def decode_target(cls, mask):
+    def decode_seg_to_rgb(cls, mask):
         """decode semantic mask to RGB image"""
         return cls.cmap[mask]
 
