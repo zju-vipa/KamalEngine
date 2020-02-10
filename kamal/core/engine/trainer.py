@@ -26,6 +26,10 @@ class TrainerBase(abc.ABC):
         self._callbacks = []
         self.callbacks_on=True
 
+    @property
+    def callbacks(self):
+        return self._callbacks
+        
     def train(self, start_iter, max_iter):
         self.iter = start_iter
         self.start_iter, self.max_iter = start_iter, max_iter

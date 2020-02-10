@@ -8,6 +8,7 @@ import os
 class HPO(object):
     def __init__(self, trainer, saved_hp=None):
         self.trainer = trainer
+        assert len(self.trainer.callbacks)==0, "HPO should be applied before adding callbacks"
         self.saved_hp = saved_hp
         self.init_model = deepcopy(self.trainer.model)
 
