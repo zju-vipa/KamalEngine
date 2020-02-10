@@ -37,7 +37,7 @@ def main():
     for model_name in args.model_list:
         for data_name in args.data_list:
             print(model_name, data_name)
-            with open( 'configs/data/%s.yml'%data_name, 'r') as f:
+            with open( 'configs/dataset/%s.yml'%data_name, 'r') as f:
                 data_cfg = YAML().load(f)
             
             model_root = 'checkpoints/%s/%s/%s'%( model_name, data_name, time.asctime().replace(' ', '_') )
