@@ -15,8 +15,8 @@ class EvaluatorBase(abc.ABC):
         pass
 
 class ClassificationEvaluator(EvaluatorBase):
-    def __init__(self, data_loader):
-        self.task = task.ClassificationTask()
+    def __init__(self, data_loader, task=task.ClassificationTask()):
+        self.task = task
         self.metrics = metrics.StreamClassificationMetrics()
         self.data_loader = data_loader
         
@@ -34,9 +34,6 @@ class ClassificationEvaluator(EvaluatorBase):
         return self.metrics.get_results()
 
 class SegmentationEvaluator(ClassificationEvaluator):
-    def __init__(self, num_classes, data_loader):
-        super( SegmentationEvaluator, self ).__init__(data_loader)
+    def __init__(self, num_classes, data_loader, task=task.SegmentationTask()):
+        super( SegmentationEvaluator, self ).__init__(data_loader, task)
         self.metrics = metrics.StreamSegmentationMetrics(num_classes)
-        self.task = task.SegmentationTask()
-            
-            
