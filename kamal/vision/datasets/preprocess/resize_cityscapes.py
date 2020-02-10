@@ -3,6 +3,8 @@ import os
 from PIL import Image
 import numpy as np 
 
+SIZE=(640, 320)
+
 def is_image(path: str):
     return path.endswith( 'png' ) or path.endswith('jpg') or path.endswith( 'jpeg' )
 
@@ -21,13 +23,13 @@ def copy_and_resize( src_dir, dst_dir, resize_fn ):
             resized_image.save( dst )
 
 def resize_input( image: Image.Image ):
-    return image.resize( (640, 320), resample=Image.BICUBIC )
+    return image.resize( SIZE, resample=Image.BICUBIC )
 
 def resize_seg( image: Image.Image ):
-    return image.resize( (640, 320), resample=Image.NEAREST )
+    return image.resize( SIZE, resample=Image.NEAREST )
 
 def resize_depth( image: Image.Image ):
-    return image.resize( (640, 320), resample=Image.NEAREST )
+    return image.resize( SIZE, resample=Image.NEAREST )
 
 def main():
     parser = argparse.ArgumentParser()
@@ -38,7 +40,7 @@ def main():
     GT_DIR = os.path.join( ROOT, 'gtFine' )
     DEPTH_DIR = os.path.join( ROOT, 'disparity' )
 
-    NEW_ROOT = os.path.join( ROOT, '320_640' )
+    NEW_ROOT = os.path.join( ROOT, '%d_%d'%(*SIZE) )
     NEW_IMG_DIR = os.path.join( NEW_ROOT, 'leftImg8bit' )
     NEW_GT_DIR = os.path.join( NEW_ROOT, 'gtFine' )
     NEW_DEPTH_DIR = os.path.join( NEW_ROOT, 'disparity' )

@@ -22,7 +22,7 @@ model_urls = {
 }
 
 class DeepLabV3(nn.Module):
-    def __init__(self, arch='deeplabv3_mobilenetv2', num_classes=21, output_stride=8, pretrained_backbone=False):
+    def __init__(self, arch='deeplabv3_mobilenetv2', num_classes=21, output_stride=8, pretrained_backbone=False, aspp_dilate=None):
         super(DeepLabV3, self).__init__()
         assert arch in __all__[1:], "arch_name for deeplab should be one of %s"%( __all__[1:] )
 
@@ -30,10 +30,10 @@ class DeepLabV3(nn.Module):
 
         if backbone_name=='mobilenetv2':
             backbone, classifier = _segm_mobilenet(arch_type, backbone_name, num_classes, 
-                output_stride=output_stride, pretrained_backbone=pretrained_backbone)
+                output_stride=output_stride, pretrained_backbone=pretrained_backbone, aspp_dilate=aspp_dilate)
         elif backbone_name.startswith('resnet'):
             backbone, classifier = _segm_resnet(arch_type, backbone_name, num_classes, 
-                output_stride=output_stride, pretrained_backbone=pretrained_backbone)
+                output_stride=output_stride, pretrained_backbone=pretrained_backbone, aspp_dilate=aspp_dilate)
         else:
             print("backbone nam")
             raise NotImplementedError
@@ -48,14 +48,14 @@ class DeepLabV3(nn.Module):
         x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
         return x
 
-def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_backbone):
+def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_backbone, aspp_dilate=None):
 
     if output_stride==8:
         replace_stride_with_dilation=[False, True, True]
-        aspp_dilate = [12, 24, 36]
+        aspp_dilate = [12, 24, 36] if aspp_dilate is None else aspp_dilate
     else:
         replace_stride_with_dilation=[False, False, True]
-        aspp_dilate = [6, 12, 18]
+        aspp_dilate = [6, 12, 18] if aspp_dilate is None else aspp_dilate
 
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained_backbone,
@@ -75,11 +75,11 @@ def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_bac
     #model = DeepLabV3(backbone, classifier)
     return backbone, classifier
 
-def _segm_mobilenet(name, backbone_name, num_classes, output_stride, pretrained_backbone):
+def _segm_mobilenet(name, backbone_name, num_classes, output_stride, pretrained_backbone, aspp_dilate=None):
     if output_stride==8:
-        aspp_dilate = [12, 24, 36]
+        aspp_dilate = [12, 24, 36] if aspp_dilate is None else aspp_dilate
     else:
-        aspp_dilate = [6, 12, 18]
+        aspp_dilate = [6, 12, 18] if aspp_dilate is None else aspp_dilate
 
     backbone = mobilenetv2.mobilenet_v2(pretrained=pretrained_backbone, output_stride=output_stride)
     

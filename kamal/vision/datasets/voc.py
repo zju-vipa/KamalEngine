@@ -7,7 +7,7 @@ import shutil
 import numpy as np
 from .utils import colormap
 from torchvision.datasets import VisionDataset
-
+import torch
 from PIL import Image
 from torchvision.datasets.utils import download_url, check_integrity
 
@@ -81,7 +81,7 @@ class VOCSegmentation(VisionDataset):
         super( VOCSegmentation, self ).__init__( root, transform=transform, target_transform=target_transform, transforms=transforms )
 
         is_aug=False
-        if year=='2012_aug':
+        if year=='2012aug':
             is_aug = True
             year = '2012'
         
@@ -90,7 +90,6 @@ class VOCSegmentation(VisionDataset):
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
         self.md5 = DATASET_YEAR_DICT[year]['md5']
-        self.transform = transform
         
         self.image_set = image_set
         base_dir = DATASET_YEAR_DICT[year]['base_dir']
@@ -134,8 +133,8 @@ class VOCSegmentation(VisionDataset):
         """
         img = Image.open(self.images[index]).convert('RGB')
         target = Image.open(self.masks[index])
-        if self.transform is not None:
-            img, target = self.transform(img, target)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
         return img, target
 
     def __len__(self):

@@ -65,7 +65,7 @@ class Cityscapes(VisionDataset):
     _TRAIN_ID_TO_COLOR = np.array(_TRAIN_ID_TO_COLOR)
     _ID_TO_TRAIN_ID = np.array([c.train_id for c in classes])
     
-    def __init__(self, root, split='train', mode='gtfine', target_type='semantic', transform=None, target_transform=None, transforms=None):
+    def __init__(self, root, split='train', mode='gtFine', target_type='semantic', transform=None, target_transform=None, transforms=None):
         super(Cityscapes, self).__init__( root, transform=transform, target_transform=target_transform, transforms=transforms )
         self.root = os.path.expanduser(root)
         self.mode = mode
@@ -98,7 +98,10 @@ class Cityscapes(VisionDataset):
     
     @classmethod
     def encode_target(cls, target):
-        return cls._ID_TO_TRAIN_ID[np.array(target)]
+        if isinstance( target, torch.Tensor ):
+            return torch.from_numpy( cls._ID_TO_TRAIN_ID[np.array(target)] )
+        else:
+            return cls._ID_TO_TRAIN_ID[target]
 
     @classmethod
     def decode_seg_to_rgb(cls, target):

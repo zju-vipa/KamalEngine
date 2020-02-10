@@ -24,6 +24,7 @@ class TrainerBase(abc.ABC):
     def __init__(self, logger=None):
         self.logger = logger if logger is not None else get_logger(name='kamal', color=True)
         self._callbacks = []
+        self.callbacks_on=True
 
     def train(self, start_iter, max_iter):
         self.iter = start_iter
@@ -48,18 +49,26 @@ class TrainerBase(abc.ABC):
         pass
 
     def before_train(self):
+        if not self.callbacks_on:
+            return
         for callback in self._callbacks:
             callback.before_train()
 
     def after_train(self):
+        if not self.callbacks_on:
+            return
         for callback in self._callbacks:
             callback.after_train()
 
     def before_step(self):
+        if not self.callbacks_on:
+            return
         for callback in self._callbacks:
             callback.before_step()
 
     def after_step(self):
+        if not self.callbacks_on:
+            return
         for callback in self._callbacks:
             callback.after_step()
     
@@ -112,6 +121,11 @@ class SimpleTrainer(TrainerBase):
         info['step_time'] = step_time
         info['lr'] = float( self.optimizer.param_groups[0]['lr'] )
         self._gather_training_info( info )
+
+    def reset(self):
+        self.history = None
+        self._train_loader_iter = iter(train_loader)
+        self.iter = self.start_iter
 
     def _gather_training_info(self, info): 
         info = {

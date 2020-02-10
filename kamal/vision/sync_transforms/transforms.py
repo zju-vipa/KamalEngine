@@ -75,7 +75,7 @@ class Multi(object):
 
     def __call__(self, *inputs):
         if len(self.transforms)==1:
-            outputs = [ self.transofrms[0](input) for input in inputs ]
+            outputs = [ self.transforms[0](input) for input in inputs ]
         else:
             assert len(inputs) == len(self.transforms), \
                 "Expected %d inputs, but got %d"%( len(self.transforms), len(inputs) )

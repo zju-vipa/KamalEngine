@@ -71,7 +71,7 @@ class NYUv2(VisionDataset):
         if self.transforms is not None:
             image, target = self.transforms( image, target )
         if self._is_seg:
-            target = (target-1).to(dtype=torch.long)
+            target = (target.to(dtype=torch.uint8)-1).to(dtype=torch.long)
         return image, target.squeeze(0)
 
     def __len__(self):
