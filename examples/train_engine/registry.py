@@ -210,7 +210,7 @@ def get_dataloader(name, data_cfg):
                         transforms=sT.Compose([
                             sT.Multi( sT.Resize(data_cfg['input_size']), 
                                 sT.Resize(data_cfg['input_size'], interpolation=Image.NEAREST) ),
-                            sT.Multi( sT.CenterCrop(data_cfg['input_size']), sT.CenterCrop(data_cfg['input_size']) ),
+                            #sT.Multi( sT.CenterCrop(data_cfg['input_size']), sT.CenterCrop(data_cfg['input_size']) ),
                             sT.Multi( sT.ToTensor(), sT.ToTensor(normalize=False, dtype=torch.long) ),
                             sT.Multi( sT.Normalize( data_cfg['mean'], data_cfg['std'] ), None )
                         ])),
