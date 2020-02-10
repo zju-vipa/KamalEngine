@@ -1,0 +1,31 @@
+# Deeplab v3
+deeplabv3_resnet50_os16_dilate4_8_12:
+  output_stride: 16
+  aspp_dilate: [4,8,12]
+  pretrained_backbone: True
+
+deeplabv3_resnet101_os16_dilate4_8_12:
+  output_stride: 16
+  aspp_dilate: [4,8,12]
+  pretrained_backbone: True
+
+deeplabv3_mobilenet_os16_dilate4_8_12:
+  output_stride: 16
+  aspp_dilate: [4,8,12]
+  pretrained_backbone: True
+
+# Deeplab v3+
+deeplabv3plus_resnet50_os16_dilate4_8_12:
+  output_stride: 16
+  aspp_dilate: [4,8,12]
+  pretrained_backbone: True
+
+deeplabv3plus_resnet101_os16_dilate4_8_12:
+  output_stride: 16
+  aspp_dilate: [4,8,12]
+  pretrained_backbone: True
+
+deeplabv3plus_mobilenet_os16_dilate4_8_12:
+  output_stride: 16
+  aspp_dilate: [4,8,12]
+  pretrained_backbone: True

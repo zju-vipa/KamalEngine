@@ -22,7 +22,6 @@ def pack_images(images, col=None, channel_last=False):
         pack[:, h:h+H, w:w+W] = img
     return pack
 
-
 def denormalize(tensor, mean, std):
     _mean = [ -m / s for m, s in zip(mean, std) ]
     _std = [ 1/s for s in std ]

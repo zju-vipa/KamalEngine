@@ -27,7 +27,10 @@ class ClassificationTask(TaskBase):
 
     def inference(self, model, inputs):
         logits = model( inputs )
+        if isinstance(logits, tuple):
+            logits = logits[0]
         preds = logits.max(1)[1]
+        
         return {'preds': preds}
 
 class SegmentationTask(ClassificationTask):
