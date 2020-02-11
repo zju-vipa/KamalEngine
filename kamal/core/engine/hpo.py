@@ -6,8 +6,9 @@ import os
 # optimizer
 
 class HPO(object):
-    def __init__(self, trainer, saved_hp=None):
+    def __init__(self, trainer, evaluator=None, saved_hp=None):
         self.trainer = trainer
+        self.evaluator = evaluator
         assert len(self.trainer.callbacks)==0, "HPO should be applied before adding callbacks"
         self.saved_hp = saved_hp
         self.init_model = self.trainer.model
@@ -30,9 +31,15 @@ class HPO(object):
 
             trainer.train(0, max_iters)
 
-            total_loss = trainer.history.get_scalar('total_loss')
-            trainer.logger.info("[HPO] loss: %.4f"%total_loss)
-            return total_loss
+            if self.evaluator is not None:
+                score = self.evaluator.eval( trainer.model )
+                score = score[ self.evaluator.metrics.PRIMARY_METRIC ]
+                trainer.logger.info("[HPO] score: %.4f"%score)
+                return -score # maximize score
+            else:
+                total_loss = trainer.history.get_scalar('total_loss')
+                trainer.logger.info("[HPO] loss: %.4f"%total_loss)
+                return total_loss
 
         if self.saved_hp is not None and os.path.exists(self.saved_hp):
             with open(self.saved_hp, 'r')as f:
