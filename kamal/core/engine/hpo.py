@@ -40,7 +40,7 @@ class HPO(object):
                 else:
                     return score
             else:
-                total_loss = trainer.history.get_scalar('total_loss')
+                total_loss = trainer.history.get_scalar('total_loss', 100)
                 trainer.logger.info("[HPO] loss: %.4f"%total_loss)
                 if minimize:
                     return total_loss
