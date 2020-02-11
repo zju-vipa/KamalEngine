@@ -1,4 +1,9 @@
 torch
 torchvision
-pytorch-mssim
 pandas
+pytorch-mssim
+torch-pruning
+termcolor
+hyperopt
+scikit-learn
+numpy
