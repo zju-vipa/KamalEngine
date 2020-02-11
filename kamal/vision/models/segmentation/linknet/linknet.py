@@ -133,6 +133,7 @@ class LinkNet(nn.Module):
                 
     def forward(self, x):
         # Encoder
+        out_size = x.shape[2:]
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -150,8 +151,10 @@ class LinkNet(nn.Module):
         d2 = self.decoder2(d3)
         d2 = d2+e1
         d1 = self.decoder1(d2)
-
-        return self.classifier(d1)
+        logits = self.classifier(d1)
+        if logits.shape[2:]!=out_size:
+            logits = nn.functional.interpolate( logits, size=out_size, mode='bilinear', align_corners=True )
+        return logits
 
 
 def linknet_resnet18(pretrained=False, progress=True, **kwargs):
