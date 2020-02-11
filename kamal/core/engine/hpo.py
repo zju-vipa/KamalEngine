@@ -13,7 +13,7 @@ class HPO(object):
         self.saved_hp = saved_hp
         self.init_model = self.trainer.model
 
-    def optimize( self, max_evals=50, max_iters=200 ):
+    def optimize( self, max_evals=50, max_iters=200, hpo_space=None, minimize=True):
         
         def objective_fn(space):
             trainer = self.trainer
@@ -35,26 +35,32 @@ class HPO(object):
                 score = self.evaluator.eval( trainer.model )
                 score = score[ self.evaluator.metrics.PRIMARY_METRIC ]
                 trainer.logger.info("[HPO] score: %.4f"%score)
-                return -score # maximize score
+                if minimize:
+                    return -score # maximize score = minimize loss
+                else:
+                    return score
             else:
                 total_loss = trainer.history.get_scalar('total_loss')
                 trainer.logger.info("[HPO] loss: %.4f"%total_loss)
-                return total_loss
+                if minimize:
+                    return total_loss
+                else:
+                    return -total_loss
 
         if self.saved_hp is not None and os.path.exists(self.saved_hp):
             with open(self.saved_hp, 'r')as f:
                 hp = YAML().load( f )
         else:
-            hpspace = self._get_space()
+            hpspace = self._get_default_space() if hpo_space is None else hpo_space
             best_hp = fmin(  fn=objective_fn,
-                        space=hpspace,
-                        algo=tpe.suggest,
-                        max_evals=max_evals, 
-                        verbose=1)
+                            space=hpspace,
+                            algo=tpe.suggest,
+                            max_evals=max_evals, 
+                            verbose=1)
             hp = dict()
             for k, v in best_hp.items():
-                if '-' in k:
-                    hp[ k.split('-')[1] ] = float(v)
+                if ':' in k:
+                    hp[ k.split(':')[1] ] = float(v)
             hp['opt'] = 'Adam' if best_hp['opt']==0 else 'SGD'
             with open(self.saved_hp, 'w')as f:
                 YAML().dump( dict(hp), f )
@@ -72,20 +78,20 @@ class HPO(object):
         elif name.lower()=='sgd':
             return torch.optim.SGD(model.parameters(), **params)   
 
-    def _get_space(self):
+    def _get_default_space(self):
         space = {
                 'opt': hp.choice('opt', [
                         { 
-                            'type': 'Adam', 
-                            'lr': hp.quniform(label='adam-lr', low=1e-5, high=1e-2, q=1e-4),
-                            'eps': hp.quniform(label='adam-eps', low=1e-9, high=1e-6, q=1e-8),
-                            'weight_decay': hp.quniform('adam-weight_decay', low=0, high=1e-3, q=1e-8),
+                            'type': 'adam', 
+                            'lr':  hp.uniform('adam:lr', 1e-5, 1e-2 ), 
+                            'eps': hp.uniform('adam:eps', 1e-9, 1e-7),
+                            'weight_decay': hp.uniform('adam:weight_decay', 0, 1e-3),
                         },
                         {
-                            'type': 'SGD',
-                            'lr': hp.quniform(label='sgd-lr', low=1e-3, high=0.2, q=1e-5),
-                            'momentum': hp.quniform(label='sgd-momentum', low=0, high=0.99, q=0.1),
-                            'weight_decay': hp.quniform('sgd-weight_decay', low=0, high=1e-3, q=1e-8),
+                            'type': 'sgd',
+                            'lr': hp.normal('sgd:lr', 1e-3, 0.5),
+                            'momentum': hp.choice('sgd:momentum', [0.5, 0.8, 0.9, 0.99]),
+                            'weight_decay': hp.uniform('sgd:weight_decay', 0, 1e-3),
                         }
                 ])
             }
