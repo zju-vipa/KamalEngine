@@ -39,14 +39,16 @@ class CamVid(VisionDataset):
                  transforms=None):
         assert split in ('train', 'val', 'test', 'trainval')
         super( CamVid, self ).__init__(root=root, transforms=transforms, transform=transform, target_transform=target_transform)
-        self.root = root
+        self.root = os.path.expanduser(root)
         self.split = split
+
         if split == 'trainval':
             self.images = glob(os.path.join(self.root, 'train', '*.png')) + glob(os.path.join(self.root, 'val', '*.png'))
             self.labels = glob(os.path.join(self.root, 'trainannot', '*.png')) + glob(os.path.join(self.root, 'valannot', '*.png'))
         else:
             self.images = glob(os.path.join(self.root, self.split, '*.png'))
             self.labels = glob(os.path.join(self.root, self.split+'annot', '*.png'))
+            
         self.images.sort()
         self.labels.sort()
 

@@ -7,19 +7,21 @@ from tqdm import tqdm
 from .trainer import set_mode
 
 class EvaluatorBase(abc.ABC):
-    def __init__(self):
-        pass
+    def __init__(self, data_loader, task):
+        self.data_loader = data_loader
+        self.task = task
 
     @abc.abstractmethod
     def eval(self, model):
         pass
 
 class ClassificationEvaluator(EvaluatorBase):
-    def __init__(self, data_loader, task=task.ClassificationTask()):
-        self.task = task
+    def __init__(self, 
+                data_loader, 
+                task=task.ClassificationTask()):
+        super(ClassificationEvaluator, self).__init__(data_loader, task)
         self.metrics = metrics.StreamClassificationMetrics()
-        self.data_loader = data_loader
-        
+    
     def eval(self, model, device=None):
         device = device if device is not None else \
             torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
@@ -37,3 +39,8 @@ class SegmentationEvaluator(ClassificationEvaluator):
     def __init__(self, num_classes, data_loader, task=task.SegmentationTask()):
         super( SegmentationEvaluator, self ).__init__(data_loader, task)
         self.metrics = metrics.StreamSegmentationMetrics(num_classes)
+
+class DepthEvaluator(EvaluatorBase):
+    def __init__(self, data_loader, task=task.DepthTask()):
+        super(DepthEvaluator, self).__init__(data_loader)
+        self.metrics = metrics.StreamDepthMetrics(thresholds=[1.25, 1.25**2, 1.25**3])

@@ -109,7 +109,7 @@ def main():
             code = ['../../kamal']
             os.makedirs('exported', exist_ok=True)
             
-            serialize.save( model, path='exported/%s_%s_%s_segmentation'%(model_name, time.asctime().replace(' ', '_'), data_name),
+            serialize.save( trainer.model, path='exported/%s_%s_%s_segmentation'%(model_name, time.asctime().replace(' ', '_'), data_name),
                             deps=deps, code=code, metadata=metadata )
             
 

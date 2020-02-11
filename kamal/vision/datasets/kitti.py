@@ -9,12 +9,12 @@ import numpy as np
 class Kitti(data.Dataset):
     """Kitti dataset loader.
     
-    **Parameters:**
-        - **root** (string): Root directory path.
-        - **split** (string, optional): 'train' for training set, and 'test' for test set. Default: 'train'.
-        - **transform** (callable, optional): A function/transform that takes in an PIL image and returns a transformed version. Default: None.
-        - **target_transforms** (callable, optional): A function/transform that takes in the target and transform it. Default: None.
-        - **ds_type** (string, optional): To pick samples with semantic labels, depth, or nothing. Default: 'seg'.
+    Augs:
+        root (string): Root directory path.
+        split (string, optional): 'train' for training set, and 'test' for test set. Default: 'train'.
+        transform (callable, optional): A function/transform that takes in an PIL image and returns a transformed version. Default: None.
+        target_transforms (callable, optional): A function/transform that takes in the target and transform it. Default: None.
+        ds_type (string, optional): To pick samples with semantic labels, depth, or nothing. Default: 'seg'.
     """
     def __init__(self,
                  root,
