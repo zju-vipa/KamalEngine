@@ -87,12 +87,12 @@ class HPO(object):
                             'eps': hp.choice('adam:eps', [1e-5, 1e-6, 1e-8, 1e-9]),
                             'weight_decay': hp.uniform('adam:weight_decay', 0, 1e-3),
                         },
-                        {
-                            'type': 'sgd',
-                            'lr': hp.uniform('sgd:lr', 1e-3, 0.2),
-                            'momentum': hp.choice('sgd:momentum', [0.5, 0.8, 0.9, 0.99]),
-                            'weight_decay': hp.uniform('sgd:weight_decay', 0, 1e-3),
-                        }
+                        #{
+                        #    'type': 'sgd',
+                        #    'lr': hp.uniform('sgd:lr', 1e-3, 0.2),
+                        #    'momentum': hp.choice('sgd:momentum', [0.5, 0.8, 0.9, 0.99]),
+                        #    'weight_decay': hp.uniform('sgd:weight_decay', 0, 1e-3),
+                        #}
                 ])
             }
         return space
