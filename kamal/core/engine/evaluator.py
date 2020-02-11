@@ -42,5 +42,21 @@ class SegmentationEvaluator(ClassificationEvaluator):
 
 class DepthEvaluator(EvaluatorBase):
     def __init__(self, data_loader, task=task.DepthTask()):
-        super(DepthEvaluator, self).__init__(data_loader)
+        super(DepthEvaluator, self).__init__(data_loader, task)
         self.metrics = metrics.StreamDepthMetrics(thresholds=[1.25, 1.25**2, 1.25**3])
+
+class CriterionEvaluator(EvaluatorBase):
+    def __init__(self, data_loader, task):
+        super(CriterionEvaluator, self).__init__(data_loader, task)
+
+    def eval(self, model, device=None):
+        device = device if device is not None else \
+            torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
+        model.to(device)
+        avg_loss = 0
+        with torch.no_grad(), set_mode(model, training=False):
+            for i, (inputs, targets) in enumerate( tqdm(self.data_loader) ): 
+                inputs, targets = inputs.to(device), targets.to(device)
+                loss = self.task.get_loss( model, inputs, targets )['loss']
+                avg_loss+=loss.item()
+        return avg_loss/len(self.data_loader)
