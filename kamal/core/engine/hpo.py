@@ -10,7 +10,7 @@ class HPO(object):
         self.trainer = trainer
         assert len(self.trainer.callbacks)==0, "HPO should be applied before adding callbacks"
         self.saved_hp = saved_hp
-        self.init_model = deepcopy(self.trainer.model)
+        self.init_model = self.trainer.model
 
     def optimize( self, max_evals=50, max_iters=200 ):
         
@@ -18,7 +18,7 @@ class HPO(object):
             trainer = self.trainer
             trainer.logger.info("[HPO] hp: %s"%space)
             model = deepcopy( self.init_model )
-            trainer.model = model
+            trainer.model = model # point to a copy of init model
             try:
                 self.trainer.reset()
             except: pass 
@@ -56,6 +56,7 @@ class HPO(object):
         optimizer = self._prepare_optimizer( self.trainer.model, name, hp )
         self.trainer.optimizer = optimizer
         self.trainer.callbacks_on = True
+        self.trainer.model = self.init_model
         return hp
         
     def _prepare_optimizer(self, model, name, params):

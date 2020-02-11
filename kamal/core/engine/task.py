@@ -17,9 +17,8 @@ class TaskBase(abc.ABC):
         pass 
 
 class ClassificationTask(TaskBase):
-    def __init__(self, criterion=nn.CrossEntropyLoss(ignore_index=255), logits_fn=None):
+    def __init__(self, criterion=nn.CrossEntropyLoss(ignore_index=255)):
         super(ClassificationTask, self).__init__(criterion)
-        self.logits_fn = logits_fn
 
     def get_loss(self, model, inputs, targets): 
         logits = model( inputs )
@@ -28,18 +27,16 @@ class ClassificationTask(TaskBase):
 
     def inference(self, model, inputs):
         logits = model( inputs )
-        if self.logits_fn is not None:
-            logits = self.logits_fn(logits)
-        elif isinstance(logits, (tuple, list)): # 
-            logits = logits[0]
+        if isinstance(logits, (tuple, list)): # 
+            logits = logits[-1]
 
         preds = logits.max(1)[1]
         
         return {'preds': preds}
 
 class SegmentationTask(ClassificationTask):
-    def __init__( self, criterion=nn.CrossEntropyLoss(), logits_fn=None ):
-        super(SegmentationTask, self).__init__(criterion, logits_fn)
+    def __init__( self, criterion=nn.CrossEntropyLoss() ):
+        super(SegmentationTask, self).__init__(criterion)
 
 class ReconstructionTask( TaskBase ):
     def __init__(self, criterion=nn.MSELoss()):
@@ -53,7 +50,10 @@ class ReconstructionTask( TaskBase ):
     def inference(self, model, inputs):
         outputs = model( inputs )
         return {'preds': preds}
-    
+
+class DepthTask( ReconstructionTask ):
+    def __init__(self, criterion=nn.L1Loss()):
+        super(DepthTask, self).__init__(criterion)
 
 class KDClassificationTask(ClassificationTask):
     def __init__(self, criterion=KDLoss()):
