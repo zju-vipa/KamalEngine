@@ -38,7 +38,7 @@ class ClassificationEvaluator(EvaluatorBase):
 class SegmentationEvaluator(ClassificationEvaluator):
     def __init__(self, num_classes, data_loader, task=task.SegmentationTask()):
         super( SegmentationEvaluator, self ).__init__(data_loader, task)
-        self.metrics = metrics.StreamSegmentationMetrics(num_classes)
+        self.metrics = metrics.StreamSegmentationMetrics(num_classes, ignore_index=255)
 
 class DepthEvaluator(EvaluatorBase):
     def __init__(self, data_loader, task=task.DepthTask()):
