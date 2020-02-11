@@ -57,8 +57,8 @@ def main():
                 logger=kamal.utils.get_logger(name='%s_%s'%(model_name, data_name), output=os.path.join(model_root, 'logs.txt' ))
             )
 
-            hpo = engine.hpo.HPO(trainer, os.path.join(model_root, 'hp.yml'))
-            hp = hpo.optimize(max_evals=50, max_iters=200)
+            hpo = engine.hpo.HPO(trainer, evaluator, os.path.join(model_root, 'hp.yml'))
+            hp = hpo.optimize(max_evals=20, max_iters=400)
 
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(trainer.optimizer, 20000)
             viz = Visdom(port='29999', env='%s_%s-%s'%(model_name, data_name, time.asctime().replace(' ', '_')))
