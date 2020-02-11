@@ -29,6 +29,7 @@ class UNet(nn.Module):
         self.classifier = nn.Conv2d(channel_list[0], num_classes, 1)
 
     def forward(self, inputs):
+        out_size = inputs.shape[2:]
         out, conv_features1 = self.down1(inputs)
         out, conv_features2 = self.down2(out)
         out, conv_features3 = self.down3(out)
@@ -42,6 +43,8 @@ class UNet(nn.Module):
         out = self.up1(out, conv_features1)
 
         out = self.classifier(out)
+        if out.shape[2:]!=out_size:
+            out = nn.functional.interpolate( out, size=out_size, mode='bilinear', align_corners=True )
         return out
 
 def unet(pretrained=False, progress=True, **kwargs):
