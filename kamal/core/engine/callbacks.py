@@ -52,8 +52,8 @@ class SimpleValidationCallback(CallbackBase):
             os.makedirs(self._ckpt_dir, exist_ok=True)
 
         self.best_score = -99999
-        self._best_ckpt = None
-        self._latest_ckpt = None
+        self.best_ckpt = None
+        self.latest_ckpt = None
 
     def after_step(self):
         trainer = self.trainer() # get the current trainer from weak reference
@@ -89,21 +89,21 @@ class SimpleValidationCallback(CallbackBase):
                 pth_path = os.path.join(self._ckpt_dir, "%s-latest-%08d-%s-%.3f.pth"
                                         % (self._ckpt_tag, trainer.iter, primary_metric, score))
                 # remove existed weights
-                if self._latest_ckpt is not None and os.path.exists(self._latest_ckpt):
-                    os.remove(self._latest_ckpt)
+                if self.latest_ckpt is not None and os.path.exists(self.latest_ckpt):
+                    os.remove(self.latest_ckpt)
                 pth_path_list.append(pth_path)
-                self._latest_ckpt = pth_path
+                self.latest_ckpt = pth_path
 
             # the best model
             if 'best' in self.save_model and score > self.best_score:
                 pth_path = os.path.join(self._ckpt_dir, "%s-best-%08d-%s-%.3f.pth" %
                                         (self._ckpt_tag, trainer.iter, primary_metric, score))
                 # remove existed weights
-                if self._best_ckpt is not None and os.path.exists(self._best_ckpt):
-                    os.remove(self._best_ckpt)
+                if self.best_ckpt is not None and os.path.exists(self.best_ckpt):
+                    os.remove(self.best_ckpt)
                 pth_path_list.append(pth_path)
                 self.best_score = score
-                self._best_ckpt = pth_path
+                self.best_ckpt = pth_path
 
             # save model
             trainer.logger.info("Model saved as:")
