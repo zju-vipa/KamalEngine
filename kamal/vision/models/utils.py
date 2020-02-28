@@ -47,7 +47,7 @@ def download_from_url(url, model_dir=None, map_location=None, progress=True, che
     return cached_file
 
 
-def load_darknet_weights( model, darknet_file ):
+def load_darknet_weights( model, darknet_file):
     layers_with_params = [ layer for layer in model.modules() \
         if isinstance( layer, (nn.Conv2d, nn.Linear, nn.BatchNorm2d) ) ]
     
@@ -96,9 +96,10 @@ def load_darknet_weights( model, darknet_file ):
                     offset+=num_bias
 
                 num_weight = conv.weight.numel()
-                n, c, h, w = conv.weight.shape
+                # n, c, h, w = conv.weight.shape
                 conv_weight = torch.from_numpy(weights[offset:offset+num_weight])  #.view_as(conv.weight)
-                conv_weight = conv_weight.view(n, h, w, c).permute(0, 3, 1, 2).contiguous()
+                # conv_weight = conv_weight.view_as(n, h, w, c).permute(0, 3, 1, 2).contiguous()
+                conv_weight = conv_weight.view_as(conv.weight)
                 conv.weight.data.copy_( conv_weight )
                 offset+=num_weight
             
