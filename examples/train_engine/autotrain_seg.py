@@ -57,8 +57,10 @@ def main():
                 logger=kamal.utils.get_logger(name='%s_%s'%(model_name, data_name), output=os.path.join(model_root, 'logs.txt' ))
             )
 
-            hpo = engine.hpo.HPO(trainer, evaluator, os.path.join(model_root, 'hp.yml'))
-            hp = hpo.optimize(max_evals=20, max_iters=400)
+            hpo = engine.hpo.HPO(trainer, 
+                evaluator=engine.evaluator.CriterionEvaluator(val_loader, task=task), 
+                saved_hp=os.path.join(model_root, 'hp.yml'))
+            hp = hpo.optimize(max_evals=20, max_iters=400, minimize=True)
 
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(trainer.optimizer, 20000)
             viz = Visdom(port='29999', env='%s_%s-%s'%(model_name, data_name, time.asctime().replace(' ', '_')))
@@ -89,6 +91,9 @@ def main():
             ] )
             trainer.train(0, 20000)
 
+            
+            trainer.model.load_state_dict( torch.load( trainer.callbacks[2].best_ckpt ) )
+
             metadata = meta.MetaData(
                 name=model_name, dataset=data_name, task=meta.TASK.SEGMENTATION,
                 url='https://github.com/zju-vipa/KamalEngine', 
@@ -109,8 +114,8 @@ def main():
             code = ['../../kamal']
             os.makedirs('exported', exist_ok=True)
             
-            serialize.save( trainer.model, path='exported/%s_%s_%s_segmentation'%(model_name, time.asctime().replace(' ', '_'), data_name),
-                            deps=deps, code=code, metadata=metadata )
+            #serialize.save( trainer.model, path='exported/%s_%s_%s_segmentation'%(model_name, time.asctime().replace(' ', '_'), data_name),
+            #                deps=deps, code=code, metadata=metadata )
             
 
 if __name__=='__main__':

@@ -26,9 +26,9 @@ _MODEL_DICT = {
 
     'unet': kamalmodels.segmentation.UNet,
     
-    'linknet': kamalmodels.segmentation.linknet.linknet_resnet18,
-    'linknet': kamalmodels.segmentation.linknet.linknet_resnet34,
-    'linknet': kamalmodels.segmentation.linknet.linknet_resnet50,
+    'linknet_resnet18': kamalmodels.segmentation.linknet.linknet_resnet18,
+    'linknet_resnet34': kamalmodels.segmentation.linknet.linknet_resnet34,
+    'linknet_resnet50': kamalmodels.segmentation.linknet.linknet_resnet50,
 }
 
 def get_model(model_name, num_classes):
