@@ -28,8 +28,17 @@ def denormalize(tensor, mean, std):
 
     _mean = torch.as_tensor(_mean, dtype=tensor.dtype, device=tensor.device)
     _std = torch.as_tensor(_std, dtype=tensor.dtype, device=tensor.device)
-    tensor.sub_(_mean[None, :, None, None]).div_(_std[None, :, None, None])
+
+    tensor = (tensor - _mean[None, :, None, None]) / (_std[None, :, None, None])
     return tensor
+
+class Denormalizer(object):
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, x):
+        return denormalize(x, self.mean, self.std)
 
 def colormap(N=256, normalized=False):
     def bitget(byteval, idx):

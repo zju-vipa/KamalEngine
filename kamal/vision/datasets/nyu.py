@@ -78,7 +78,7 @@ class NYUv2(VisionDataset):
         return len(self.images)
 
     @classmethod
-    def decode_seg_to_rgb(cls, mask: np.ndarray):
+    def decode_seg_to_color(cls, mask: np.ndarray):
         """decode semantic mask to RGB image"""
         mask+=1 # 255 => 0
         return cls.cmap[mask]

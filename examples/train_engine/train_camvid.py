@@ -10,6 +10,7 @@ from kamal import engine, metrics
 from kamal.vision.models.segmentation import deeplabv3plus_mobilenetv2
 from kamal.vision.datasets import CamVid
 from kamal.vision import sync_transforms as sT
+from kamal.utils import Denormalizer
 
 from visdom import Visdom
 import random
@@ -48,35 +49,30 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.total_iters)
     evaluator = engine.evaluator.SegmentationEvaluator( 11, val_loader )
-    trainer = engine.trainer.SimpleTrainer( task=task, model=model, train_loader=train_loader, optimizer=optimizer )
-
-    viz = Visdom(port='29999', env='camvid')
-
+    trainer = engine.trainer.SimpleTrainer( task=task, model=model, viz=Visdom(port='29999', env='camvid') )
+    
     trainer.add_callbacks( [
         engine.callbacks.LoggingCallback(
             interval=10,
             names=('total_loss', 'lr' ), 
-            smooth_window_sizes=( 20, None ), # no smooth for lr
-            viz=viz),
+            smooth_window_sizes=( 20, None )),
         engine.callbacks.LRSchedulerCallback(scheduler=scheduler),
-        engine.callbacks.SimpleValidationCallback(
+        engine.callbacks.ValidationCallback(
             interval=200, 
             evaluator=evaluator,
             save_model=('best', 'latest'), 
             ckpt_dir='checkpoints',
-            ckpt_tag='deeplabv3plus_mobilenet_camvid',
-            viz = viz,
+            ckpt_tag='deeplabv3plus_mobilenet_camvid'
         ),
-        engine.callbacks.SegVisualizationCallback(
+        engine.callbacks.VisualizeSegmentationCallBack(
             interval=200,
-            viz=viz,
-            dst=val_loader.dataset,
+            dataset=val_loader.dataset,
             idx_list_or_num_vis=5, # select 5 images for visualization
-            scale_to_255=True,     # 0~1 => 0~255
-            mean=[0.485, 0.456, 0.406],  # for denormalization
-            std=[0.229, 0.224, 0.225])
+            denormalizer=Denormalizer(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            scale_to_255=True)     # 0~1 => 0~255
     ] )
-    trainer.train(0, args.total_iters)
+
+    trainer.train(0, args.total_iters, train_loader=train_loader, optimizer=optimizer)
 
 if __name__=='__main__':
     main()

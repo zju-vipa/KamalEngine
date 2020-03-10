@@ -42,33 +42,33 @@ def main():
     )
     
     # Prepare model
-    task = engine.task.ClassificationTask( criterion=nn.CrossEntropyLoss(ignore_index=255) )
+    task = engine.task.ClassificationTask()
     model = resnet18(pretrained=True)
     model.fc = nn.Linear( model.fc.in_features, 10 )
     
     # prepare trainer
+    viz = Visdom(port='29999', env='cifar10')
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader)*100)
     evaluator = engine.evaluator.ClassificationEvaluator( val_loader )
-    trainer = engine.trainer.SimpleTrainer( task=task, model=model, train_loader=train_loader, optimizer=optimizer )
+    trainer = engine.trainer.SimpleTrainer( task=task, model=model, viz=viz )
 
-    viz = Visdom(port='29999', env='cifar10')
     trainer.add_callbacks( [
         engine.callbacks.LoggingCallback(
             interval=50,  
             names=('total_loss', 'lr'), 
-            smooth_window_sizes=( 20, None ),
-            viz=viz),
+            smooth_window_sizes=( 20, None )
+        ),
         engine.callbacks.LRSchedulerCallback(scheduler=scheduler),
-        engine.callbacks.SimpleValidationCallback(
+        engine.callbacks.ValidationCallback(
             interval=len(train_loader), 
             evaluator=evaluator, 
             save_model=('best', 'latest'), 
             ckpt_dir='checkpoints',
-            ckpt_tag='cifar10',
-            viz = viz)  
+            ckpt_tag='cifar10'
+        )
     ] )
-    trainer.train(0, len(train_loader)*100)
+    trainer.train(0, len(train_loader)*100, train_loader=train_loader, optimizer=optimizer)
 
 if __name__=='__main__':
     main()
