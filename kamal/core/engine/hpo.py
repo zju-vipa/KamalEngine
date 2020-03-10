@@ -3,15 +3,16 @@ import torch
 from copy import deepcopy
 from ruamel_yaml import YAML
 import os
-# optimizer
 
 class HPO(object):
-    def __init__(self, trainer, evaluator, saved_hp=None):
+    def __init__(self, trainer, train_loader, evaluator, saved_hp=None):
         self.trainer = trainer
         self.evaluator = evaluator
-        assert len(self.trainer.callbacks)==0, "HPO should be applied before adding callbacks"
+        self.train_loader = train_loader
         self.saved_hp = saved_hp
+
         self._init_model = self.trainer.model
+        self._callbacks_state = train_loader.callbacks_enabled
 
     def optimize( self, max_evals=50, max_iters=200, hpo_space=None, minimize=True):
         

@@ -9,7 +9,6 @@ from .. import metrics
 from ...utils import denormalize
 from .trainer import set_mode
 
-
 class CallbackBase(abc.ABC):
     def __init__(self):
         pass
@@ -26,15 +25,14 @@ class CallbackBase(abc.ABC):
     def after_train(self):
         pass
 
-class SimpleValidationCallback(CallbackBase):
+class ValidationCallback(CallbackBase):
     def __init__(self,
                  interval,
                  evaluator,
                  save_model     = ('best', 'latest'),
                  ckpt_tag       = 'model',
                  ckpt_dir       = 'checkpoints',
-                 weights_only   = True,
-                 viz            = None):
+                 weights_only   = True):
         
         self.interval = interval
         self.evaluator = evaluator
@@ -43,7 +41,6 @@ class SimpleValidationCallback(CallbackBase):
         self._ckpt_dir = ckpt_dir
         self._ckpt_tag = ckpt_tag
         self._weights_only = weights_only
-        self._viz = viz
 
         if self.save_model is not None:
             for save_type in self.save_model:
@@ -61,17 +58,15 @@ class SimpleValidationCallback(CallbackBase):
             return   
         results = self.evaluator.eval( trainer.model )  
         trainer.history.put_scalars( **results )
-
         trainer.logger.info( "[Val] Iter %d/%d: %s"%(trainer.iter, trainer.max_iter, results) )
 
         # Visualization
-        if self._viz is not None:
+        if trainer.viz is not None:
             for k, v in results.items():
                 if isinstance(v, Iterable):  # skip non-scalar value
                     continue
                 else:
-                    self._viz.line([v, ], [trainer.iter, ], win=k,
-                                update='append', opts={'title': k})
+                    trainer.viz.line([v, ], [trainer.iter, ], win=k, update='append', opts={'title': k})
 
         if self.save_model is not None:
             primary_metric = self.evaluator.metrics.PRIMARY_METRIC
@@ -113,13 +108,12 @@ class SimpleValidationCallback(CallbackBase):
                 trainer.logger.info("\t%s" % (pth_path))
 
 class LoggingCallback(CallbackBase):
-    def __init__(self, interval=10, names=('total_loss', 'lr' ), smooth_window_sizes=(10, None), viz=None):
+    def __init__(self, interval=10, names=('total_loss', 'lr' ), smooth_window_sizes=(10, None)):
         self.interval = interval
         self._names = names
         self._smooth_window_sizes = [ None for _ in names ] if smooth_window_sizes is None else smooth_window_sizes
         if isinstance( self._smooth_window_sizes, int):
             self._smooth_window_sizes = [ self._smooth_window_sizes for _ in names ]
-        self._viz = viz
 
     def after_step(self):
         trainer = self.trainer()
@@ -139,12 +133,12 @@ class LoggingCallback(CallbackBase):
             smoothed_value = trainer.history.get_scalar(name, smooth) if smooth is not None else latest_value
             format_str += " %s=%.4f" % ( name, smoothed_value )
 
-            if self._viz:
+            if trainer.viz:
                 opts={'title': name, 
                       'showlegend': ( smooth is not None ) }
-                self._viz.line([latest_value, ], [trainer.iter, ], win=name, name='latest', update='append', opts=opts )
+                trainer.viz.line([latest_value, ], [trainer.iter, ], win=name, name='latest', update='append', opts=opts )
                 if smooth:
-                    self._viz.line( [smoothed_value, ], [trainer.iter, ], win=name, name='smoothed', update='append', opts=opts )
+                    trainer.viz.line( [smoothed_value, ], [trainer.iter, ], win=name, name='smoothed', update='append', opts=opts )
 
         trainer.logger.info(format_str % (
             trainer.iter,      trainer.max_iter,
@@ -165,24 +159,22 @@ class LRSchedulerCallback(CallbackBase):
         self.scheduler.step()
 
 
-class SegVisualizationCallback(CallbackBase):
-    def __init__(self, interval, viz, dst, idx_list_or_num_vis=5, 
-                        mean=None, std=None, scale_to_255=True):
+class VisualizeSegmentationCallBack(CallbackBase):
+    def __init__(self, interval, dataset, idx_list_or_num_vis=5, 
+                        denormalizer=None, scale_to_255=True):
         self.interval = interval
-        self.dst = dst
+        self.dataset = dataset
         
         if isinstance( idx_list_or_num_vis, int ):
-            self.idx_list = self._get_vis_idx_list( dst, idx_list_or_num_vis )
+            self.idx_list = self._get_vis_idx_list( dataset, idx_list_or_num_vis )
         elif isinstance( idx_list_or_num_vis, Iterable ):
             self.idx_list = idx_list_or_num_vis
         
-        self._viz = viz
-        self._mean = mean
-        self._std = std
+        self._denormalizer = denormalizer
         self._scale_to_255 = scale_to_255
 
-    def _get_vis_idx_list( self, dst, num_vis ):
-        return random.sample( list( range( len( dst ) ) ), num_vis )
+    def _get_vis_idx_list( self, dataset, num_vis ):
+        return random.sample( list( range( len( dataset ) ) ), num_vis )
 
     def after_step(self):
         trainer = self.trainer()  # get current chainer
@@ -192,13 +184,13 @@ class SegVisualizationCallback(CallbackBase):
 
         with torch.no_grad(), set_mode(trainer.model, training=False):
             for img_id, idx in enumerate(self.idx_list):
-                inputs, targets = self.dst[ idx ]
+                inputs, targets = self.dataset[ idx ]
                 inputs, targets = inputs.unsqueeze(0).to(device), targets.unsqueeze(0).to(device)
 
                 preds = trainer.model( inputs ).max(1)[1]
 
-                if self._mean is not None and self._std is not None:
-                    inputs = denormalize(inputs, self._mean, self._std)
+                if self._denormalizer is not None:
+                    inputs = self._denormalizer(inputs)
                 inputs = inputs.cpu().numpy()
                 if self._scale_to_255:
                     inputs = (inputs*255)
@@ -208,7 +200,7 @@ class SegVisualizationCallback(CallbackBase):
                 targets = targets.detach().cpu().squeeze(1).numpy().astype('uint8')
                 
                 inputs = inputs[0]
-                preds = self.dst.decode_seg_to_rgb(preds).transpose(0, 3, 1, 2)[0]  # nhwc => nchw
-                targets = self.dst.decode_seg_to_rgb(targets).transpose(0, 3, 1, 2)[0]
+                preds = self.dataset.decode_seg_to_color(preds).transpose(0, 3, 1, 2)[0]  # nhwc => nchw
+                targets = self.dataset.decode_seg_to_color(targets).transpose(0, 3, 1, 2)[0]
 
-                self._viz.images([inputs, preds, targets], nrow=3, win=("seg-%d" % img_id), opts={'title': str(img_id)})
+                trainer.viz.images([inputs, preds, targets], nrow=3, win=("seg-%d" % img_id), opts={'title': str(img_id)})

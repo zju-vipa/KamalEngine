@@ -13,7 +13,7 @@ class TaskBase(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def inference(self, model, inputs):
+    def predict(self, model, inputs):
         pass 
 
 class ClassificationTask(TaskBase):
@@ -25,17 +25,16 @@ class ClassificationTask(TaskBase):
         loss = self.criterion(logits, targets.squeeze())
         return {'loss': loss}
 
-    def inference(self, model, inputs):
+    def predict(self, model, inputs):
         logits = model( inputs )
-        if isinstance(logits, (tuple, list)): # 
+        # multiple output
+        if isinstance(logits, (tuple, list)):
             logits = logits[-1]
-
         preds = logits.max(1)[1]
-        
         return {'preds': preds}
 
 class SegmentationTask(ClassificationTask):
-    def __init__( self, criterion=nn.CrossEntropyLoss() ):
+    def __init__( self, criterion=nn.CrossEntropyLoss(ignore_index=255) ):
         super(SegmentationTask, self).__init__(criterion)
 
 class ReconstructionTask( TaskBase ):
@@ -47,7 +46,7 @@ class ReconstructionTask( TaskBase ):
         loss = self.criterion(logits, outputs)
         return {'loss': loss}
 
-    def inference(self, model, inputs):
+    def predict(self, model, inputs):
         outputs = model( inputs )
         return {'preds': preds}
 

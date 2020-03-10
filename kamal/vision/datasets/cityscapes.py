@@ -104,7 +104,7 @@ class Cityscapes(VisionDataset):
             return cls._ID_TO_TRAIN_ID[target]
 
     @classmethod
-    def decode_seg_to_rgb(cls, target):
+    def decode_seg_to_color(cls, target):
         target[target == 255] = 19
         #target = target.astype('uint8') + 1
         return cls._TRAIN_ID_TO_COLOR[target]

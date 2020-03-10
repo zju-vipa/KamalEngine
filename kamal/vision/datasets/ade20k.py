@@ -48,6 +48,6 @@ class ADE20K(VisionDataset):
         return img, lbl
 
     @classmethod
-    def decode_seg_to_rgb(cls, mask):
+    def decode_seg_to_color(cls, mask):
         """decode semantic mask to RGB image"""
         return cls.cmap[mask+1]

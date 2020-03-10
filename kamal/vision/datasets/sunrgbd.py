@@ -53,7 +53,7 @@ class SunRGBD(VisionDataset):
         return len(self.images)
 
     @classmethod
-    def decode_seg_to_rgb(cls, mask):
+    def decode_seg_to_color(cls, mask):
         """decode semantic mask to RGB image"""
         #mask[mask == 255] = 11
         return cls.cmap[mask.astype('uint8')+1]

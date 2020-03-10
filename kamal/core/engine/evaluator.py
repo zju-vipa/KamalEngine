@@ -31,7 +31,7 @@ class ClassificationEvaluator(EvaluatorBase):
         with torch.no_grad(), set_mode(model, training=False):
             for i, (inputs, targets) in enumerate( tqdm(self.data_loader) ): 
                 inputs = inputs.to(device)
-                preds = self.task.inference( model, inputs )['preds']
+                preds = self.task.predict( model, inputs )['preds']
                 self.metrics.update( preds, targets )
         return self.metrics.get_results()
 
