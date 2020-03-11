@@ -214,3 +214,57 @@ class SimpleKDTrainer(SimpleTrainer):
         info['step_time'] = float(step_time)
         info['lr'] = float( self.optimizer.param_groups[0]['lr'] )
         self._gather_training_info( info )
+
+from .hpo import HPO
+class AutoKDTrainer(object):
+    def __init__(   self, 
+                    task, 
+                    model,
+                    teacher,
+                    evaluator,
+                    logger=None,
+                    viz=None, ):
+
+        self.trainer = SimpleKDTrainer( task, model, teacher, logger=logger, viz=viz )
+        self.hpo = HPO(trainer, train_loader, evaluator)
+
+    def train(self, start_iter, max_iter, train_loader, device=None):
+        if device is None:
+            device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
+        self.device = device
+        self.model.to(self.device)
+        self.teacher.to(self.device)
+        with set_mode(self.model, training=True), \
+             set_mode(self.teacher, training=False):
+            super( SimpleKDTrainer, self ).train( start_iter, max_iter, train_loader, optimizer, device=device)
+
+    def search_hp(self):
+        hpo = HPO( self,  )
+
+    def step(self):
+        self.optimizer.zero_grad()
+        start_time = time.perf_counter()
+        # prepare data
+        try:
+            data = next( self._train_loader_iter )
+        except StopIteration:
+            self._train_loader_iter = iter(self.train_loader)
+            data = next( self._train_loader_iter )
+        if not isinstance( data, typing.Iterable ):
+            data = [data, ]
+        data = [ d.to(self.device) for d in data ]
+
+        # get loss
+        loss_dict = self.task.get_loss( self.model, self.teacher, data[0] )
+        loss = sum( loss_dict.values() )
+        loss.backward()
+        # update weights
+        self.optimizer.step()
+        step_time = time.perf_counter() - start_time
+
+        # record training info
+        info = loss_dict
+        info['total_loss'] = float(loss.item())
+        info['step_time'] = float(step_time)
+        info['lr'] = float( self.optimizer.param_groups[0]['lr'] )
+        self._gather_training_info( info )
