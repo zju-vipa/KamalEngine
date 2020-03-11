@@ -4,6 +4,13 @@ from copy import deepcopy
 from ruamel_yaml import YAML
 import os
 
+def search_optimizer(trainer, train_loader, evaluator, hpo_space=None, minimize=True):
+    hpo = HPO(trainer, train_loader, evaluator)
+    trainer.set_callbacks(enable=False)
+    optimizer = hpo.search(max_evals=20, max_iters=400, hpo_space=hpo_space, minimize=minimize)
+    trainer.set_callbacks(enable=True)
+    return optimizer
+
 class HPO(object):
     def __init__(self, trainer, train_loader, evaluator, saved_hp=None):
         self.trainer = trainer
@@ -11,58 +18,46 @@ class HPO(object):
         self.train_loader = train_loader
         self.saved_hp = saved_hp
 
-        self._init_model = self.trainer.model
-        self._callbacks_state = train_loader.callbacks_enabled
+        self._ori_model = trainer.model # keep the original model
 
-    def optimize( self, max_evals=50, max_iters=200, hpo_space=None, minimize=True):
+    def search( self, max_evals=50, max_iters=200, hpo_space=None, minimize=True):
         
         def objective_fn(space):
             trainer = self.trainer
             trainer.logger.info("[HPO] hp: %s"%space)
-            trainer.model = deepcopy( self._init_model ) # point to a copy of init model
-            try:
-                self.trainer.reset()
+            trainer.model = deepcopy( self._ori_model )
+            try: self.trainer.reset()
             except: pass 
             opt_params = space['opt']
             name = opt_params.pop('type')
             optimizer = self._prepare_optimizer(trainer.model, name, opt_params)
-            trainer.optimizer = optimizer # set optimizer
-
-            trainer.train(0, max_iters)
-
+            trainer.train(0, max_iters, train_loader=self.train_loader, optimizer=optimizer)
             score = self.evaluator.eval( trainer.model )
             if isinstance(score, dict):
                 score = score[ self.evaluator.metrics.PRIMARY_METRIC ]
             trainer.logger.info("[HPO] score: %.4f"%score)
-            if minimize:
-                return score
-            else:
-                return -score
+            return (score if minimize else -score )
         
-        self.trainer.callbacks_on = False
-        if self.saved_hp is not None and os.path.exists(self.saved_hp):
-            with open(self.saved_hp, 'r')as f:
-                hp = YAML().load( f )
-        else:
-            hpspace = self._get_default_space() if hpo_space is None else hpo_space
-            best_hp = fmin(  fn=objective_fn,
-                            space=hpspace,
+        #if self.saved_hp is not None and os.path.exists(self.saved_hp):
+        #    with open(self.saved_hp, 'r')as f:
+        #        hp = YAML().load( f )
+        #else:
+        if hpo_space is None:
+            hpo_space = self._get_default_space()
+        best_hp = fmin(  fn=objective_fn,
+                            space=hpo_space,
                             algo=tpe.suggest,
                             max_evals=max_evals, 
                             verbose=1)
-            hp = dict()
-            for k, v in best_hp.items():
-                if ':' in k:
-                    hp[ k.split(':')[1] ] = float(v)
-            hp['opt'] = 'Adam' if best_hp['opt']==0 else 'SGD'
-            with open(self.saved_hp, 'w')as f:
-                YAML().dump( dict(hp), f )
+        hp = dict()
+        for k, v in best_hp.items():
+            if ':' in k:
+                hp[ k.split(':')[1] ] = float(v)
+        hp['opt'] = 'Adam' if best_hp['opt']==0 else 'SGD'
         name = hp.pop('opt')
-        self.trainer.model = self._init_model
+        self.trainer.model = self._ori_model # reset trainer.model
         optimizer = self._prepare_optimizer( self.trainer.model, name, hp )
-        self.trainer.optimizer = optimizer
-        self.trainer.callbacks_on = True
-        return hp
+        return optimizer
         
     def _prepare_optimizer(self, model, name, params):
         if name.lower()=='adam':
