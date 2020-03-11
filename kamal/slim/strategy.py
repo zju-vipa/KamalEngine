@@ -47,9 +47,3 @@ class RandomStrategy(BaseStrategy):
             plan = DG.get_pruning_plan( layer_to_prune, torch_pruning.prune_conv, idxs=idx )        
             num_pruned += plan.exec() 
         return model
-
-        
-
-
-        
-        
