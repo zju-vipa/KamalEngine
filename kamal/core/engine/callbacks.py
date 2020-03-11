@@ -8,6 +8,7 @@ import random
 from .. import metrics
 from ...utils import denormalize
 from .trainer import set_mode
+import typing
 
 class CallbackBase(abc.ABC):
     def __init__(self):
@@ -29,6 +30,7 @@ class ValidationCallback(CallbackBase):
     def __init__(self,
                  interval,
                  evaluator,
+                 model_name     = 'model',
                  save_model     = ('best', 'latest'),
                  ckpt_tag       = 'model',
                  ckpt_dir       = 'checkpoints',
@@ -37,6 +39,7 @@ class ValidationCallback(CallbackBase):
         self.interval = interval
         self.evaluator = evaluator
         self.save_model = save_model
+        self.model_name = model_name
 
         self._ckpt_dir = ckpt_dir
         self._ckpt_tag = ckpt_tag
@@ -60,6 +63,7 @@ class ValidationCallback(CallbackBase):
         trainer.history.put_scalars( **results )
         trainer.logger.info( "[Val] Iter %d/%d: %s"%(trainer.iter, trainer.max_iter, results) )
 
+        model = getattr( trainer, self.model_name )
         # Visualization
         if trainer.viz is not None:
             for k, v in results.items():
@@ -99,10 +103,10 @@ class ValidationCallback(CallbackBase):
                 pth_path_list.append(pth_path)
                 self.best_score = score
                 self.best_ckpt = pth_path
-
+            
             # save model
             trainer.logger.info("Model saved as:")
-            obj = trainer.model.state_dict() if self._weights_only else model
+            obj = model.state_dict() if self._weights_only else model
             for pth_path in pth_path_list:
                 torch.save(obj, pth_path)
                 trainer.logger.info("\t%s" % (pth_path))
@@ -156,15 +160,21 @@ class LRSchedulerCallback(CallbackBase):
         trainer = self.trainer()
         if self.scheduler is None or trainer.iter == 0 or trainer.iter % self.interval != 0:
             return
-        self.scheduler.step()
+        
+        if isinstance( self.scheduler, typing.Sequence ):
+            for sch in self.scheduler:
+                sch.step()
+        else:
+            self.scheduler.step()
 
 
 class VisualizeSegmentationCallBack(CallbackBase):
-    def __init__(self, interval, dataset, idx_list_or_num_vis=5, 
+    def __init__(self, interval, dataset, idx_list_or_num_vis=5, model_name='model',
                         denormalizer=None, scale_to_255=True):
         self.interval = interval
         self.dataset = dataset
-        
+        self.model_name = model_name
+
         if isinstance( idx_list_or_num_vis, int ):
             self.idx_list = self._get_vis_idx_list( dataset, idx_list_or_num_vis )
         elif isinstance( idx_list_or_num_vis, Iterable ):
@@ -181,13 +191,13 @@ class VisualizeSegmentationCallBack(CallbackBase):
         if trainer.iter == 0 or trainer.iter % self.interval != 0:
             return
         device = trainer.device
-
+        model = getattr(trainer, self.model_name)
         with torch.no_grad(), set_mode(trainer.model, training=False):
             for img_id, idx in enumerate(self.idx_list):
                 inputs, targets = self.dataset[ idx ]
                 inputs, targets = inputs.unsqueeze(0).to(device), targets.unsqueeze(0).to(device)
-
-                preds = trainer.model( inputs ).max(1)[1]
+                
+                preds = model( inputs ).max(1)[1]
 
                 if self._denormalizer is not None:
                     inputs = self._denormalizer(inputs)
