@@ -12,6 +12,7 @@ class BaseStrategy(abc.ABC):
     def __call__(self, model):
         pass
 
+
 class RandomStrategy(BaseStrategy):
     def  __call__(self, model, rate=0.1, fake_input=None):
         if fake_input is None:
