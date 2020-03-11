@@ -21,3 +21,4 @@ class Pruner(object):
     
     def _prune(self, model, **kargs):
         return self.strategy( model, **kargs)
+        
