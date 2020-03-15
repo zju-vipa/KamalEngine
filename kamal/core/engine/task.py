@@ -55,7 +55,7 @@ class DepthTask( ReconstructionTask ):
         super(DepthTask, self).__init__(criterion)
 
 class KDClassificationTask(ClassificationTask):
-    def __init__(self, criterion=KDLoss()):
+    def __init__(self, criterion=KDLoss(use_kldiv=True)):
         super(KDClassificationTask, self).__init__(criterion)
     
     def get_loss( self, model, teacher, inputs ):

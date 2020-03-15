@@ -7,7 +7,7 @@ if __name__=='__main__':
     module = importlib.import_module(entry_file.split('.')[0])
     model = module.AtlasEntry.init()
 
-    model.load_state_dict( torch.load( 'checkpoints/mnist-lenet-best-00007973-acc-0.992.pth') )
+    model.load_state_dict( torch.load( 'checkpoints/mnist-lenet-best-00007504-acc-0.991.pth') )
     
     metadata = meta.MetaData(
                     name='lenet5_mnist',

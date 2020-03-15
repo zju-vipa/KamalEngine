@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from .mmd import mmd_rbf2
 import torch
 
-def kldiv(logits, targets, T=1.0, reduction='mean'):
+def kldiv(logits, targets, T=1.0):
     """ Cross Entropy for soft targets
     
     Parameters:
@@ -15,7 +15,8 @@ def kldiv(logits, targets, T=1.0, reduction='mean'):
     """
     p_targets = F.softmax(targets/T, dim=1)
     logp_logits = F.log_softmax(logits/T, dim=1)
-    return F.kl_div(logp_logits, p_targets, reduction=reduction)*T*T
+    kld = F.kl_div(logp_logits, p_targets, reduction='none')
+    return kld.sum(1).mean()*T*T
 
 def mmd_loss(f1, f2, sigmas, normalized=False):
     if len(f1.shape) != 2:

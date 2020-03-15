@@ -19,7 +19,7 @@ class RandomStrategy(BaseStrategy):
             fake_input = torch.randn( 1,3,256,256 )
         DG = torch_pruning.DependencyGraph(model, fake_input=fake_input)
         
-        conv_layers = []
+        prunable_layers = []
         total_params = 0
         num_accumulative_conv_params = [ 0, ]
 
@@ -27,16 +27,18 @@ class RandomStrategy(BaseStrategy):
             if isinstance(m, _PRUNABLE_LAYER ) :
                 nparam = torch_pruning.utils.count_prunable_params( m )  # number of conv kernels
                 total_params += nparam
-                if isinstance(m, nn.modules.conv._ConvNd):
-                    conv_layers.append( m )
+                if isinstance(m, (nn.modules.conv._ConvNd, nn.Linear)):
+                    prunable_layers.append( m )
                     num_accumulative_conv_params.append( num_accumulative_conv_params[-1]+nparam )
-
+        prunable_layers.pop(-1)
+        num_accumulative_conv_params.pop(-1)
+        
         num_conv_params = num_accumulative_conv_params[-1]
         num_accumulative_conv_params = [ ( num_accumulative_conv_params[i], num_accumulative_conv_params[i+1] ) for i in range(len(num_accumulative_conv_params)-1) ]
-
+        
         def map_param_idx_to_conv_layer(i):
-            for l, accu in zip( conv_layers, num_accumulative_conv_params ):
-                if accu[0]<i and i<accu[1]:
+            for l, accu in zip( prunable_layers, num_accumulative_conv_params ):
+                if accu[0]<=i and i<accu[1]:
                     return l 
 
         num_pruned = 0
@@ -45,6 +47,11 @@ class RandomStrategy(BaseStrategy):
             if layer_to_prune.weight.shape[0]<1:
                 continue
             idx = [ random.randint( 0, layer_to_prune.weight.shape[0]-1 ) ]
-            plan = DG.get_pruning_plan( layer_to_prune, torch_pruning.prune_conv, idxs=idx )        
+            if isinstance(layer_to_prune, nn.modules.conv._ConvNd):
+                fn = torch_pruning.prune_conv
+            else:
+                fn = torch_pruning.prune_linear
+            
+            plan = DG.get_pruning_plan( layer_to_prune, fn, idxs=idx )        
             num_pruned += plan.exec() 
         return model

@@ -1,7 +1,19 @@
 import numpy as np
 import math
 import torch 
+import random
 
+from ruamel.yaml import YAML
+def save_yaml(dic: dict, filepath: str):
+    yaml=YAML()  
+    with open(filepath, 'w') as f:
+        yaml.dump(doc, f)
+
+def load_yaml(filepath):
+    yaml=YAML()  
+    with open(filepath, 'r') as f:
+        return yaml.load(f)
+    
 def pack_images(images, col=None, channel_last=False):
     # N, C, H, W
     if isinstance(images, (list, tuple) ):
@@ -61,3 +73,26 @@ def colormap(N=256, normalized=False):
     return cmap
 
 DEFAULT_COLORMAP = colormap()
+
+
+def flatten_dict(dic):
+    flattned = dict()
+
+    def _flatten(prefix, d):
+        for k, v in d.items():
+            if isinstance(v, dict):
+                if prefix is None:
+                    _flatten( k, v )
+                else:
+                    _flatten( prefix+'/%s'%k, v )
+            else:
+                flattned[ prefix+'/%s'%k ] = v
+        
+    _flatten('', dic)
+    return flattned
+
+def setup_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)

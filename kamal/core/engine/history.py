@@ -23,6 +23,9 @@ class HistoryBuffer(object):
         Return the median of the latest `window_size` values in the buffer.
         """
         return np.median([x[0] for x in self._data[-window_size:]])
+
+    def max(self):
+        return np.max( [x[0] for x in self._data] )
     
     def avg(self, window_size: int):
         return np.mean( [x[0] for x in self._data[-window_size:]] )

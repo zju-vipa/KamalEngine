@@ -117,8 +117,8 @@ class SimpleTrainer(TrainerBase):
         with set_mode(self.model, training=True):
             super( SimpleTrainer, self ).train( start_iter, max_iter )
     
-    def search_optimizer(self, evaluator, train_loader, hpo_space=None, minimize=True):
-        optimizer = hpo.search_optimizer(self, train_loader, evaluator=evaluator, hpo_space=hpo_space)
+    def search_optimizer(self, evaluator, train_loader, hpo_space=None, mode='min', max_evals=20, max_iters=400):
+        optimizer = hpo.search_optimizer(self, train_loader, evaluator=evaluator, hpo_space=hpo_space, mode=mode, max_evals=max_evals, max_iters=max_iters)
         return optimizer
     
     def step(self):

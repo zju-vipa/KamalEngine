@@ -4,10 +4,10 @@ from copy import deepcopy
 from ruamel_yaml import YAML
 import os
 
-def search_optimizer(trainer, train_loader, evaluator, hpo_space=None, minimize=True):
+def search_optimizer(trainer, train_loader, evaluator, hpo_space=None, mode='min', max_evals=20, max_iters=400):
     hpo = HPO(trainer, train_loader, evaluator)
     trainer.set_callbacks(enable=False)
-    optimizer = hpo.search(max_evals=20, max_iters=400, hpo_space=hpo_space, minimize=minimize)
+    optimizer = hpo.search(max_evals=max_evals, max_iters=max_iters, hpo_space=hpo_space, mode=mode)
     trainer.set_callbacks(enable=True)
     return optimizer
 
@@ -20,7 +20,7 @@ class HPO(object):
 
         self._ori_model = trainer.model # keep the original model
 
-    def search( self, max_evals=50, max_iters=200, hpo_space=None, minimize=True):
+    def search( self, max_evals=50, max_iters=200, hpo_space=None, mode='min'):
         
         def objective_fn(space):
             trainer = self.trainer
@@ -36,7 +36,7 @@ class HPO(object):
             if isinstance(score, dict):
                 score = score[ self.evaluator.metrics.PRIMARY_METRIC ]
             trainer.logger.info("[HPO] score: %.4f"%score)
-            return (score if minimize else -score )
+            return (score if mode=='min' else -score )
         
         #if self.saved_hp is not None and os.path.exists(self.saved_hp):
         #    with open(self.saved_hp, 'r')as f:
