@@ -11,3 +11,5 @@ from .stanford_cars import StanfordCars
 from .stanford_dogs import StanfordDogs
 from .sunrgbd import SunRGBD
 from .voc import VOCClassification, VOCSegmentation
+
+from torchvision import datasets as torchvision_dataset

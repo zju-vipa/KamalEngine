@@ -15,7 +15,7 @@ import random
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--data_root', type=str, default='./data')
+    parser.add_argument('--data_root', type=str, default='~/Datasets/torchdata')
     args = parser.parse_args()
 
     train_loader = torch.utils.data.DataLoader(
@@ -41,7 +41,7 @@ def main():
     model = LeNet5()
     
     # prepare trainer
-    viz = Visdom(port='29999', env='mnist')
+    viz = None #Visdom(port='29999', env='mnist')
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(train_loader)*20)
     evaluator = engine.evaluator.ClassificationEvaluator( val_loader )

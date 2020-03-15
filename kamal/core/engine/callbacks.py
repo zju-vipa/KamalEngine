@@ -9,6 +9,7 @@ from .. import metrics
 from ...utils import denormalize
 from .trainer import set_mode
 import typing
+import shutil
 
 class CallbackBase(abc.ABC):
     def __init__(self):
@@ -62,7 +63,7 @@ class ValidationCallback(CallbackBase):
         results = self.evaluator.eval( trainer.model )  
         trainer.history.put_scalars( **results )
         trainer.logger.info( "[Val] Iter %d/%d: %s"%(trainer.iter, trainer.max_iter, results) )
-
+        
         model = getattr( trainer, self.model_name )
         # Visualization
         if trainer.viz is not None:
@@ -72,11 +73,12 @@ class ValidationCallback(CallbackBase):
                 else:
                     trainer.viz.line([v, ], [trainer.iter, ], win=k, update='append', opts={'title': k})
 
-        if self.save_model is not None:
-            primary_metric = self.evaluator.metrics.PRIMARY_METRIC
-            score = results[primary_metric]
-            pth_path_list = []
+        primary_metric = self.evaluator.metrics.PRIMARY_METRIC
+        score = results[primary_metric]
+        trainer.history.put_scalars( score=score )
 
+        if self.save_model is not None:
+            pth_path_list = []
             # interval model
             if 'interval' in self.save_model:
                 pth_path = os.path.join(self._ckpt_dir, "%s-%08d-%s-%.3f.pth"
@@ -110,6 +112,20 @@ class ValidationCallback(CallbackBase):
             for pth_path in pth_path_list:
                 torch.save(obj, pth_path)
                 trainer.logger.info("\t%s" % (pth_path))
+
+    def final_save(self, ckpt_dir=None):
+        trainer = self.trainer()
+        model = getattr( trainer, self.model_name )
+        if ckpt_dir is None:
+            ckpt_dir = self._ckpt_dir
+        if self.save_model is not None:
+            if 'latest' in self.save_model:
+                os.makedirs(ckpt_dir, exist_ok=True)
+                shutil.copy2( self.latest_ckpt, os.path.join(ckpt_dir, "%s-latest.pth"% (self._ckpt_tag) )  )
+            if 'best' in self.save_model:
+                os.makedirs(ckpt_dir, exist_ok=True)
+                shutil.copy2( self.best_ckpt, os.path.join(ckpt_dir, "%s-best.pth"% (self._ckpt_tag) )  )
+
 
 class LoggingCallback(CallbackBase):
     def __init__(self, interval=10, names=('total_loss', 'lr' ), smooth_window_sizes=(10, None)):
