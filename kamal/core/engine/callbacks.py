@@ -6,7 +6,6 @@ from typing import Sequence, Iterable
 import random
 
 from .. import metrics
-from ...utils import denormalize
 from .trainer import set_mode
 import typing
 import shutil
@@ -60,18 +59,19 @@ class ValidationCallback(CallbackBase):
         trainer = self.trainer() # get the current trainer from weak reference
         if trainer.iter == 0 or trainer.iter % self.interval != 0:
             return   
-        results = self.evaluator.eval( trainer.model )  
-        trainer.history.put_scalars( **results )
-        trainer.logger.info( "[Val] Iter %d/%d: %s"%(trainer.iter, trainer.max_iter, results) )
-        
         model = getattr( trainer, self.model_name )
+        results = self.evaluator.eval( model )  
+        trainer.history.put_scalars( **results )
+        trainer.logger.info( "[val %s] Iter %d/%d: %s"%(self.model_name, trainer.iter, trainer.max_iter, results) )
+        
+        
         # Visualization
         if trainer.viz is not None:
             for k, v in results.items():
                 if isinstance(v, Iterable):  # skip non-scalar value
                     continue
                 else:
-                    trainer.viz.line([v, ], [trainer.iter, ], win=k, update='append', opts={'title': k})
+                    trainer.viz.line([v, ], [trainer.iter, ], win="%s:%s"%(self.model_name, k), update='append', opts={'title': "%s:%s"%(self.model_name, k)})
 
         primary_metric = self.evaluator.metrics.PRIMARY_METRIC
         score = results[primary_metric]
@@ -208,7 +208,7 @@ class VisualizeSegmentationCallBack(CallbackBase):
             return
         device = trainer.device
         model = getattr(trainer, self.model_name)
-        with torch.no_grad(), set_mode(trainer.model, training=False):
+        with torch.no_grad(), set_mode(model, training=False):
             for img_id, idx in enumerate(self.idx_list):
                 inputs, targets = self.dataset[ idx ]
                 inputs, targets = inputs.unsqueeze(0).to(device), targets.unsqueeze(0).to(device)
