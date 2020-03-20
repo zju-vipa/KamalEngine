@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from .mmd import mmd_rbf2
 import torch
 
-def kldiv(logits, targets, T=1.0):
+def kldiv(logits, targets, T=1.0, prob_targets=False):
     """ Cross Entropy for soft targets
     
     Parameters:
@@ -13,10 +13,19 @@ def kldiv(logits, targets, T=1.0):
         - T (float): temperature　of distill
         - reduction: reduction to the output
     """
-    p_targets = F.softmax(targets/T, dim=1)
+    if prob_targets:
+        p_targets = targets
+    else:
+        p_targets = F.softmax(targets/T, dim=1)
     logp_logits = F.log_softmax(logits/T, dim=1)
     kld = F.kl_div(logp_logits, p_targets, reduction='none')
     return kld.sum(1).mean()*T*T
+
+def jsdiv(logits, targets, T=1.0):
+    p = F.softmax(logits, dim=1)
+    q = F.softmax(targets, dim=1)
+    log_m = torch.log( (p+q) / 2 )
+    return 0.5* ( F.kl_div( log_m,  p ) + F.kl_div( log_m, q ) )
 
 def mmd_loss(f1, f2, sigmas, normalized=False):
     if len(f1.shape) != 2:

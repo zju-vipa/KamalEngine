@@ -34,13 +34,16 @@ def pack_images(images, col=None, channel_last=False):
         pack[:, h:h+H, w:w+W] = img
     return pack
 
-def denormalize(tensor, mean, std):
-    _mean = [ -m / s for m, s in zip(mean, std) ]
-    _std = [ 1/s for s in std ]
-
+def normalize(tensor, mean, std, reverse=False):
+    if reverse:
+        _mean = [ -m / s for m, s in zip(mean, std) ]
+        _std = [ 1/s for s in std ]
+    else:
+        _mean = mean
+        _std = std
+    
     _mean = torch.as_tensor(_mean, dtype=tensor.dtype, device=tensor.device)
     _std = torch.as_tensor(_std, dtype=tensor.dtype, device=tensor.device)
-
     tensor = (tensor - _mean[None, :, None, None]) / (_std[None, :, None, None])
     return tensor
 
@@ -50,7 +53,15 @@ class Denormalizer(object):
         self.std = std
 
     def __call__(self, x):
-        return denormalize(x, self.mean, self.std)
+        return normalize(x, self.mean, self.std, reverse=True)
+
+class Normalizer(object):
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, x):
+        return normalize(x, self.mean, self.std, reverse=False)
 
 def colormap(N=256, normalized=False):
     def bitget(byteval, idx):
