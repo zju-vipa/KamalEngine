@@ -25,7 +25,7 @@ class RandomStrategy(BaseStrategy):
 
         for m in model.modules():
             if isinstance(m, _PRUNABLE_LAYER ) :
-                nparam = torch_pruning.utils.count_prunable_params( m )  # number of conv kernels
+                nparam = torch_pruning.utils.count_prunable_params( m )
                 total_params += nparam
                 if isinstance(m, (nn.modules.conv._ConvNd, nn.Linear)):
                     prunable_layers.append( m )
@@ -51,7 +51,7 @@ class RandomStrategy(BaseStrategy):
                 fn = torch_pruning.prune_conv
             else:
                 fn = torch_pruning.prune_linear
-            
+
             plan = DG.get_pruning_plan( layer_to_prune, fn, idxs=idx )        
             num_pruned += plan.exec() 
         return model
