@@ -230,3 +230,27 @@ class VisualizeSegmentationCallBack(CallbackBase):
                 targets = self.dataset.decode_seg_to_color(targets).transpose(0, 3, 1, 2)[0]
 
                 trainer.viz.images([inputs, preds, targets], nrow=3, win=("seg-%d" % img_id), opts={'title': str(img_id)})
+
+
+class VisualizeHistoryImagesCallbacks(CallbackBase):
+    def __init__(self, interval=1, names=None):
+        self.interval = interval
+        self._names = names
+
+    def after_step(self):
+        trainer = self.trainer()
+        if trainer.iter == 0 or trainer.iter % self.interval != 0:
+            return
+        if trainer.viz is None:
+            return
+
+        if self._names is None:
+            name_list = trainer.history.vis_data.keys()
+        else:
+            name_list = self._names
+        
+        for img_name in name_list:
+            images = trainer.history.vis_data[img_name]
+            N,C,H,W = images.shape
+            nrow = N if N<=3 else int(math.ceil(math.sqrt(N)))
+            trainer.viz.images(images, nrow=nrow, win=img_name, opts={'title': img_name})

@@ -107,3 +107,7 @@ def setup_seed(seed):
     torch.cuda.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
+
+def count_parameters(model):
+    return sum( [ p.numel() for p in model.parameters() ] )
+

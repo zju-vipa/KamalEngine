@@ -42,7 +42,7 @@ class History(object):
 
         self._iter = start_iter
         self._latest_scalars = dict()
-        self._vis_data = list()
+        self._vis_data = dict()
         
     def put_scalar(self, name, value):
         self._history[ name ].update( float(value), self._iter )
@@ -53,7 +53,7 @@ class History(object):
             self.put_scalar(k, v)
 
     def put_image(self, img_name, img_tensor):
-        self._vis_data.append((img_name, img_tensor, self._iter))
+        self._vis_data[img_name] = img_tensor
 
     def put_images( self, **kwargs ):
         for k, v in kwargs.items():
