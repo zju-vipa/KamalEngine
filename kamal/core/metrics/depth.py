@@ -1,14 +1,9 @@
 from .stream_metrics import StreamMetricsBase
 import numpy as np
 
-class StreamDepthMetrics(StreamMetricsBase):
-    """This metric is used in depth prediction task.
+class StreamDepthMetrics(object):
+    PRIMARY_METRIC = 'rmse'
 
-    **Parameters:**
-        - **thresholds** (list of float)
-        - **ignore_index** (int, optional): Value to ignore.
-    """
-    PRIMARY_METRIC = 'absolute relative'
     def __init__(self, thresholds, ignore_index=0):
         self.thresholds = thresholds
         self.ignore_index = ignore_index
@@ -48,14 +43,23 @@ class StreamDepthMetrics(StreamMetricsBase):
             - **squared relative error**
             - **precents for $r$ within thresholds**: Where $r_i = max(preds_i/targets_i, targets_i/preds_i)$
         """
-        masks = self.targets != self.ignore_index
+        masks = (self.targets != self.ignore_index)
         count = np.sum(masks)
-        self.targets = self.targets[masks]
-        self.preds = self.preds[masks]
+        self.targets = self.targets[masks].clip(1e-3)
+        self.preds = self.preds[masks].clip(1e-3)
+
 
         diff = np.abs(self.targets - self.preds)
-        sigma = np.maximum(self.targets / self.preds, self.preds / self.targets)
+        diff_log = np.log( self.targets ) - np.log( self.preds )
 
+        rmse = np.sqrt( (diff**2).mean() )
+        rmse_log = np.sqrt( (diff_log**2).mean() )
+
+        rmse_scale_inv = ( (diff_log**2).sum() / count - \
+            0.5 * (diff_log.sum() / count)**2 )
+        
+        sigma = np.maximum(self.targets / self.preds, self.preds / self.targets)
+    
         ard = diff / self.targets
         ard = np.sum(ard) / count
 
@@ -67,8 +71,11 @@ class StreamDepthMetrics(StreamMetricsBase):
             threshold_percents[threshold] = np.nansum((sigma < threshold)) / count
         
         return {
-            'absolute relative': ard,
-            'squared relative': srd,
+            'rmse': float(rmse),
+            'rmse_log': float(rmse_log),
+            'rmse_scale_inv': float(rmse_scale_inv),
+            'ard': float(ard),
+            'srd': float(srd),
             'percents within thresholds': threshold_percents
         }
 
