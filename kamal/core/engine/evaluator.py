@@ -43,9 +43,23 @@ class SegmentationEvaluator(ClassificationEvaluator):
         self.metrics = metrics.StreamSegmentationMetrics(num_classes, ignore_index=255)
 
 class DepthEvaluator(EvaluatorBase):
-    def __init__(self, data_loader, task=task.DepthTask(), progress=True):
-        super(DepthEvaluator, self).__init__(data_loader, task, progress=progress)
+    def __init__(self, data_loader, task=task.DepthTask(),progress=True):
+        super(DepthEvaluator, self).__init__(data_loader, task)
         self.metrics = metrics.StreamDepthMetrics(thresholds=[1.25, 1.25**2, 1.25**3])
+        self.progress = progress
+    
+    def eval(self, model, device=None):
+        device = device if device is not None else \
+            torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
+        self.metrics.reset()
+        model.to(device)
+        with torch.no_grad(), set_mode(model, training=False):
+            for i, (images, targets) in enumerate( tqdm(self.data_loader, disable=not self.progress) ):
+                images, targets = images.to(device), targets.to(device)
+                outs = model( images ) 
+                self.metrics.update(outs, targets)
+
+        return self.metrics.get_results()
 
 class CriterionEvaluator(EvaluatorBase):
     def __init__(self, data_loader, task, progress=True):

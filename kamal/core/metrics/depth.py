@@ -1,5 +1,6 @@
 from .stream_metrics import StreamMetricsBase
 import numpy as np
+import torch
 
 class StreamDepthMetrics(object):
     PRIMARY_METRIC = 'rmse'
