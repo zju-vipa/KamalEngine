@@ -53,6 +53,16 @@ class ReconstructionTask( TaskBase ):
 class DepthTask( ReconstructionTask ):
     def __init__(self, criterion=nn.L1Loss()):
         super(DepthTask, self).__init__(criterion)
+    
+    def get_loss(self, model, inputs, targets):
+        outputs = model(inputs)
+        outputs = outputs.squeeze(1)
+        loss = self.criterion(outputs, targets)
+        return {'loss': loss}
+    
+    def predict(self, model, inputs):
+        outputs = model(inputs)
+        return outputs
 
 class KDClassificationTask(ClassificationTask):
     def __init__(self, criterion=KDLoss(use_kldiv=True)):

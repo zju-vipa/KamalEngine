@@ -7,8 +7,13 @@ import random
 
 from .. import metrics
 from .trainer import set_mode
+from ... import utils
 import typing
 import shutil, math
+
+import matplotlib.pyplot as plt
+import math
+
 
 class CallbackBase(abc.ABC):
     def __init__(self):
@@ -25,6 +30,7 @@ class CallbackBase(abc.ABC):
 
     def after_train(self):
         pass
+
 
 class ValidationCallback(CallbackBase):
     def __init__(self,
@@ -53,12 +59,12 @@ class ValidationCallback(CallbackBase):
                     'save_model should be None or a subset of (\"best\", \"latest\", \"interval\")'
             os.makedirs(self._ckpt_dir, exist_ok=True)
 
-        self.best_score = -99999
+        self.best_score = 99999
         self.best_ckpt = None
         self.latest_ckpt = None
 
     def after_step(self):
-        trainer = self.trainer() # get the current trainer from weak reference
+        trainer = self.trainer()  # get the current trainer from weak reference
         if trainer.iter == 0 or trainer.iter % self.interval != 0:
             return   
         model = getattr( trainer, self.model_name )
@@ -80,7 +86,7 @@ class ValidationCallback(CallbackBase):
 
         primary_metric = self.evaluator.metrics.PRIMARY_METRIC
         score = results[primary_metric]
-        trainer.history.put_scalars( score=score )
+        trainer.history.put_scalars(score=score)
 
         if self.save_model is not None:
             pth_path_list = []
@@ -101,7 +107,8 @@ class ValidationCallback(CallbackBase):
                 self.latest_ckpt = pth_path
 
             # the best model
-            if 'best' in self.save_model and score > self.best_score:
+            print('score:%s, best:%s'%(score, self.best_score))
+            if 'best' in self.save_model and score < self.best_score:
                 pth_path = os.path.join(self._ckpt_dir, "%s-best-%08d-%s-%.3f.pth" %
                                         (self._ckpt_tag, trainer.iter, primary_metric, score))
                 # remove existed weights
@@ -110,7 +117,7 @@ class ValidationCallback(CallbackBase):
                 pth_path_list.append(pth_path)
                 self.best_score = score
                 self.best_ckpt = pth_path
-            
+
             # save model
             trainer.logger.info("Model saved as:")
             obj = model.state_dict() if self._weights_only else model
@@ -120,25 +127,29 @@ class ValidationCallback(CallbackBase):
 
     def final_save(self, ckpt_dir=None):
         trainer = self.trainer()
-        model = getattr( trainer, self.model_name )
+        model = getattr(trainer, self.model_name)
         if ckpt_dir is None:
             ckpt_dir = self._ckpt_dir
         if self.save_model is not None:
             if 'latest' in self.save_model:
                 os.makedirs(ckpt_dir, exist_ok=True)
-                shutil.copy2( self.latest_ckpt, os.path.join(ckpt_dir, "%s-latest.pth"% (self._ckpt_tag) )  )
+                shutil.copy2(self.latest_ckpt, os.path.join(
+                    ckpt_dir, "%s-latest.pth" % (self._ckpt_tag)))
             if 'best' in self.save_model:
                 os.makedirs(ckpt_dir, exist_ok=True)
-                shutil.copy2( self.best_ckpt, os.path.join(ckpt_dir, "%s-best.pth"% (self._ckpt_tag) )  )
+                shutil.copy2(self.best_ckpt, os.path.join(
+                    ckpt_dir, "%s-best.pth" % (self._ckpt_tag)))
 
 
 class LoggingCallback(CallbackBase):
-    def __init__(self, interval=10, names=('total_loss', 'lr' ), smooth_window_sizes=(10, None)):
+    def __init__(self, interval=10, names=('total_loss', 'lr'), smooth_window_sizes=(10, None)):
         self.interval = interval
         self._names = names
-        self._smooth_window_sizes = [ None for _ in names ] if smooth_window_sizes is None else smooth_window_sizes
-        if isinstance( self._smooth_window_sizes, int):
-            self._smooth_window_sizes = [ self._smooth_window_sizes for _ in names ]
+        self._smooth_window_sizes = [
+            None for _ in names] if smooth_window_sizes is None else smooth_window_sizes
+        if isinstance(self._smooth_window_sizes, int):
+            self._smooth_window_sizes = [
+                self._smooth_window_sizes for _ in names]
 
     def after_step(self):
         trainer = self.trainer()
@@ -149,21 +160,24 @@ class LoggingCallback(CallbackBase):
         total_epoch = trainer.max_iter // num_batchs_per_epoch
         current_epoch = trainer.iter // num_batchs_per_epoch
         current_batch = trainer.iter % num_batchs_per_epoch
-        
+
         # create log info
         format_str = "Iter %d/%d (Epoch %d/%d, Batch %d/%d)"
 
         for name, smooth in zip(self._names, self._smooth_window_sizes):
             latest_value = trainer.history.get_scalar(name)
-            smoothed_value = trainer.history.get_scalar(name, smooth) if smooth is not None else latest_value
-            format_str += " %s=%.4f" % ( name, smoothed_value )
+            smoothed_value = trainer.history.get_scalar(
+                name, smooth) if smooth is not None else latest_value
+            format_str += " %s=%.4f" % (name, smoothed_value)
 
             if trainer.viz:
-                opts={'title': name, 
-                      'showlegend': ( smooth is not None ) }
-                trainer.viz.line([latest_value, ], [trainer.iter, ], win=name, name='latest', update='append', opts=opts )
+                opts = {'title': name,
+                        'showlegend': (smooth is not None)}
+                trainer.viz.line([latest_value, ], [trainer.iter, ],
+                                 win=name, name='latest', update='append', opts=opts)
                 if smooth:
-                    trainer.viz.line( [smoothed_value, ], [trainer.iter, ], win=name, name='smoothed', update='append', opts=opts )
+                    trainer.viz.line([smoothed_value, ], [
+                                     trainer.iter, ], win=name, name='smoothed', update='append', opts=opts)
 
         trainer.logger.info(format_str % (
             trainer.iter,      trainer.max_iter,
@@ -181,8 +195,8 @@ class LRSchedulerCallback(CallbackBase):
         trainer = self.trainer()
         if self.scheduler is None or trainer.iter == 0 or trainer.iter % self.interval != 0:
             return
-        
-        if isinstance( self.scheduler, typing.Sequence ):
+
+        if isinstance(self.scheduler, typing.Sequence):
             for sch in self.scheduler:
                 sch.step()
         else:
@@ -191,21 +205,22 @@ class LRSchedulerCallback(CallbackBase):
 
 class VisualizeSegmentationCallBack(CallbackBase):
     def __init__(self, interval, dataset, idx_list_or_num_vis=5, model_name='model',
-                        denormalizer=None, scale_to_255=True):
+                 denormalizer=None, scale_to_255=True):
         self.interval = interval
         self.dataset = dataset
         self.model_name = model_name
 
-        if isinstance( idx_list_or_num_vis, int ):
-            self.idx_list = self._get_vis_idx_list( dataset, idx_list_or_num_vis )
-        elif isinstance( idx_list_or_num_vis, Iterable ):
+        if isinstance(idx_list_or_num_vis, int):
+            self.idx_list = self._get_vis_idx_list(
+                dataset, idx_list_or_num_vis)
+        elif isinstance(idx_list_or_num_vis, Iterable):
             self.idx_list = idx_list_or_num_vis
-        
+
         self._denormalizer = denormalizer
         self._scale_to_255 = scale_to_255
 
-    def _get_vis_idx_list( self, dataset, num_vis ):
-        return random.sample( list( range( len( dataset ) ) ), num_vis )
+    def _get_vis_idx_list(self, dataset, num_vis):
+        return random.sample(list(range(len(dataset))), num_vis)
 
     def after_step(self):
         trainer = self.trainer()  # get current chainer
@@ -215,10 +230,11 @@ class VisualizeSegmentationCallBack(CallbackBase):
         model = getattr(trainer, self.model_name)
         with torch.no_grad(), set_mode(model, training=False):
             for img_id, idx in enumerate(self.idx_list):
-                inputs, targets = self.dataset[ idx ]
-                inputs, targets = inputs.unsqueeze(0).to(device), targets.unsqueeze(0).to(device)
-                
-                preds = model( inputs ).max(1)[1]
+                inputs, targets = self.dataset[idx]
+                inputs, targets = inputs.unsqueeze(0).to(
+                    device), targets.unsqueeze(0).to(device)
+
+                preds = model(inputs).max(1)[1]
 
                 if self._denormalizer is not None:
                     inputs = self._denormalizer(inputs)
@@ -229,12 +245,68 @@ class VisualizeSegmentationCallBack(CallbackBase):
 
                 preds = preds.detach().cpu().numpy().astype('uint8')
                 targets = targets.detach().cpu().squeeze(1).numpy().astype('uint8')
-                
-                inputs = inputs[0]
-                preds = self.dataset.decode_seg_to_color(preds).transpose(0, 3, 1, 2)[0]  # nhwc => nchw
-                targets = self.dataset.decode_seg_to_color(targets).transpose(0, 3, 1, 2)[0]
 
-                trainer.viz.images([inputs, preds, targets], nrow=3, win=("seg-%d" % img_id), opts={'title': str(img_id)})
+                inputs = inputs[0]
+                preds = self.dataset.decode_seg_to_color(
+                    preds).transpose(0, 3, 1, 2)[0]  # nhwc => nchw
+                targets = self.dataset.decode_seg_to_color(
+                    targets).transpose(0, 3, 1, 2)[0]
+
+                trainer.viz.images([inputs, preds, targets], nrow=3, win=(
+                    "seg-%d" % img_id), opts={'title': str(img_id)})
+
+
+class VisualizeDepthCallBack(CallbackBase):
+    def __init__(self, interval, dataset, idx_list_or_num_vis=5, model_name='model', denormalizer=None, scale_to_255=True):
+        self.interval = interval
+        self.dataset = dataset
+        self.model_name = model_name
+
+        if isinstance(idx_list_or_num_vis, int):
+            self.idx_list = self._get_vis_idx_list(
+                dataset, idx_list_or_num_vis)
+        elif isinstance(idx_list_or_num_vis, Iterable):
+            self.idx_list = idx_list_or_num_vis
+
+        self._denormalizer = denormalizer
+        self._scale_to_255 = scale_to_255
+
+    def _get_vis_idx_list(self, dataset, num_vis):
+        return random.sample(list(range(len(dataset))), num_vis)
+
+    def after_step(self):
+        trainer = self.trainer()  # get current chainer
+        cm = plt.get_cmap('jet')
+        if trainer.iter == 0 or trainer.iter % self.interval != 0:
+            return
+        device = trainer.device
+        model = getattr(trainer, self.model_name)
+        with torch.no_grad(), set_mode(model, training=False):
+            for img_id, idx in enumerate(self.idx_list):
+                inputs, targets = self.dataset[idx]
+                inputs, targets = inputs.unsqueeze(0).to(
+                    device), targets.unsqueeze(0).to(device)
+
+                targets = torch.log(targets)
+                outs = model(inputs)
+                preds = torch.log(outs)
+                max_depth = math.log(10)
+
+                if self._denormalizer is not None:
+                    inputs = self._denormalizer(inputs)
+                inputs = inputs.cpu().numpy()
+                if self._scale_to_255:
+                    inputs = (inputs*255)
+                inputs = inputs.astype('uint8')
+
+                inputs = inputs[0]
+                preds = ((cm(preds[0].clamp(0, max_depth).cpu().numpy().squeeze(
+                )/max_depth)*255).astype('uint8')).transpose(2, 0, 1)[:3]
+                targets = ((cm(targets[0].clamp(0, max_depth).cpu().numpy(
+                ).squeeze()/max_depth)*255).astype('uint8')).transpose(2, 0, 1)[:3]
+
+                trainer.viz.images([inputs, preds, targets], nrow=3, win=(
+                    "depth-%d" % img_id), opts={'title': str(img_id)})
 
 
 class VisualizeHistoryImagesCallbacks(CallbackBase):
@@ -253,7 +325,7 @@ class VisualizeHistoryImagesCallbacks(CallbackBase):
             name_list = trainer.history.vis_data.keys()
         else:
             name_list = self._names
-        
+
         for img_name in name_list:
             images = trainer.history.vis_data[img_name]
             N,C,H,W = images.shape
