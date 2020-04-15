@@ -8,7 +8,7 @@ import random
 from .. import metrics
 from .trainer import set_mode
 import typing
-import shutil
+import shutil, math
 
 class CallbackBase(abc.ABC):
     def __init__(self):
@@ -31,6 +31,7 @@ class ValidationCallback(CallbackBase):
                  interval,
                  evaluator,
                  model_name     = 'model',
+                 log_tag     = None,
                  save_model     = ('best', 'latest'),
                  ckpt_tag       = 'model',
                  ckpt_dir       = 'checkpoints',
@@ -40,6 +41,7 @@ class ValidationCallback(CallbackBase):
         self.evaluator = evaluator
         self.save_model = save_model
         self.model_name = model_name
+        self.log_tag = log_tag
 
         self._ckpt_dir = ckpt_dir
         self._ckpt_tag = ckpt_tag
@@ -62,8 +64,7 @@ class ValidationCallback(CallbackBase):
         model = getattr( trainer, self.model_name )
         results = self.evaluator.eval( model )  
         trainer.history.put_scalars( **results )
-        trainer.logger.info( "[val %s] Iter %d/%d: %s"%(self.model_name, trainer.iter, trainer.max_iter, results) )
-        
+        trainer.logger.info( "[val %s] Iter %d/%d: %s"%(self.model_name if self.log_tag is None else self.log_tag, trainer.iter, trainer.max_iter, results) )
         
         # Visualization
         if trainer.viz is not None:
@@ -71,7 +72,11 @@ class ValidationCallback(CallbackBase):
                 if isinstance(v, Iterable):  # skip non-scalar value
                     continue
                 else:
-                    trainer.viz.line([v, ], [trainer.iter, ], win="%s:%s"%(self.model_name, k), update='append', opts={'title': "%s:%s"%(self.model_name, k)})
+                    if self.log_tag is not None:
+                        log_tag = "%s:%s"%(self.log_tag, k)
+                    else:
+                        log_tag = "%s:%s"%(self.model_name, k)
+                    trainer.viz.line([v, ], [trainer.iter, ], win=log_tag, update='append', opts={'title': log_tag})
 
         primary_metric = self.evaluator.metrics.PRIMARY_METRIC
         score = results[primary_metric]
@@ -254,3 +259,29 @@ class VisualizeHistoryImagesCallbacks(CallbackBase):
             N,C,H,W = images.shape
             nrow = N if N<=3 else int(math.ceil(math.sqrt(N)))
             trainer.viz.images(images, nrow=nrow, win=img_name, opts={'title': img_name})
+
+
+class VisualizeGeneratorCallback(CallbackBase):
+    def __init__(self, interval=1, model_name='generator', batch_size=16, denormalizer=None, win='generated'):
+        self.interval = interval
+        self.batch_size = batch_size
+        self.denormalizer = denormalizer
+        self._model_name=model_name
+        self._win = win
+
+    def after_step(self):
+        trainer = self.trainer()
+        if trainer.iter == 0 or trainer.iter % self.interval != 0:
+            return
+        if trainer.viz is None:
+            return
+        generator = getattr( trainer, self._model_name )
+        z = torch.randn( self.batch_size, generator.nz ).to(device=trainer.device)
+        with torch.no_grad():
+            fake = generator(z) # n, c, h, w
+        if self.denormalizer is not None:
+            fake = self.denormalizer(fake)
+        fake = fake.clamp(0,1).cpu().numpy()
+        N,C,H,W = fake.shape
+        nrow = int(math.ceil(math.sqrt(N)))
+        trainer.viz.images(fake, nrow=nrow, win=self._win, opts={'title': self._win})

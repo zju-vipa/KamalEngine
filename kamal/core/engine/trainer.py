@@ -205,7 +205,7 @@ class SimpleKDTrainer(SimpleTrainer):
         except StopIteration:
             self._train_loader_iter = iter(self.train_loader)
             data = next( self._train_loader_iter )
-        if not isinstance( data, typing.Iterable ):
+        if not isinstance( data, typing.Sequence ):
             data = [data, ]
         data = [ d.to(self.device) for d in data ]
 
