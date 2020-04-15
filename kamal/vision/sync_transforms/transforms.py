@@ -30,7 +30,7 @@ __all__ = [ "Sync", "Multi","Compose", "ToTensor", "ToPILImage", "Normalize", "R
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "FlipChannels", "RandomErasing"]
+           "RandomPerspective", "FlipChannels", "RandomErasing", "ToRGB", "ToGRAY"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -1307,6 +1307,27 @@ class RandomAffine(object):
         d['resample'] = _pil_interpolation_to_str[d['resample']]
         return s.format(name=self.__class__.__name__, **d)
 
+class ToRGB(object):
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be converted to grayscale.
+
+        Returns:
+            PIL Image: Randomly grayscaled image.
+        """
+        return img.convert('RGB')
+
+class ToGRAY(object):
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be converted to grayscale.
+
+        Returns:
+            PIL Image: Randomly grayscaled image.
+        """
+        return img.convert('GRAY')
 
 class Grayscale(object):
     """Convert image to grayscale.

@@ -63,3 +63,34 @@ class CriterionEvaluator(EvaluatorBase):
                 loss = self.task.get_loss( model, inputs, targets )['loss']
                 avg_loss+=loss.item()
         return avg_loss/len(self.data_loader)
+
+class KDClassificationEvaluator(EvaluatorBase):
+    def __init__(self, 
+                data_loader, 
+                teacher,
+                task=task.ClassificationTask(),
+                progress=True):
+        super(KDClassificationEvaluator, self).__init__(data_loader, task)
+        self.metrics = metrics.StreamClassificationMetrics()
+        self.progress = progress
+        self.teacher = teacher
+
+    def eval(self, model, device=None):
+        device = device if device is not None else \
+            torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
+        self.metrics.reset()
+        teacher = self.teacher
+
+        model.to(device)
+        teacher.to(device)
+        
+        with torch.no_grad(), \
+             set_mode(model, training=False), \
+             set_mode( teacher, training=False ): 
+            for i, data in enumerate( tqdm(self.data_loader, disable=not self.progress) ): 
+                inputs = data[0] if isinstance( data, (tuple, list) ) else data
+                inputs = inputs.to(device)
+                s_preds = self.task.predict( model, inputs )['preds']
+                t_preds = self.task.predict( teacher, inputs )['preds']
+                self.metrics.update( s_preds, t_preds )
+        return self.metrics.get_results()
