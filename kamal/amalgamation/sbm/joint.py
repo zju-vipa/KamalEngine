@@ -26,7 +26,7 @@ class JointNet(nn.Module):
 
         ses = []
         for i in range(5):
-            se = channels[i]/4
+            se = int(channels[i]/4)
             ses.append(16 if se < 16 else se)
 
         for teacher in teachers:

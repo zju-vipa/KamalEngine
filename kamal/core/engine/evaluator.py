@@ -6,6 +6,8 @@ import torch
 from tqdm import tqdm
 from .trainer import set_mode
 
+import sys
+
 class EvaluatorBase(abc.ABC):
     def __init__(self, data_loader, task):
         self.data_loader = data_loader
@@ -77,6 +79,43 @@ class CriterionEvaluator(EvaluatorBase):
                 loss = self.task.get_loss( model, inputs, targets )['loss']
                 avg_loss+=loss.item()
         return avg_loss/len(self.data_loader)
+
+class SbmEvaluator(EvaluatorBase):
+    def __init__(self, data_loader, split_size, tasks, task=task.SbmTask(), progress=True):
+        super(SbmEvaluator, self).__init__(data_loader, task)
+        self.metrics_list = []
+        self.tasks = tasks
+        for (teacher,task_name, num_classes) in zip(task.tasks, self.tasks, split_size):
+            evaluator = getattr(sys.modules[__name__], task_name+'Evaluator')(num_classes, data_loader, teacher)
+            self.metrics_list.append(evaluator.metrics)
+        self.progress = progress
+
+    def eval(self, model, split_size, device=None):
+        results_dict = {}
+        device = device if device is not None else \
+            torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
+        for i in range(len(self.metrics_list)):
+            self.metrics_list[i].reset()
+        model.to(device)
+        with torch.no_grad(), set_mode(model, training=False):
+            for i, (images, targets_list) in enumerate( tqdm(self.data_loader, disable=not self.progress) ):
+                images = images.to(device)
+                joint_outputs = self.task.predict( model, images, split_size)['preds']
+                for j, (targets, outs) in enumerate(zip(targets_list, joint_outputs)):
+                    targets = targets.to(device)
+                    if self.tasks[j] == 'Segmentation':
+                         # multiple output
+                        if isinstance(outs, (tuple, list)):
+                            outs = outs[-1]
+                        outs = outs.max(1)[1]
+                    self.metrics_list[j].update(outs, targets)
+        for task_name, metrics in zip(self.tasks, self.metrics_list):
+            results_dict[task_name] = metrics.get_results()
+        return results_dict
+
+class MultitaskEvaluator(SbmEvaluator):
+    def __init__(self, data_loader, split_size, tasks, task=task.SbmTask(), progress=True):
+        super(MultitaskEvaluator, self).__init__(data_loader, split_size, tasks, task=task, progress=progress)
 
 class KDClassificationEvaluator(EvaluatorBase):
     def __init__(self, 
