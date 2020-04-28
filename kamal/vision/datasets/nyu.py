@@ -70,6 +70,8 @@ class NYUv2(VisionDataset):
         target = Image.open(self.targets[idx])
         if self.transforms is not None:
             image, target = self.transforms( image, target )
+        else:
+            return image, target
         if self._is_seg:
             target = (target.to(dtype=torch.uint8)-1).to(dtype=torch.long)
         return image, target.squeeze(0)
