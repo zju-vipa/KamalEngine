@@ -224,18 +224,12 @@ class SimpleKDTrainer(SimpleTrainer):
         info['lr'] = float( self.optimizer.param_groups[0]['lr'] )
         self._gather_training_info( info )
 
-class SbmTrainer(SimpleTrainer):
-    def __init__(   self, 
-                    task, 
-                    model,
-                    teachers,
-                    split_size,
-                    logger=None,
-                    viz=None):
-        super(SbmTrainer, self).__init__(task, model, logger, viz)
+class MultitaskTrainer(SimpleTrainer):
+    def __init__(self, task, model, teachers, split_size, logger=None, viz=None):
+        super(MultitaskTrainer, self).__init__(task, model, logger=logger, viz=viz)
         self.teachers = teachers
         self.split_size = split_size
-        
+
     def train(self, start_iter, max_iter, train_loader, optimizer,  device=None):
         # init data_loader & optimizer
         if device is None:
@@ -247,65 +241,7 @@ class SbmTrainer(SimpleTrainer):
         with set_mode(self.model, training=True):
             for i in range(len(self.teachers)):
                 set_mode(self.teachers[i], training=False)
-            super( SbmTrainer, self ).train(start_iter, max_iter, train_loader, optimizer, device=device)
-    
-    def step(self):
-        self.optimizer.zero_grad()
-        start_time = time.perf_counter()
-        
-        try:
-            data = next( self._train_loader_iter )
-        except StopIteration:
-            self._train_loader_iter = iter(self.train_loader) # reset iterator
-            data = next( self._train_loader_iter )
-        if not isinstance( data, typing.Iterable ):
-            data = [data, ]
-        data[0] = data[0].to(self.device) # move to device
-
-        loss_dict = self.task.get_loss( self.model, self.teachers, data[0], self.split_size ) # get loss
-        loss = sum( loss_dict.values() )
-        loss.backward()
-
-        # optimize
-        self.optimizer.step()
-        step_time = time.perf_counter() - start_time
-
-        # record training info
-        info = loss_dict
-        info['total_loss'] = loss
-        info['step_time'] = step_time
-        info['lr'] = float( self.optimizer.param_groups[0]['lr'] )
-        self._gather_training_info( info )
-
-    def reset(self):
-        self.history = None
-        self._train_loader_iter = iter(train_loader)
-        self.iter = self.start_iter
-
-    def _gather_training_info(self, info): 
-        info = {
-            k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v)
-            for k, v in info.items()
-        }
-        current_lr = info.pop('lr')
-        all_info = comm.gather(info)
-        if comm.is_main_process():
-            if "step_time" in all_info[0]:
-                step_time = np.max([x.pop("step_time") for x in all_info])
-                self.history.put_scalar("step_time", step_time)
-                self.history.put_scalar("lr", current_lr)
-            # average the rest training info
-            info = {
-                k: np.mean([x[k] for x in all_info]) for k in all_info[0].keys()
-            }
-            total_losses_reduced = sum(loss for loss in info.values())
-            self.history.put_scalar("total_loss", total_losses_reduced)
-            if len(info) > 1:
-                self.history.put_scalars(**info)
-
-class MultitaskTrainer(SbmTrainer):
-    def __init__(self, task, model, teachers, split_size, logger=None, viz=None):
-        super(MultitaskTrainer, self).__init__(task, model, teachers, split_size, logger=logger, viz=viz)
+            super( MultitaskTrainer, self ).train(start_iter, max_iter, train_loader, optimizer, device=device)
 
     def step(self):
         self.optimizer.zero_grad()
@@ -334,3 +270,30 @@ class MultitaskTrainer(SbmTrainer):
         info['step_time'] = step_time
         info['lr'] = float( self.optimizer.param_groups[0]['lr'] )
         self._gather_training_info( info )
+
+
+    def reset(self):
+        self.history = None
+        self._train_loader_iter = iter(train_loader)
+        self.iter = self.start_iter
+
+    def _gather_training_info(self, info): 
+        info = {
+            k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v)
+            for k, v in info.items()
+        }
+        current_lr = info.pop('lr')
+        all_info = comm.gather(info)
+        if comm.is_main_process():
+            if "step_time" in all_info[0]:
+                step_time = np.max([x.pop("step_time") for x in all_info])
+                self.history.put_scalar("step_time", step_time)
+                self.history.put_scalar("lr", current_lr)
+            # average the rest training info
+            info = {
+                k: np.mean([x[k] for x in all_info]) for k in all_info[0].keys()
+            }
+            total_losses_reduced = sum(loss for loss in info.values())
+            self.history.put_scalar("total_loss", total_losses_reduced)
+            if len(info) > 1:
+                self.history.put_scalars(**info)

@@ -85,9 +85,12 @@ class SbmTask(TaskBase):
         return {'preds': joint_outputs}
 
 
-class MultitaskTask(SbmTask):
+class MultitaskTask(TaskBase):
     def __init__(self, weights, criterions=[], tasks=[]):
-        super(MultitaskTask, self).__init__(criterions=criterions, tasks=tasks)
+        self.tasks = []
+        for i, criterion in enumerate(criterions):
+            Task = getattr(sys.modules[__name__], tasks[i]+'Task')(criterion = criterion)
+            self.tasks.append(Task)
         self.weights = weights
 
     def get_loss(self, model, inputs, targets_list, split_size):
@@ -98,6 +101,10 @@ class MultitaskTask(SbmTask):
                 outputs = outputs.squeeze(1)
             loss += task.criterion(outputs, targets) * weight
         return {'loss': loss}
+
+    def predict(self, student, inputs, split_size):
+        joint_outputs = torch.split(student(inputs), split_size, dim=1)
+        return {'preds': joint_outputs}
 
 
 
