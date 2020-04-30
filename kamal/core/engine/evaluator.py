@@ -80,9 +80,9 @@ class CriterionEvaluator(EvaluatorBase):
                 avg_loss+=loss.item()
         return avg_loss/len(self.data_loader)
 
-class SbmEvaluator(EvaluatorBase):
+class MultitaskEvaluator(EvaluatorBase):
     def __init__(self, data_loader, split_size, tasks, task=task.SbmTask(), progress=True):
-        super(SbmEvaluator, self).__init__(data_loader, task)
+        super(MultitaskEvaluator, self).__init__(data_loader, task)
         self.metrics_list = []
         self.tasks = tasks
         for (teacher,task_name, num_classes) in zip(task.tasks, self.tasks, split_size):
@@ -113,9 +113,9 @@ class SbmEvaluator(EvaluatorBase):
             results_dict[task_name] = metrics.get_results()
         return results_dict
 
-class MultitaskEvaluator(SbmEvaluator):
+class SbmEvaluator(MultitaskEvaluator):
     def __init__(self, data_loader, split_size, tasks, task=task.SbmTask(), progress=True):
-        super(MultitaskEvaluator, self).__init__(data_loader, split_size, tasks, task=task, progress=progress)
+        super(SbmEvaluator, self).__init__(data_loader, split_size, tasks, task=task, progress=progress)
 
 class KDClassificationEvaluator(EvaluatorBase):
     def __init__(self, 

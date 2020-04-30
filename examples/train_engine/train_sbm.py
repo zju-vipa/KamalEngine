@@ -10,7 +10,7 @@ from PIL import Image
 from kamal import engine, metrics, loss
 
 from kamal.vision.models.segmentation import segnet_vgg11_bn, segnet_vgg16_bn, segnet_vgg19_bn
-from kamal.amalgamation.sbm import JointNet
+from kamal.amalgamation.sbm import JointNet, SbmTrainer
 from kamal.vision.datasets import NYUv2
 from kamal.vision.datasets import LabelConcatDataset
 from kamal.utils import Denormalizer
@@ -32,9 +32,9 @@ def main():
                         default='~/Datasets/NYUv2')
     parser.add_argument('--total_iters', type=int, default=40000)
     parser.add_argument('--seg_path', type=str,
-                        default='~/checkpoints/segnet_vgg11_bn-best-00009200-mIoU-0.446.pth')
+                        default='~/SegNet/checkpoints/segnet_vgg11_bn-best-00009200-mIoU-0.446.pth')
     parser.add_argument('--depth_path', type=str,
-                        default='~/checkpoints/depth_segnet_vgg11_bn-latest-00019600-rmse-2.885.pth')
+                        default='~/SegNet/checkpoints/depth_segnet_vgg11_bn-latest-00019600-rmse-2.885.pth')
     args = parser.parse_args()
 
     # tasks
@@ -113,7 +113,7 @@ def main():
         optimizer, args.total_iters)
     evaluator = engine.evaluator.SbmEvaluator(
         val_loader, split_size=split_size, task=task, tasks=tasks)
-    trainer = engine.trainer.SbmTrainer(
+    trainer = SbmTrainer(
         task=task, model=joint_model, teachers=[teacher_seg_model, teacher_dep_model], split_size=split_size, viz=Visdom(port='19999', env='sbm'))
 
     trainer.add_callbacks([

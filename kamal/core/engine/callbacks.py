@@ -141,9 +141,9 @@ class ValidationCallback(CallbackBase):
                     ckpt_dir, "%s-best.pth" % (self._ckpt_tag)))
 
 
-class SbmValidationCallback(ValidationCallback):
+class MultitaskValidationCallback(ValidationCallback):
     def __init__(self, interval, evaluator, split_size, model_name='model', save_model=('best', 'latest'), ckpt_tag='model', ckpt_dir='checkpoints', weights_only=True):
-        super(SbmValidationCallback, self).__init__(interval, evaluator, model_name=model_name,
+        super(MultitaskValidationCallback, self).__init__(interval, evaluator, model_name=model_name,
                                                     save_model=save_model, ckpt_tag=ckpt_tag, ckpt_dir=ckpt_dir, weights_only=weights_only)
 
         self.best_score_list = [0.0, 99999]
@@ -232,9 +232,9 @@ class SbmValidationCallback(ValidationCallback):
                 trainer.logger.info("\t%s" % (pth_path))
 
 
-class MultitaskValidationCallback(SbmValidationCallback):
+class SbmValidationCallback(MultitaskValidationCallback):
     def __init__(self, interval, evaluator, split_size, model_name='model', save_model=('best','latest'), ckpt_tag='model', ckpt_dir='checkpoints', weights_only=True):
-        super(MultitaskValidationCallback, self).__init__(interval, evaluator, split_size, model_name=model_name, save_model=save_model, ckpt_tag=ckpt_tag, ckpt_dir=ckpt_dir, weights_only=weights_only)
+        super(SbmValidationCallback, self).__init__(interval, evaluator, split_size, model_name=model_name, save_model=save_model, ckpt_tag=ckpt_tag, ckpt_dir=ckpt_dir, weights_only=weights_only)
 
 
 class LoggingCallback(CallbackBase):
@@ -405,7 +405,7 @@ class VisualizeDepthCallBack(CallbackBase):
                     "depth-%d" % img_id), opts={'title': str(img_id)})
 
 
-class VisualizeSbmCallBack(CallbackBase):
+class VisualizeMultitaskCallBack(CallbackBase):
     def __init__(self, interval, dataset, split_size, tasks, idx_list_or_num_vis=5, model_name='model', teachers_name='teachers',
                  denormalizer=None, scale_to_255=True):
         self.interval = interval
@@ -488,9 +488,9 @@ class VisualizeSbmCallBack(CallbackBase):
                     "sbm-%d" % img_id), opts={'title': str(img_id)})
 
 
-class VisualizeMultitaskCallBack(VisualizeSbmCallBack):
+class VisualizeSbmCallBack(VisualizeMultitaskCallBack):
     def __init__(self, interval, dataset, split_size, tasks, idx_list_or_num_vis=5, model_name='model', teachers_name='teachers', denormalizer=None, scale_to_255=True):
-        super(VisualizeMultitaskCallBack, self).__init__(interval, dataset, split_size, tasks, idx_list_or_num_vis=idx_list_or_num_vis, model_name=model_name, teachers_name=teachers_name, denormalizer=denormalizer, scale_to_255=scale_to_255)
+        super(VisualizeSbmCallBack, self).__init__(interval, dataset, split_size, tasks, idx_list_or_num_vis=idx_list_or_num_vis, model_name=model_name, teachers_name=teachers_name, denormalizer=denormalizer, scale_to_255=scale_to_255)
 
 
 class VisualizeHistoryImagesCallbacks(CallbackBase):
