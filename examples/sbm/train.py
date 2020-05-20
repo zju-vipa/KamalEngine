@@ -31,14 +31,18 @@ def main():
     parser.add_argument('--data_root', type=str,
                         default='~/Datasets/NYUv2')
     parser.add_argument('--total_iters', type=int, default=40000)
-    parser.add_argument('--seg_path', type=str,
-                        default='~/SegNet/checkpoints/segnet_vgg11_bn-best-00009200-mIoU-0.446.pth')
-    parser.add_argument('--depth_path', type=str,
-                        default='~/SegNet/checkpoints/depth_segnet_vgg11_bn-latest-00019600-rmse-2.885.pth')
+    parser.add_argument('--tasks', type=str, nargs='*', default=['Segmentation', 'Depth'], help="""A list of different tasks """)
+    parser.add_argument("--init_ckpt", type=str, nargs = '*', default=['~/seg.pth', '~/depth.pth'], help="""A list of pretrained teacher models' paths""")
+    parser.add_argument("--phase", type=str, choices=['block', 'finetune'], default='block',
+                        help="""The 'block' phase is the step 2 in the paper, to train block by block. The layers of branches are fixed.
+                            The 'finetune' phase is the step 4 in the paper. All layers are trainable.
+                        """)
+    parser.add_argument("--indices", type=int, nargs='*',
+                        default=[3, 1], help="""Where to branch out for each task.""")
     args = parser.parse_args()
 
     # tasks
-    tasks = ['Segmentation', 'Depth']
+    tasks = args.tasks
     # split_size
     split_size = [13, 1]  # num_classes
 
@@ -85,14 +89,14 @@ def main():
     # Prepare model
     teacher_seg_model = segnet_vgg11_bn(
         num_classes=13, pretrained_backbone=False)
-    teacher_seg_model.load_state_dict(torch.load(args.seg_path))
+    teacher_seg_model.load_state_dict(torch.load(args.init_ckpt[0]))
     teacher_dep_model = segnet_vgg11_bn(
         num_classes=1, pretrained_backbone=False)
-    teacher_dep_model.load_state_dict(torch.load(args.depth_path))
+    teacher_dep_model.load_state_dict(torch.load(args.init_ckpt[1]))
     joint_model = JointNet(
         [teacher_seg_model, teacher_dep_model],
-        indices=[3, 1],
-        phase='block'
+        indices= args.indices,
+        phase=args.phase
     )
     task = engine.task.SbmTask(criterions=[nn.CrossEntropyLoss(
         ignore_index=255), nn.L1Loss()], tasks=tasks)

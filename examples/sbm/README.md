@@ -16,7 +16,8 @@ Use `train_seg.py`, `train_depth.py`, or `train_normal.py` to train three teache
 ## Amalgamation
 ### Online Method
 Use `train.py` to combine any number of teachers with 'SegNet' structure.
-- `--init_ckpt`: A list of string. The first two checkpoints are pre-trained teacher models, and the last one is to recover target joint student model.
+- `--tasks`: A list of string. The task lists of pretrained teachers.
+- `--init_ckpt`: A list of string. The path lists of pretrained teacher models.
 - `--phase`: Must be 'block' or 'finetune'. To choose from training block by block or finetune.
 - `--indices`: A list of integer. To choose which layer to branch out for each task, starting from zero. 
 
@@ -26,5 +27,4 @@ Use `train_offline.py` to combine one pretrained joint teacher and one single te
 - `--init_ckpt`: A list of string. The first one is pre-trained joint model, the second one is another teacher, and the last one is to recover target joint student model.
 
 ![sbm-demo](demo.png)
-Demo of combining a semantic teacher and a normal teacher.
- 
+Demo of combining a semantic teacher and a depth teacher
