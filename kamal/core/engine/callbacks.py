@@ -59,7 +59,7 @@ class ValidationCallback(CallbackBase):
                     'save_model should be None or a subset of (\"best\", \"latest\", \"interval\")'
             os.makedirs(self._ckpt_dir, exist_ok=True)
 
-        self.best_score = 99999
+        self.best_score = 0.0
         self.best_ckpt = None
         self.latest_ckpt = None
 
@@ -108,7 +108,7 @@ class ValidationCallback(CallbackBase):
 
             # the best model
             print('score:%s, best:%s'%(score, self.best_score))
-            if 'best' in self.save_model and score < self.best_score:
+            if 'best' in self.save_model and score > self.best_score:
                 pth_path = os.path.join(self._ckpt_dir, "%s-best-%08d-%s-%.3f.pth" %
                                         (self._ckpt_tag, trainer.iter, primary_metric, score))
                 # remove existed weights
