@@ -15,7 +15,7 @@ def kldiv(logits, targets, T=1.0, prob_targets=False, reduction='batchmean'):
     """
     p_targets = targets if prob_targets else F.softmax(targets/T, dim=1)
     logp_logits = F.log_softmax(logits/T, dim=1)
-    kld = F.kl_div(logp_logits, p_targets, reduction=reduction)
+    kld = F.kl_div(logp_logits, p_targets, reduction=reduction) * (T**2)
     return kld
 
 def jsdiv(logits, targets, T=1.0, reduction='mean'):
