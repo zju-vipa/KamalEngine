@@ -36,7 +36,9 @@ class HintDistiller(KDDistiller):
         data, targets = data.to(self.device), targets.to(self.device)
 
         feat_s, s_out = self.student(data, is_feat=True)
-        feat_t, t_out = self.teacher(data, is_feat=True)
+        with torch.no_grad():
+            feat_t, t_out = self.teacher(data, is_feat=True)
+            feat_t = [f.detach() for f in feat_t]
         f_s = self.regressor(feat_s[self._hint_layer])
         f_t = feat_t[self._hint_layer]
         loss = self._gamma * nn.CrossEntropyLoss()(s_out, targets) + self._alpha * KDLoss(T=self._T, use_kldiv=True)(s_out, t_out) +self._beta * nn.MSELoss()(f_s, f_t)

@@ -29,7 +29,9 @@ class SVDDistiller(KDDistiller):
         data, targets = data.to(self.device), targets.to(self.device)
 
         feat_s, s_out = self.student(data, is_feat=True)
-        feat_t, t_out = self.teacher(data, is_feat=True)
+        with torch.no_grad():
+            feat_t, t_out = self.teacher(data, is_feat=True)
+            feat_t = [f.detach() for f in feat_t]
         g_s = feat_s[1:-1]
         g_t = feat_t[1:-1]
         loss = self._gamma * nn.CrossEntropyLoss()(s_out, targets) + self._alpha * \
