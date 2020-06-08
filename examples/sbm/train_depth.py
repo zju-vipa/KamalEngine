@@ -1,22 +1,11 @@
 import argparse
-import os
-import sys
-import numpy as np
 import torch
 import torch.nn as nn
 
-from PIL import Image
-
-from kamal import engine, metrics, loss
-
-from kamal.vision.models.segmentation import segnet_vgg11_bn, segnet_vgg16_bn, segnet_vgg19_bn
-from kamal.vision.datasets import NYUv2
-from kamal.utils import Denormalizer
+from kamal import engine, metrics, vision, amalgamation, utils
 from kamal.vision import sync_transforms as sT
 
-
 from visdom import Visdom
-import random
 
 
 # 1. Download dataset from https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid
@@ -33,7 +22,7 @@ def main():
     args = parser.parse_args()
 
     # Prepare data
-    train_dst = NYUv2(root=args.data_root, split='train', target_type='depth',
+    train_dst = vision.datasets.NYUv2(root=args.data_root, split='train', target_type='depth',
                       transforms=sT.Compose([
                           sT.Sync(sT.RandomRotation(5), sT.RandomRotation(5)),
                           sT.Sync(sT.RandomHorizontalFlip(),
@@ -45,7 +34,7 @@ def main():
                                    0.229, 0.224, 0.225]), sT.Lambda(lambda depth: depth.float() / 1000.))
                       ]),
                       )
-    test_dst = NYUv2(root=args.data_root, split='test', target_type='depth',
+    test_dst = vision.datasets.NYUv2(root=args.data_root, split='test', target_type='depth',
                      transforms=sT.Compose([
                          sT.Multi(sT.ToTensor(), sT.ToTensor(
                              normalize=False, dtype=torch.float)),
@@ -60,7 +49,7 @@ def main():
     print('train: %s, val: %s' % (len(train_loader), len(val_loader)))
 
     # Prepare model
-    model = segnet_vgg19_bn(num_classes=1, pretrained_backbone=True)
+    model = vision.models.segnet_vgg11_bn(num_classes=1, pretrained_backbone=True)
     task = engine.task.DepthTask(criterion=nn.L1Loss())
 
     # Prepare trainer
@@ -79,7 +68,7 @@ def main():
         optimizer, args.total_iters)
     evaluator = engine.evaluator.DepthEvaluator(val_loader)
     trainer = engine.trainer.SimpleTrainer(
-        task=task, model=model, viz=Visdom(port='19999', env='depth_NYUv2_vgg19_bn'))
+        task=task, model=model, viz=Visdom(port='19999', env='depth_NYUv2_vgg11_bn'))
 
     trainer.add_callbacks([
         engine.callbacks.LoggingCallback(
@@ -98,7 +87,7 @@ def main():
             interval=800,
             dataset=val_loader.dataset,
             idx_list_or_num_vis=5,  # select 5 images for visualization
-            denormalizer=Denormalizer(mean=[0.485, 0.456, 0.406], std=[
+            denormalizer=utils.Denormalizer(mean=[0.485, 0.456, 0.406], std=[
                                       0.229, 0.224, 0.225]),
             scale_to_255=True)     # 0~1 => 0~255
     ])

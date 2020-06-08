@@ -3,14 +3,11 @@ import os, sys
 import torch
 import torch.nn as nn
 
-from PIL import Image
-
 from kamal import engine, metrics
 from kamal.vision.models.classification import resnet18
 from torchvision.datasets import CIFAR10
 from torchvision import transforms as T
 from visdom import Visdom
-import random
  
 # 1. Run visdom server: $ visdom -p 29999
 # 2. python train_camvid.py --lr 0.01
