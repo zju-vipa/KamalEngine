@@ -1,14 +1,10 @@
 import argparse
-import os, sys
 import torch
 import torch.nn as nn
 
-from PIL import Image
-
-from kamal import engine, metrics
-from kamal.vision.models.classification.darknet import darknet19, darknet53
-from kamal.vision.datasets import ImageNet
+from kamal import engine, metrics, vision
 from kamal.vision import sync_transforms as sT
+
 from visdom import Visdom
 import random
  
@@ -20,7 +16,7 @@ def main():
     args = parser.parse_args()
 
     train_loader = torch.utils.data.DataLoader(
-        ImageNet(args.data_root, split='train', transform=sT.Compose([
+        vision.datasets.ImageNet(args.data_root, split='train', transform=sT.Compose([
             sT.RandomResizedCrop(224),
             sT.RandomHorizontalFlip(),
             sT.ToTensor(),
@@ -30,7 +26,7 @@ def main():
     )
 
     val_loader = torch.utils.data.DataLoader(
-        ImageNet(args.data_root, split='val', transform=sT.Compose([
+        vision.datasets.ImageNet(args.data_root, split='val', transform=sT.Compose([
                 sT.Resize(256),
                 sT.CenterCrop(224),
                 sT.ToTensor(),
@@ -42,9 +38,9 @@ def main():
     # Prepare model
     task = engine.task.ClassificationTask( criterion=nn.CrossEntropyLoss(ignore_index=255) )
     if args.model=='darknet19':
-        model = darknet19(num_classes=1000)
+        model = vision.models.classification.darknet19(num_classes=1000)
     elif args.model=='darknet53':
-        model = darknet53(num_classes=1000)
+        model = vision.models.classification.darknet53(num_classes=1000)
     
     # prepare trainer
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)

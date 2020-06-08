@@ -1,28 +1,13 @@
 import argparse
-import os
-import sys
-import numpy as np
 import torch
 import torch.nn as nn
 
-from PIL import Image
-
-from kamal import engine, metrics, loss
-
-from kamal.vision.models.segmentation import segnet_vgg11_bn, segnet_vgg16_bn, segnet_vgg19_bn
-from kamal.amalgamation.sbm import JointNet, SbmTrainer
-from kamal.vision.datasets import NYUv2
-from kamal.vision.datasets import LabelConcatDataset
-from kamal.utils import Denormalizer
+from kamal import engine, metrics, vision, amalgamation, utils
 from kamal.vision import sync_transforms as sT
-
 
 from visdom import Visdom
 import random
 
-# 1. Download dataset from https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid
-# 2. Run visdom server: $ visdom -p 29999
-# 3. python train_camvid.py --lr 0.01 --data_root /PATH/TO/CamVid
 
 
 def main():
@@ -32,9 +17,9 @@ def main():
                         default='~/Datasets/NYUv2')
     parser.add_argument('--total_iters', type=int, default=40000)
     parser.add_argument('--seg_path', type=str,
-                        default='~/SegNet/checkpoints/segnet_vgg11_bn-best-00009200-mIoU-0.446.pth')
+                        default='~/segnet_seg.pth')
     parser.add_argument('--depth_path', type=str,
-                        default='~/SegNet/checkpoints/depth_segnet_vgg11_bn-latest-00019600-rmse-2.885.pth')
+                        default='~/segnet_depth.pth')
     args = parser.parse_args()
 
     # tasks
@@ -47,18 +32,18 @@ def main():
     test_dst_list = []
     for task_name in tasks:
         if task_name == 'Segmentation':
-            train_dst = NYUv2(root=args.data_root,
+            train_dst = vision.datasets.NYUv2(root=args.data_root,
                               split='train', target_type='semantic')
-            test_dst = NYUv2(root=args.data_root, split='test',
+            test_dst = vision.datasets.NYUv2(root=args.data_root, split='test',
                              target_type='semantic')
         if task_name == 'Depth':
-            train_dst = NYUv2(root=args.data_root,
+            train_dst = vision.datasets.NYUv2(root=args.data_root,
                               split='train', target_type='depth')
-            test_dst = NYUv2(root=args.data_root, split='test',
+            test_dst = vision.datasets.NYUv2(root=args.data_root, split='test',
                              target_type='depth')
         train_dst_list.append(train_dst)
         test_dst_list.append(test_dst)
-    train_concat_dst = LabelConcatDataset(train_dst_list, tasks, transforms=sT.Compose([
+    train_concat_dst = vision.datasets.LabelConcatDataset(train_dst_list, tasks, transforms=sT.Compose([
         sT.Sync(sT.RandomCrop(320)),
         sT.Sync(sT.RandomRotation(5)),
         sT.Sync(sT.RandomHorizontalFlip()),
@@ -69,7 +54,7 @@ def main():
         sT.Multi(sT.Normalize(mean=[0.485, 0.456, 0.406], std=[
             0.229, 0.224, 0.225]), None, sT.Lambda(lambda depth: depth.float() / 1000.))
     ]))
-    test_concat_dst = LabelConcatDataset(test_dst_list, tasks, transforms=sT.Compose([
+    test_concat_dst = vision.datasets.LabelConcatDataset(test_dst_list, tasks, transforms=sT.Compose([
         sT.Multi(sT.ToTensor(), sT.ToTensor(
             normalize=False, dtype=torch.long), sT.ToTensor(
             normalize=False, dtype=torch.float)),
@@ -83,13 +68,13 @@ def main():
     print('train: %s, val: %s' % (len(train_loader), len(val_loader)))
 
     # Prepare model
-    teacher_seg_model = segnet_vgg11_bn(
+    teacher_seg_model = vision.models.segmentation.segnet_vgg11_bn(
         num_classes=13, pretrained_backbone=False)
     teacher_seg_model.load_state_dict(torch.load(args.seg_path))
-    teacher_dep_model = segnet_vgg11_bn(
+    teacher_dep_model = vision.models.segmentation.segnet_vgg11_bn(
         num_classes=1, pretrained_backbone=False)
     teacher_dep_model.load_state_dict(torch.load(args.depth_path))
-    joint_model = JointNet(
+    joint_model = amalgamation.sbm.JointNet(
         [teacher_seg_model, teacher_dep_model],
         indices=[3, 1],
         phase='block'
@@ -113,7 +98,7 @@ def main():
         optimizer, args.total_iters)
     evaluator = engine.evaluator.SbmEvaluator(
         val_loader, split_size=split_size, task=task, tasks=tasks)
-    trainer = SbmTrainer(
+    trainer = amalgamation.sbm.SbmTrainer(
         task=task, model=joint_model, teachers=[teacher_seg_model, teacher_dep_model], split_size=split_size, viz=Visdom(port='19999', env='sbm'))
 
     trainer.add_callbacks([
@@ -136,7 +121,7 @@ def main():
             split_size=split_size,
             tasks=tasks,
             idx_list_or_num_vis=5,  # select 5 images for visualization
-            denormalizer=Denormalizer(mean=[0.485, 0.456, 0.406], std=[
+            denormalizer=utils.Denormalizer(mean=[0.485, 0.456, 0.406], std=[
                                       0.229, 0.224, 0.225]),
             scale_to_255=True)     # 0~1 => 0~255
     ])
