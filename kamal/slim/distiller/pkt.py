@@ -8,10 +8,14 @@ import torch.nn as nn
 import time
 
 class PKTDistiller(KDDistiller):
-    def __init__(self, student, teacher, T=1.0, gamma=1.0, alpha=None, beta=None, logger=None, viz=None):
+    def __init__(self, student, teacher, T=1.0, gamma=1.0, alpha=None, beta=None, stu_hooks=[], tea_hooks=[], out_flags=[], logger=None, viz=None):
         super(PKTDistiller, self).__init__(student, teacher,
                                                  T=T, gamma=gamma, alpha=alpha, logger=logger, viz=viz)
         self._beta = beta
+
+        self.stu_hooks = stu_hooks
+        self.tea_hooks = tea_hooks
+        self.out_flags = out_flags
 
     def step(self):
         self.optimizer.zero_grad()
@@ -27,10 +31,13 @@ class PKTDistiller(KDDistiller):
             data, targets = self._train_loader_iter.next()
         data, targets = data.to(self.device), targets.to(self.device)
 
-        feat_s, s_out = self.student(data, is_feat=True)
+        s_out = self.student(data)
+        feat_s = [f.feat_out if flag else f.feat_in for (
+            f, flag) in zip(self.stu_hooks, self.out_flags)]
         with torch.no_grad():
-            feat_t, t_out = self.teacher(data, is_feat=True)
-            feat_t = [f.detach() for f in feat_t]
+            t_out = self.teacher(data)
+            feat_t = [f.feat_out.detach() if flag else f.feat_in for (
+                f, flag) in zip(self.tea_hooks, self.out_flags)]
         f_s = feat_s[-1]
         f_t = feat_t[-1]
         loss = self._gamma * nn.CrossEntropyLoss()(s_out, targets) + self._alpha * \
