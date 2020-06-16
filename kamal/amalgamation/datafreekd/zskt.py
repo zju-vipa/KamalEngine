@@ -2,6 +2,7 @@ from ...core import engine
 import torch
 import time
 import torch.nn.functional as F
+from ..utils import set_mode
 
 class ZSKTTrainer(engine.trainer.TrainerBase):
     def __init__(   self, 
@@ -27,10 +28,10 @@ class ZSKTTrainer(engine.trainer.TrainerBase):
         self.teacher.to(self.device)
         self.generator.to(self.device)
         self.train_loader = [0, ]
-
-        with engine.trainer.set_mode(self.student, training=True), \
-             engine.trainer.set_mode(self.teacher, training=False), \
-             engine.trainer.set_mode(self.generator, training=True):
+        
+        with set_mode(self.student, training=True), \
+             set_mode(self.teacher, training=False), \
+             set_mode(self.generator, training=True):
             super( ZSKTTrainer, self ).train( start_iter, max_iter )
     
     def search_optimizer(self, evaluator, train_loader, hpo_space=None, mode='min', max_evals=20, max_iters=400):

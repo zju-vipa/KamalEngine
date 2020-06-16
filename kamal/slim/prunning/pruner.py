@@ -5,7 +5,7 @@ from copy import deepcopy
 from hyperopt import fmin, tpe, hp
 import pickle, os
 import math
-from ..core.engine.trainer import TrainerBase
+from ...core.engine.trainer import TrainerBase
 
 class Pruner(object):
     def __init__(self, strategy):

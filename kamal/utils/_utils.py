@@ -5,6 +5,16 @@ import random
 from copy import deepcopy
 
 from ruamel.yaml import YAML
+
+import contextlib
+
+@contextlib.contextmanager
+def set_mode(model, training=True):
+    ori_mode = model.training
+    model.train(training)
+    yield
+    model.train(ori_mode)
+    
 def save_yaml(dic: dict, filepath: str):
     yaml=YAML()  
     with open(filepath, 'w') as f:
