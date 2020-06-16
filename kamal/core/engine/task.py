@@ -26,11 +26,15 @@ class ClassificationTask(TaskBase):
         loss = self.criterion(logits, targets.squeeze())
         return {'loss': loss}
 
-    def predict(self, model, inputs):
+    def get_logits(self, model, inputs):
         logits = model( inputs )
         # multiple output
         if isinstance(logits, (tuple, list)):
             logits = logits[-1]
+        return logits
+
+    def predict(self, model, inputs):
+        logits = self.get_logits(model, inputs)
         preds = logits.max(1)[1]
         return {'preds': preds}
 

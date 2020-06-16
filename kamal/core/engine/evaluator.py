@@ -21,11 +21,14 @@ class ClassificationEvaluator(EvaluatorBase):
     def __init__(self, 
                 data_loader, 
                 task=task.ClassificationTask(),
+                metrics=None,
                 progress=True):
         super(ClassificationEvaluator, self).__init__(data_loader, task)
-        self.metrics = metrics.StreamClassificationMetrics()
         self.progress = progress
-
+        if metrics is None:
+            metrics = metrics.StreamClassificationMetrics()
+        self.metrics = metrics
+    
     def eval(self, model, device=None):
         device = device if device is not None else \
             torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
@@ -34,9 +37,9 @@ class ClassificationEvaluator(EvaluatorBase):
         
         with torch.no_grad(), set_mode(model, training=False):
             for i, (inputs, targets) in enumerate( tqdm(self.data_loader, disable=not self.progress) ): 
-                inputs = inputs.to(device)
-                preds = self.task.predict( model, inputs )['preds']
-                self.metrics.update( preds, targets )
+                inputs, targets = inputs.to(device), targets.to(device)
+                logits = self.task.get_logits( model, inputs )
+                self.metrics.update( logits, targets )
         return self.metrics.get_results()
 
 class SegmentationEvaluator(ClassificationEvaluator):

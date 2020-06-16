@@ -4,7 +4,7 @@ import os
 import os.path
 
 from torchvision.datasets.vision import VisionDataset
-from torchvision.datasets.utils import download_url, makedir_exist_ok
+from torchvision.datasets.utils import download_url
 
 
 class Caltech101(VisionDataset):
@@ -33,7 +33,7 @@ class Caltech101(VisionDataset):
         self.train = train
         self.dir_name = '101_ObjectCategories_split/train' if self.train else '101_ObjectCategories_split/test'
         
-        makedir_exist_ok(self.root)
+        os.makdirs(self.root, exist_ok=True)
         if isinstance(target_type, list):
             self.target_type = target_type
         else:
@@ -159,7 +159,7 @@ class Caltech256(VisionDataset):
                  transform=None, target_transform=None,
                  download=False):
         super(Caltech256, self).__init__(os.path.join(root, 'caltech256'))
-        makedir_exist_ok(self.root)
+        os.makedirs(self.root, exist_ok=True)
         self.transform = transform
         self.target_transform = target_transform
 

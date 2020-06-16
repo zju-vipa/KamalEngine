@@ -1,4 +1,4 @@
-from .classification import StreamClassificationMetrics, StreamCEMAPMetrics
+from .classification import StreamClassificationMetrics, StreamClassificationTopKMetrics, StreamCEMAPMetrics
 from .segmentation import StreamSegmentationMetrics
 from .reconstruction import StreamReconstructionMetrics
 from .depth import StreamDepthMetrics
