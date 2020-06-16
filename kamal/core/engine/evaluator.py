@@ -4,7 +4,7 @@ from .. import metrics
 from . import task
 import torch
 from tqdm import tqdm
-from .trainer import set_mode
+from ...utils import set_mode
 
 import sys
 

@@ -8,18 +8,9 @@ import time
 import numpy as np 
 
 from ...utils.logger import get_logger
-from ...utils import comm
+from ...utils import comm, set_mode
 from .history import History
 from . import hpo
-
-import contextlib
-
-@contextlib.contextmanager
-def set_mode(model, training=True):
-    ori_mode = model.training
-    model.train(training)
-    yield
-    model.train(ori_mode)
 
 class TrainerBase(abc.ABC):
     def __init__(self, logger=None, viz=None):

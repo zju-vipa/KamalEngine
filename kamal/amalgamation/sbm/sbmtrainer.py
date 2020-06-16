@@ -1,5 +1,5 @@
 from ...core import engine
-from ...utils import comm
+from ...utils import comm, set_mode
 
 import torch
 import torch.nn as nn
@@ -7,14 +7,6 @@ import torch.nn as nn
 import typing
 import time
 import numpy as np 
-import contextlib
-
-@contextlib.contextmanager
-def set_mode(model, training=True):
-    ori_mode = model.training
-    model.train(training)
-    yield
-    model.train(ori_mode)
 
 class SbmTrainer(engine.trainer.MultitaskTrainer):
     def __init__(   self, 
