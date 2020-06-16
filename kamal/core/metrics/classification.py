@@ -8,11 +8,11 @@ class StreamClassificationMetrics(StreamMetricsBase):
         self.correct = 0
         self.total = 0
 
-    def update(self, preds, targets):
+    def update(self, logits, targets):
+        preds = logits.max(1)[1]
         if isinstance(preds, torch.Tensor):
             preds = preds.detach().cpu().numpy()
             targets = targets.detach().cpu().numpy()
-
         self.correct += (preds.flatten()==targets.flatten()).sum()
         self.total += len(targets)
 
@@ -26,13 +26,45 @@ class StreamClassificationMetrics(StreamMetricsBase):
     def reset(self):
         self.correct = self.total = 0
 
+
+class StreamClassificationTopKMetrics(StreamMetricsBase):
+    PRIMARY_METRIC = 'acc@1'
+    def __init__(self, topk=(1, )):
+        self.topk_correct = { k:0 for k in topk }
+        self.total = 0
+        self._max_k = max(topk)
+        self._topk = topk
+        
+    def update(self, logits, targets):
+        _, preds = logits.topk(self._max_k, dim=1, largest=True, sorted=True)
+        correct = preds.eq( targets.view(-1, 1).expand_as(preds) )
+        for k in self._topk:
+            self.topk_correct[k] += correct[:, :k].view(-1).float().sum(0).item()
+        self.total += len(targets)
+    
+    @staticmethod
+    def to_str(results):
+        topk_str = ""
+        for k, v in results:
+            topk_str+="%s: %.4f "%( k, results[k] )
+        return topk_str
+    
+    def get_results(self):
+        return { 'acc@%d'%k: self.topk_correct[k] / self.total for k in self._topk }
+
+    def reset(self):
+        self.correct = { k:0 for k in self._topk }
+        self.total = 0
+
+
 class StreamCEMAPMetrics():
     PRIMARY_METRIC = 'eap'
     def __init__(self):
         self.targets = None
         self.preds = None
 
-    def update(self, preds, targets):
+    def update(self, logits, targets):
+        preds = logits.max(1)[1]
         # targets: -1 negative, 0 difficult, 1 positive
         if isinstance(preds, torch.Tensor):
             preds = preds.cpu().numpy()
