@@ -8,13 +8,17 @@ import time
 
 
 class CCDistiller(KDDistiller):
-    def __init__(self, student, teacher, embed_s, embed_t, T=1.0, gamma=1.0, alpha=None, beta=None, logger=None, viz=None):
+    def __init__(self, student, teacher, embed_s, embed_t, T=1.0, gamma=1.0, alpha=None, beta=None, stu_hooks=[], tea_hooks=[], out_flags=[], logger=None, viz=None):
         super(CCDistiller, self).__init__(student, teacher, T=T,
                                           gamma=gamma, alpha=alpha, logger=logger, viz=viz)
         self.embed_s = embed_s
         self.embed_t = embed_t
 
         self._beta = beta
+
+        self.stu_hooks = stu_hooks
+        self.tea_hooks = tea_hooks
+        self.out_flags = out_flags
 
     def train(self, start_iter, max_iter, train_loader, optimizer, device=None):
         if device is None:
@@ -41,10 +45,13 @@ class CCDistiller(KDDistiller):
             data, targets = self._train_loader_iter.next()
         data, targets = data.to(self.device), targets.to(self.device)
 
-        feat_s, s_out = self.student(data, is_feat=True)
+        s_out = self.student(data)
+        feat_s = [f.feat_out if flag else f.feat_in for (
+            f, flag) in zip(self.stu_hooks, self.out_flags)]
         with torch.no_grad():
-            feat_t, t_out = self.teacher(data, is_feat=True)
-            feat_t = [f.detach() for f in feat_t]
+            t_out = self.teacher(data)
+            feat_t = [f.feat_out.detach() if flag else f.feat_in for (
+                f, flag) in zip(self.tea_hooks, self.out_flags)]
         f_s = self.embed_s(feat_s[-1])
         f_t = self.embed_t(feat_t[-1])
 
@@ -64,3 +71,24 @@ class CCDistiller(KDDistiller):
         info['step_time'] = float(step_time)
         info['lr'] = float(self.optimizer.param_groups[0]['lr'])
         self._gather_training_info(info)
+
+
+class LinearEmbed(nn.Module):
+    """
+        Linear Embedding
+        @inproceedings{tian2019crd,
+        title={Contrastive Representation Distillation},
+        author={Yonglong Tian and Dilip Krishnan and Phillip Isola},
+        booktitle={International Conference on Learning Representations},
+        year={2020}
+        }
+    """
+
+    def __init__(self, dim_in=1024, dim_out=128):
+        super(LinearEmbed, self).__init__()
+        self.linear = nn.Linear(dim_in, dim_out)
+
+    def forward(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.linear(x)
+        return x
