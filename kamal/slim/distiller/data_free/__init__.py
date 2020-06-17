@@ -1,1 +1,1 @@
-from .zskt import ZSKTTrainer
+from .zskt import ZSKTDistiller

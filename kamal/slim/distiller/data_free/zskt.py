@@ -1,10 +1,11 @@
 import torch
 import time
 import torch.nn.functional as F
-from ....core import engine
+from ..kd import KDDistiller
 from ....utils import set_mode
+from ....core.loss import kldiv
 
-class ZSKTTrainer(engine.trainer.TrainerBase):
+class ZSKTDistiller(KDDistiller):
     def __init__(   self, 
                     student,
                     teacher,
@@ -12,7 +13,7 @@ class ZSKTTrainer(engine.trainer.TrainerBase):
                     z_dim,
                     logger=None,
                     viz=None):
-        super(ZSKTTrainer, self).__init__(logger, viz)
+        super(ZSKTDistiller, self).__init__(logger, viz)
         self.teacher = teacher
         self.model = self.student = student
         self.generator = generator
@@ -32,7 +33,7 @@ class ZSKTTrainer(engine.trainer.TrainerBase):
         with set_mode(self.student, training=True), \
              set_mode(self.teacher, training=False), \
              set_mode(self.generator, training=True):
-            super( ZSKTTrainer, self ).train( start_iter, max_iter )
+            super( ZSKTDistiller, self ).train( start_iter, max_iter )
     
     def search_optimizer(self, evaluator, train_loader, hpo_space=None, mode='min', max_evals=20, max_iters=400):
         optimizer = hpo.search_optimizer(self, train_loader, evaluator=evaluator, hpo_space=hpo_space, mode=mode, max_evals=max_evals, max_iters=max_iters)
@@ -47,20 +48,20 @@ class ZSKTTrainer(engine.trainer.TrainerBase):
         self.optim_g.zero_grad()
         t_out = self.teacher( fake )
         s_out = self.student( fake )
-        loss_g = -F.l1_loss( s_out, t_out )
+        loss_g = -kldiv( s_out, t_out )
         loss_g.backward()
         self.optim_g.step()
 
         with torch.no_grad():
             fake = self.generator( z )
             t_out = self.teacher( fake.detach() )
-        for _ in range(5):
+        for _ in range(10):
             self.optim_s.zero_grad()
             s_out = self.student( fake.detach() )
-            loss_s = F.l1_loss( s_out, t_out )
+            loss_s = kldiv( s_out, t_out )
             loss_s.backward()
             self.optim_s.step()
-
+        
         loss_dict = {
             'loss_g': loss_g,
             'loss_s': loss_s,
