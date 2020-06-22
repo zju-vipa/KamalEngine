@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from torchvision.datasets.folder import default_loader
-from .utils import download_url, mkdir
+from .utils import download_url
 from torch.utils.data import Dataset
 import shutil
 
@@ -12,18 +12,15 @@ class CUB200(Dataset):
     filename = 'CUB_200_2011.tgz'
     tgz_md5 = '97eceeb196236b17998738112f37df78'
 
-    def __init__(self, root, split='train', transforms=None, loader=default_loader, download=False, offset=0):
-        self.root = root
-        self.transforms = transforms
+    def __init__(self, root, split='train', transform=None, loader=default_loader, download=False, offset=0):
+        self.root = os.path.abspath( os.path.expanduser( root ) )
+        self.transform = transform
         self.loader = default_loader
         self.split = split
         self.offset = offset
-
         if download:
             self.download()
-
         self._load_metadata()
-
         categories = os.listdir(os.path.join(
             self.root, 'CUB_200_2011', 'images'))
         categories.sort()
@@ -37,7 +34,6 @@ class CUB200(Dataset):
                                          sep=' ', names=['img_id', 'target'])
         train_test_split = pd.read_csv(os.path.join(self.root, 'CUB_200_2011', 'train_test_split.txt'),
                                        sep=' ', names=['img_id', 'is_training_img'])
-
         data = images.merge(image_class_labels, on='img_id')
         self.data = data.merge(train_test_split, on='img_id')
 
@@ -48,12 +44,9 @@ class CUB200(Dataset):
 
     def download(self):
         import tarfile
-
-        mkdir(self.root)
-
+        os.makedirs(self.root, exist_ok=True)
         if not os.path.isfile(os.path.join(self.root, self.filename)):
             download_url(self.url, self.root, self.filename)
-
         print("Extracting %s..." % self.filename)
         with tarfile.open(os.path.join(self.root, self.filename), "r:gz") as tar:
             tar.extractall(path=self.root)
@@ -68,6 +61,6 @@ class CUB200(Dataset):
         target = sample.target - 1
         img = self.loader(path)
 
-        if self.transforms is not None:
-            img = self.transforms(img)
+        if self.transform is not None:
+            img = self.transform(img)
         return img, target+self.offset

@@ -11,7 +11,6 @@ from visdom import Visdom
 # 1. Run visdom server: $ visdom -p 29999
 # 2. python train_camvid.py --lr 0.01
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--lr', type=float, default=0.01)
