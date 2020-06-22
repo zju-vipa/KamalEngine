@@ -84,7 +84,7 @@ class ValidationCallback(CallbackBase):
                         log_tag = "%s:%s"%(self.model_name, k)
                     trainer.viz.line([v, ], [trainer.iter, ], win=log_tag, update='append', opts={'title': log_tag})
 
-        primary_metric = self.evaluator.metrics.PRIMARY_METRIC
+        primary_metric = self.evaluator.metric.PRIMARY_METRIC
         score = results[primary_metric]
         trainer.history.put_scalars(score=score)
 
@@ -150,7 +150,6 @@ class MultitaskValidationCallback(ValidationCallback):
         self.split_size = split_size
         self.reverse_list = [False, True]
         self.best_ckpt_list = [None, None]
-
 
     def after_step(self):
         trainer = self.trainer()  # get the current trainer from weak reference

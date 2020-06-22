@@ -211,11 +211,14 @@ class ResNet(nn.Module):
 
 
 def _resnet(arch, block, layers, pretrained, progress, **kwargs):
+    num_classes = kwargs.pop('num_classes', None)
     model = ResNet(block, layers, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch],
                                               progress=progress)
         model.load_state_dict(state_dict)
+    if num_classes is not None and num_classes!=1000:
+        model.fc = nn.Linear( model.fc.in_features, num_classes )
     return model
 
 
