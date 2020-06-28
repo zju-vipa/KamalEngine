@@ -22,7 +22,7 @@ model_urls = {
 }
 
 class DeepLabV3(nn.Module):
-    def __init__(self, arch='deeplabv3_mobilenetv2', num_classes=21, output_stride=8, pretrained_backbone=False, aspp_dilate=None):
+    def __init__(self, arch='deeplabv3_mobilenetv2', num_classes=21, output_stride=16, pretrained_backbone=False, aspp_dilate=None):
         super(DeepLabV3, self).__init__()
         assert arch in __all__[1:], "arch_name for deeplab should be one of %s"%( __all__[1:] )
 
@@ -76,10 +76,11 @@ def _segm_resnet(name, backbone_name, num_classes, output_stride, pretrained_bac
     return backbone, classifier
 
 def _segm_mobilenet(name, backbone_name, num_classes, output_stride, pretrained_backbone, aspp_dilate=None):
-    if output_stride==8:
-        aspp_dilate = [12, 24, 36] if aspp_dilate is None else aspp_dilate
-    else:
-        aspp_dilate = [6, 12, 18] if aspp_dilate is None else aspp_dilate
+    if aspp_dilate is None:
+        if output_stride==8:
+            aspp_dilate = [12, 24, 36]
+        else:
+            aspp_dilate = [6, 12, 18]
 
     backbone = mobilenetv2.mobilenet_v2(pretrained=pretrained_backbone, output_stride=output_stride)
     

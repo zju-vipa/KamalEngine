@@ -12,12 +12,13 @@ class CUB200(Dataset):
     filename = 'CUB_200_2011.tgz'
     tgz_md5 = '97eceeb196236b17998738112f37df78'
 
-    def __init__(self, root, split='train', transform=None, loader=default_loader, download=False, offset=0):
+    def __init__(self, root, split='train', transform=None, target_transform=None, loader=default_loader, download=False):
         self.root = os.path.abspath( os.path.expanduser( root ) )
         self.transform = transform
+        self.target_transform = target_transform
         self.loader = default_loader
         self.split = split
-        self.offset = offset
+
         if download:
             self.download()
         self._load_metadata()
@@ -58,9 +59,11 @@ class CUB200(Dataset):
         sample = self.data.iloc[idx]
         path = os.path.join(self.root, 'CUB_200_2011',
                             self.base_folder, sample.filepath)
-        target = sample.target - 1
+        lbl = sample.target - 1
         img = self.loader(path)
 
         if self.transform is not None:
             img = self.transform(img)
-        return img, target+self.offset
+        if self.target_transform is not None:
+            lbl = self.target_transform(lbl)
+        return img, lbl

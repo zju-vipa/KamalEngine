@@ -10,7 +10,7 @@ Subpackages
    kamal.core
    kamal.datasets
    kamal.layer_wise_ka
-   kamal.losses
+   kamal.criteriones
    kamal.metrics
    kamal.misc
    kamal.models

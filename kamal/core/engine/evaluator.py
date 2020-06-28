@@ -1,17 +1,21 @@
-import abc
-from contextlib import contextmanager
-from .. import metrics
-from . import task
+import abc, sys
 import torch
 from tqdm import tqdm
+
+from . import task
+from .. import metrics
 from ...utils import set_mode
 
-import sys
-
 class EvaluatorBase(abc.ABC):
-    def __init__(self, data_loader, task):
+    
+    @property
+    def PRIMARY_METRIC(self):
+        return self.metric.PRIMARY_METRIC
+
+    def __init__(self, data_loader, metric, task):
         self.data_loader = data_loader
         self.task = task
+        self.metric = metric
 
     @abc.abstractmethod
     def eval(self, model):
@@ -20,37 +24,50 @@ class EvaluatorBase(abc.ABC):
 class ClassificationEvaluator(EvaluatorBase):
     def __init__(self, 
                 data_loader, 
-                task=task.ClassificationTask(),
                 metric=None,
+                task=task.ClassificationTask(),
                 progress=True):
-        super(ClassificationEvaluator, self).__init__(data_loader, task)
-        self.progress = progress
         if metric is None:
             metric = metrics.StreamClassificationMetrics()
-        self.metric = metric
-    
-    def eval(self, model, device=None):
+        super(ClassificationEvaluator, self).__init__(data_loader, metric, task)
+        self.progress = progress
+
+    def eval(self, model, device=None, postprocess=None):
         device = device if device is not None else \
             torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
         self.metric.reset()
         model.to(device)
-        
         with torch.no_grad(), set_mode(model, training=False):
             for i, (inputs, targets) in enumerate( tqdm(self.data_loader, disable=not self.progress) ): 
                 inputs, targets = inputs.to(device), targets.to(device)
-                logits = self.task.get_logits( model, inputs )
-                self.metric.update( logits, targets )
+                outputs = self.task.get_outputs( model, inputs )
+                if postprocess is not None:
+                    outputs = postprocess( outputs )
+                self.metric.update( outputs, targets )
         return self.metric.get_results()
 
+
 class SegmentationEvaluator(ClassificationEvaluator):
-    def __init__(self, num_classes, data_loader, task=task.SegmentationTask(), progress=True):
-        super( SegmentationEvaluator, self ).__init__(data_loader, task, progress)
-        self.metric = metric.StreamSegmentationMetrics(num_classes, ignore_index=255)
+    def __init__(self, 
+                 num_classes, 
+                 data_loader, 
+                 metric=None,
+                 task=task.SegmentationTask(), 
+                 progress=True):
+        if metric is None:
+            metric = metrics.StreamSegmentationMetrics(num_classes, ignore_index=255)
+        super( SegmentationEvaluator, self ).__init__(data_loader=data_loader, metric=metric, task=task, progress=progress)
+
 
 class DepthEvaluator(EvaluatorBase):
-    def __init__(self, data_loader, task=task.DepthTask(),progress=True):
-        super(DepthEvaluator, self).__init__(data_loader, task)
-        self.metric = metrics.StreamDepthMetrics(thresholds=[1.25, 1.25**2, 1.25**3])
+    def __init__(self, 
+                data_loader, 
+                metric=None,
+                task=task.MonocularDepthTask(),
+                progress=True):
+        if metric is None:
+            metric = metrics.StreamDepthMetrics(thresholds=[1.25, 1.25**2, 1.25**3])
+        super(DepthEvaluator, self).__init__(data_loader, metric, task)
         self.progress = progress
     
     def eval(self, model, device=None):
@@ -59,16 +76,21 @@ class DepthEvaluator(EvaluatorBase):
         self.metric.reset()
         model.to(device)
         with torch.no_grad(), set_mode(model, training=False):
-            for i, (images, targets) in enumerate( tqdm(self.data_loader, disable=not self.progress) ):
-                images, targets = images.to(device), targets.to(device)
-                outs = model( images ) 
-                self.metric.update(outs, targets)
-
+            for i, (inputs, targets) in enumerate( tqdm(self.data_loader, disable=not self.progress) ):
+                inputs, targets = inputs.to(device), targets.to(device)
+                outputs = self.task.get_outputs( model, inputs )
+                self.metric.update(outputs, targets)
         return self.metric.get_results()
 
+
 class CriterionEvaluator(EvaluatorBase):
-    def __init__(self, data_loader, task, progress=True):
-        super(CriterionEvaluator, self).__init__(data_loader, task)
+
+    @property
+    def PRIMARY_METRIC(self):
+        return 'loss'
+    
+    def __init__(self, data_loader, task, progress=False):
+        super(CriterionEvaluator, self).__init__(data_loader, None, task)
         self.progress = progress
 
     def eval(self, model, device=None):
@@ -79,9 +101,10 @@ class CriterionEvaluator(EvaluatorBase):
         with torch.no_grad(), set_mode(model, training=False):
             for i, (inputs, targets) in enumerate( tqdm(self.data_loader, disable=not self.progress) ): 
                 inputs, targets = inputs.to(device), targets.to(device)
-                loss = self.task.get_loss( model, inputs, targets )['loss']
+                loss = sum(self.task.get_loss( model, inputs, targets ))
                 avg_loss+=loss.item()
-        return avg_loss/len(self.data_loader)
+        return {'loss': (avg_loss / len(self.data_loader))}
+
 
 class MultitaskEvaluator(EvaluatorBase):
     def __init__(self, data_loader, split_size, tasks, task=task.SbmTask(), progress=True):

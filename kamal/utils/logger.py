@@ -2,7 +2,6 @@ import logging
 import os, sys
 from termcolor import colored
 
-
 class _ColorfulFormatter(logging.Formatter):
     def __init__(self, *args, **kwargs):
         super(_ColorfulFormatter, self).__init__(*args, **kwargs)

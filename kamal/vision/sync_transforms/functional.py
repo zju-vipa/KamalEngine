@@ -34,22 +34,28 @@ def _is_tensor_image(img):
 def _is_numpy_image(img):
     return isinstance(img, np.ndarray) and (img.ndim in {2, 3})
 
+def _is_numpy(img):
+    return isinstance(img, np.ndarray)
 
-def to_tensor(pic, normalize=True, dtype=torch.long):
+def to_tensor(pic, normalize=True, dtype=None):
+    img = _to_tensor( pic, normalize=normalize )
+    if dtype is not None:
+        img = img.to(dtype=dtype)
+    return img
+
+def _to_tensor(pic, normalize):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
-
     See ``ToTensor`` for more details.
-
     Args:
         pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
-        normalize: (bool): scaling the input image
-        dtype: (int): type of output tensor. This arg works only when normalize=False.
-
     Returns:
         Tensor: Converted image.
     """
-    if not(_is_pil_image(pic) or _is_numpy_image(pic)):
+    if not(_is_pil_image(pic) or _is_numpy(pic)):
         raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
+
+    if _is_numpy(pic) and not _is_numpy_image(pic):
+        raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
 
     if isinstance(pic, np.ndarray):
         # handle numpy array
@@ -58,9 +64,7 @@ def to_tensor(pic, normalize=True, dtype=torch.long):
 
         img = torch.from_numpy(pic.transpose((2, 0, 1)))
         # backward compatibility
-        if not normalize:
-            return img.to(dtype=dtype)
-        if isinstance(img, torch.ByteTensor):
+        if normalize==True and isinstance(img, torch.ByteTensor):
             return img.float().div(255)
         else:
             return img
@@ -72,30 +76,20 @@ def to_tensor(pic, normalize=True, dtype=torch.long):
 
     # handle PIL Image
     if pic.mode == 'I':
-        img = torch.from_numpy(np.array(pic, np.int32, copy=False))
+        img = torch.from_numpy(np.array(pic, np.int32))
     elif pic.mode == 'I;16':
-        img = torch.from_numpy(np.array(pic, np.int16, copy=False))
+        img = torch.from_numpy(np.array(pic, np.int16))
     elif pic.mode == 'F':
-        img = torch.from_numpy(np.array(pic, np.float32, copy=False))
+        img = torch.from_numpy(np.array(pic, np.float32))
     elif pic.mode == '1':
-        img = 255 * torch.from_numpy(np.array(pic, np.uint8, copy=False))
+        img = 255 * torch.from_numpy(np.array(pic, np.uint8))
     else:
         img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-    # PIL image mode: L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK
-    if pic.mode == 'YCbCr':
-        nchannel = 3
-    elif pic.mode == 'I;16':
-        nchannel = 1
-    else:
-        nchannel = len(pic.mode)
-    img = img.view(pic.size[1], pic.size[0], nchannel)
-    # put it from HWC to CHW format
-    # yikes, this transpose takes 80% of the loading time/CPU
-    img = img.transpose(0, 1).transpose(0, 2).contiguous()
 
-    if not normalize:
-        return img.to(dtype=dtype)
-    if isinstance(img, torch.ByteTensor):
+    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    # put it from HWC to CHW format
+    img = img.permute((2, 0, 1)).contiguous()
+    if normalize==True and isinstance(img, torch.ByteTensor):
         return img.float().div(255)
     else:
         return img

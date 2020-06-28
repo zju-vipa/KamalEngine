@@ -32,6 +32,7 @@ class StreamMetricsBase(ABC):
         """ Overridden by subclasses """
         raise NotImplementedError()
 
+
 class AverageMeter(object):
     """ Average Record
     """

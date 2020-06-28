@@ -57,8 +57,8 @@ class FGVCAircraft(data.Dataset):
     class_types = ('variant', 'family', 'manufacturer')
     splits = ('train', 'val', 'trainval', 'test')
 
-    def __init__(self, root, class_type='variant', split='train', transforms=None,
-                 target_transforms=None, loader=default_loader, download=False, offset=0):
+    def __init__(self, root, class_type='variant', split='train', transform=None,
+                 target_transform=None, loader=default_loader, download=False):
         if split not in self.splits:
             raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
                 split, ', '.join(self.splits),
@@ -71,7 +71,6 @@ class FGVCAircraft(data.Dataset):
         self.root = root
         self.class_type = class_type
         self.split = split
-        self.offset = offset
         self.classes_file = os.path.join(self.root, 'fgvc-aircraft-2013b', 'data',
                                          'images_%s_%s.txt' % (self.class_type, self.split))
         if download:
@@ -80,8 +79,8 @@ class FGVCAircraft(data.Dataset):
         (image_ids, targets, classes, class_to_idx) = find_classes(self.classes_file)
         samples = make_dataset(self.root, image_ids, targets)
 
-        self.transforms = transforms
-        self.target_transforms = target_transforms
+        self.transform = transform
+        self.target_transform = target_transform
         self.loader = loader
 
         self.samples = samples
@@ -102,12 +101,11 @@ class FGVCAircraft(data.Dataset):
 
         path, target = self.samples[index]
         sample = self.loader(path)
-        if self.transforms is not None:
-            sample = self.transforms(sample)
-        if self.target_transforms is not None:
-            target = self.target_transforms(target)
-
-        return sample, target+self.offset
+        if self.transform is not None:
+            sample = self.transform(sample)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        return sample, target
 
     def __len__(self):
         return len(self.samples)

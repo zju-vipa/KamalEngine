@@ -1,6 +1,6 @@
-from .stream_metrics import StreamMetricsBase
 from pytorch_msssim import ssim, ms_ssim
-from ..loss.functional import psnr
+from .stream_metrics import StreamMetricsBase
+from ..criterion.functional import psnr
 
 class StreamReconstructionMetrics(StreamMetricsBase):
     PRIMARY_METRIC = 'ms-ssim'

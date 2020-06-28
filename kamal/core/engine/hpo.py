@@ -3,82 +3,157 @@ import torch
 from copy import deepcopy
 from ruamel_yaml import YAML
 import os
+import tempfile
+import uuid
+import contextlib
+import typing
+import numpy as np
+from tqdm import tqdm
 
-def search_optimizer(trainer, train_loader, evaluator, hpo_space=None, mode='min', max_evals=20, max_iters=400):
-    hpo = HPO(trainer, train_loader, evaluator)
-    trainer.set_callbacks(enable=False)
-    optimizer = hpo.search(max_evals=max_evals, max_iters=max_iters, hpo_space=hpo_space, mode=mode)
-    trainer.set_callbacks(enable=True)
-    return optimizer
+from . import evaluator, callbacks
 
-class HPO(object):
-    def __init__(self, trainer, train_loader, evaluator, saved_hp=None):
+@contextlib.contextmanager
+def stack_callbasks(trainer):
+    callbacks = trainer.callbacks
+    trainer.callbacks = []
+    yield
+    trainer.callbacks = callbacks
+
+def find_learning_rate(trainer, evaluator, lr_range=None, max_iter=400, num_eval=None, mode='min', progress=True):
+    lr_finder = LRFinder(trainer)
+    lr = lr_finder.find_lr(evaluator=evaluator, lr_range=lr_range, max_iter=max_iter, num_eval=num_eval, mode=mode, progress=progress )
+    return lr
+
+class _LRFinderScheduler(torch.optim.lr_scheduler._LRScheduler):
+    def __init__(self,
+                 optimizer,
+                 lr_range,
+                 max_iter,
+                 progress=False,
+                 last_epoch=-1):
+        self.lr_range = lr_range
+        self.max_iter = max_iter
+        self._pbar = tqdm(total=max_iter, desc='[LR Finder]') if progress else None
+
+        super(_LRFinderScheduler, self).__init__(optimizer, last_epoch)
+    
+    def get_lr(self):
+        curr_iter = self.last_epoch + 1
+        if self._pbar is not None:
+            self._pbar.update(1)
+        
+        return [self.lr_range[0] + (self.lr_range[1]-self.lr_range[0]) * curr_iter / self.max_iter for group in self.optimizer.param_groups]
+
+class _LRFinderCallback(callbacks.CallbackBase):
+    def __init__(self,
+                 interval,
+                 evaluator,
+                 model_name='model'):
+        self._interval = interval
+        self._evaluator = evaluator
+        self._model_name = model_name
+        self._records = []
+        
+    @property
+    def records(self):
+        return self._records
+
+    def reset(self):
+        self._records = []
+
+    def after_step(self):
+        trainer = self.trainer()  # get the current trainer from weak reference
+        if trainer.iter == 0 or trainer.iter % self._interval != 0:
+            return       
+        model = getattr( trainer, self._model_name )
+        optimizer = getattr( trainer, 'optimizer' )
+        results = self._evaluator.eval( model )
+
+        lr = optimizer.param_groups[0]['lr']
+        score = results[ self._evaluator.PRIMARY_METRIC ]
+        self._records.append( ( lr, score ) )
+
+    def suggest( self, mode='min', skip_begin=2, skip_end=2 ):
+        scores = np.array( [ self._records[i][1] for i in range( len(self.records) ) ] )[skip_begin:-skip_end]
+        grad = np.gradient( scores )
+        index = grad.argmin() if mode=='min' else grad.argmax() 
+        index = skip_begin + index
+        return index, self.records[index][0]
+
+class LRFinder(object):
+    def __init__(self, trainer, model_name='model'):
         self.trainer = trainer
-        self.evaluator = evaluator
-        self.train_loader = train_loader
-        self.saved_hp = saved_hp
+        # save init state
+        _filename = str(uuid.uuid4())+'.pth'
+        _tempdir = tempfile.gettempdir()
+        self._temp_file = os.path.join(_tempdir, _filename)
+        init_state = {
+            'optimizer': self.trainer.optimizer.state_dict(),
+            'model': self.trainer.model.state_dict()
+        }
+        torch.save(init_state, self._temp_file)
 
-        self._ori_model = trainer.model # keep the original model
+    def _reset(self):
+        init_state = torch.load( self._temp_file )
+        self.trainer.model.load_state_dict( init_state['model'] )
+        self.trainer.optimizer.load_state_dict( init_state['optimizer'] )
+        try: 
+            self.trainer.reset()
+        except: 
+            pass
 
-    def search( self, max_evals=50, max_iters=200, hpo_space=None, mode='min'):
-        
-        def objective_fn(space):
-            trainer = self.trainer
-            trainer.logger.info("[HPO] hp: %s"%space)
-            trainer.model = deepcopy( self._ori_model )
-            try: self.trainer.reset()
-            except: pass 
-            opt_params = space['opt']
-            name = opt_params.pop('type')
-            optimizer = self._prepare_optimizer(trainer.model, name, opt_params)
-            trainer.train(0, max_iters, train_loader=self.train_loader, optimizer=optimizer)
-            score = self.evaluator.eval( trainer.model )
-            if isinstance(score, dict):
-                score = score[ self.evaluator.metrics.PRIMARY_METRIC ]
-            trainer.logger.info("[HPO] score: %.4f"%score)
-            return (score if mode=='min' else -score )
-        
-        #if self.saved_hp is not None and os.path.exists(self.saved_hp):
-        #    with open(self.saved_hp, 'r')as f:
-        #        hp = YAML().load( f )
-        #else:
-        if hpo_space is None:
-            hpo_space = self._get_default_space()
-        best_hp = fmin(  fn=objective_fn,
-                            space=hpo_space,
-                            algo=tpe.suggest,
-                            max_evals=max_evals, 
-                            verbose=1)
-        hp = dict()
-        for k, v in best_hp.items():
-            if ':' in k:
-                hp[ k.split(':')[1] ] = float(v)
-        hp['opt'] = 'Adam' if best_hp['opt']==0 else 'SGD'
-        name = hp.pop('opt')
-        self.trainer.model = self._ori_model # reset trainer.model
-        optimizer = self._prepare_optimizer( self.trainer.model, name, hp )
-        return optimizer
-        
-    def _prepare_optimizer(self, model, name, params):
-        if name.lower()=='adam':
-            return torch.optim.Adam( model.parameters(), **params)    
-        elif name.lower()=='sgd':
-            return torch.optim.SGD(model.parameters(), **params)   
+    def _adjust_learning_rate(self, optimizer, lr):
+        for group in optimizer.param_groups:
+            group['lr'] = lr
 
-    def _get_default_space(self):
-        space = {
-                'opt': hp.choice('opt', [
-                        { 
-                            'type': 'adam', 
-                            'lr':  hp.quniform('adam:lr', 1e-5, 1e-2, 5e-5 ), 
-                            'weight_decay': hp.quniform('adam:weight_decay', 0, 1e-3, 1e-5),
-                        },
-                        {
-                            'type': 'sgd',
-                            'lr': hp.quniform('sgd:lr', 1e-3, 0.2, 2e-3),
-                            'momentum': hp.choice('sgd:momentum', [0.5, 0.9]),
-                            'weight_decay': hp.quniform('sgd:weight_decay', 0, 1e-3, 1e-5),
-                        }
-                ])
-            }
-        return space
+    def _get_default_lr_range(self):
+        if isinstance( self.trainer.optimizer, torch.optim.Adam ):
+            return ( 1e-5, 1e-2 )
+        elif isinstance( self.trainer.optimizer, torch.optim.SGD ):
+            return ( 1e-3, 0.2 )
+        else:
+            return ( 1e-5, 0.5)
+    
+    def find_lr(self, evaluator, lr_range, max_iter, num_eval, mode='min', progress=True):
+        if num_eval is None or num_eval > max_iter:
+            num_eval = max_iter
+
+        if lr_range is None:
+            lr_range = self._get_default_lr_range()
+
+        interval = max_iter // num_eval
+        lr_sched = _LRFinderScheduler(self.trainer.optimizer, lr_range, max_iter=max_iter, progress=progress)
+        self._finder_callback = _LRFinderCallback(interval=interval, evaluator=evaluator)
+        self._lr_callback = callbacks.LRSchedulerCallback(interval=1, scheduler=[lr_sched])
+        self._adjust_learning_rate( self.trainer.optimizer, lr_range[0] )
+
+        with stack_callbasks(self.trainer):
+            # add new callbacks
+            self.trainer.add_callbacks([
+                self._finder_callback,
+                self._lr_callback,
+            ])
+            self.trainer.run( 0, max_iter )
+        index, best_lr = self._finder_callback.suggest(mode=mode)
+        self._reset()
+        self._adjust_learning_rate( self.trainer.optimizer, lr=best_lr )
+        return best_lr
+
+    def plot(self, suggest: bool = False, show: bool = False):
+        import matplotlib.pyplot as plt
+        lrs = []
+        scores = []
+        for rec in self._records:
+            lrs.append( rec[0] )
+            scores.append( rec[1] )
+        
+        fig, ax = plt.subplots()
+        ax.plot(lrs, scores)
+        ax.set_xlabel("Learning rate")
+        ax.set_ylabel("Score")
+        if suggest:
+            index, best_lr = self.suggestion()
+            ax.plot(lrs[index], scores[index], markersize=10, marker='o', color='red')
+        if show:
+            plt.show()
+        return fig

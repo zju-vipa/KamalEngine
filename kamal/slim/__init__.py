@@ -1,2 +1,2 @@
 from .prunning import Pruner
-from .distiller import *
+from .distillation import *
