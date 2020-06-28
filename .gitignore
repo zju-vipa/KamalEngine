@@ -14,5 +14,9 @@ modelzoo
 pruned_models
 models_old
 logs
+run
 
 exported
+
+cub200_resnet18
+stanford_dogs_resnet18
