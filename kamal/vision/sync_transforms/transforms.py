@@ -13,7 +13,6 @@ import numbers
 import types
 import collections
 import warnings
-import weakref
 import typing
 
 from . import functional as F
@@ -43,19 +42,21 @@ _pil_interpolation_to_str = {
 
 class Sync(object):
     def __init__(self, *transforms):
-        for i in range(len(transforms)):
-            transforms[i].sync_group = weakref.ref( self )
         self.transforms = transforms
-        self.shared_params = None
 
     def __call__(self, *inputs):
-        self.shared_params = None # reset
+        shared_params = None
+        outputs = []
         if len(self.transforms)==1:
-            outputs = [ self.transforms[0](input) for input in inputs ]
+            for input in inputs:
+                out, shared_params = self.transforms[0](input, params=shared_params, return_params=True)
+                outputs.append( out )
         else:
             assert len(inputs) == len(self.transforms), \
                 "Expected %d inputs, but got %d"%( len(self.transforms), len(inputs) )
-            outputs = [ trans(input) for (input, trans) in zip( inputs, self.transforms ) ]
+            for (input, trans) in zip( inputs, self.transforms ):
+                out, shared_params = trans(input, params=shared_params, return_params=True)
+                outputs.append( out )
         return outputs
     
     def _format_transform_repr(self, transform, head):
@@ -112,15 +113,16 @@ class Compose(object):
         self.transforms = []
         for t in transforms:
             if isinstance( t, typing.Sequence ):
-                self.transforms.append( StandardTransform( t ) )
+                self.transforms.append( Multi( t ) )
             else:
                 self.transforms.append(t)
 
     def __call__(self, *imgs):
         if len(imgs)==1:
+            imgs = imgs[0]
             for t in self.transforms:
-                imgs = (t(*imgs), )
-            return imgs[0]
+                imgs = t(imgs)
+            return imgs
         else:
             for t in self.transforms:
                 imgs = t(*imgs)
@@ -144,11 +146,11 @@ class ToTensor(object):
     This class is identical to torchvision.transforms.ToTensor if normalize=True.
     If normalize=False, tensors of type dtype will be returned without scaling.
     """
-    def __init__(self, normalize=True, dtype=torch.long):
+    def __init__(self, normalize=True, dtype=None):
         self.normalize=normalize
         self.dtype=dtype
 
-    def __call__(self, pic):
+    def __call__(self, pic, params=None, return_params=False):
         """
         Args:
             pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
@@ -156,11 +158,12 @@ class ToTensor(object):
         Returns:
             Tensor: Converted image.
         """
+        if return_params:
+            return F.to_tensor(pic, self.normalize, self.dtype), None
         return F.to_tensor(pic, self.normalize, self.dtype)
 
     def __repr__(self):
         return self.__class__.__name__ + '(Normalize={0})'.format(self.normalize)
-
 
 class ToPILImage(object):
     """Convert a tensor or an ndarray to PIL Image.
@@ -182,7 +185,7 @@ class ToPILImage(object):
     def __init__(self, mode=None):
         self.mode = mode
 
-    def __call__(self, pic):
+    def __call__(self, pic, params=None, return_params=False):
         """
         Args:
             pic (Tensor or numpy.ndarray): Image to be converted to PIL Image.
@@ -191,6 +194,8 @@ class ToPILImage(object):
             PIL Image: Image converted to PIL Image.
 
         """
+        if return_params:
+            return F.to_pil_image(pic, self.mode), None
         return F.to_pil_image(pic, self.mode)
 
     def __repr__(self):
@@ -220,7 +225,7 @@ class Normalize(object):
         self.std = std
         self.inplace = inplace
 
-    def __call__(self, tensor):
+    def __call__(self, tensor, params=None, return_params=False ):
         """
         Args:
             tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
@@ -228,6 +233,8 @@ class Normalize(object):
         Returns:
             Tensor: Normalized Tensor image.
         """
+        if return_params:
+            F.normalize(tensor, self.mean, self.std, self.inplace), None
         return F.normalize(tensor, self.mean, self.std, self.inplace)
 
     def __repr__(self):
@@ -252,7 +259,7 @@ class Resize(object):
         self.size = size
         self.interpolation = interpolation
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be scaled.
@@ -260,6 +267,8 @@ class Resize(object):
         Returns:
             PIL Image: Rescaled image.
         """
+        if return_params:
+            return F.resize(img, self.size, self.interpolation), None
         return F.resize(img, self.size, self.interpolation)
 
     def __repr__(self):
@@ -292,7 +301,7 @@ class CenterCrop(object):
         else:
             self.size = size
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be cropped.
@@ -300,6 +309,8 @@ class CenterCrop(object):
         Returns:
             PIL Image: Cropped image.
         """
+        if return_params:
+            return F.center_crop(img, self.size), None
         return F.center_crop(img, self.size)
 
     def __repr__(self):
@@ -348,7 +359,7 @@ class Pad(object):
         self.fill = fill
         self.padding_mode = padding_mode
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False ):
         """
         Args:
             img (PIL Image): Image to be padded.
@@ -356,6 +367,8 @@ class Pad(object):
         Returns:
             PIL Image: Padded image.
         """
+        if return_params:
+            return F.pad(img, self.padding, self.fill, self.padding_mode), None
         return F.pad(img, self.padding, self.fill, self.padding_mode)
 
     def __repr__(self):
@@ -374,14 +387,13 @@ class Lambda(object):
         assert callable(lambd), repr(type(lambd).__name__) + " object is not callable"
         self.lambd = lambd
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
+        if return_params:
+            return self.lambd(img), None
         return self.lambd(img)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
-
-
-
 
 
 class RandomTransforms(object):
@@ -419,23 +431,17 @@ class RandomApply(RandomTransforms):
         super(RandomApply, self).__init__(transforms)
         self.p = p
 
-    def __call__(self, img):
-        
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+    def __call__(self, img, params=None, return_params=False):
+        if params is None: 
             p = random.random()
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                p = random.random()
-                sync_group.shared_params = p
-            else: # sync, read params from shared_params
-                p = sync_group.shared_params
-
+            p = params
         if self.p < p:
             return img
         for t in self.transforms:
             img = t(img)
+        if return_params:
+            return img, p
         return img
 
     def __repr__(self):
@@ -450,39 +456,28 @@ class RandomApply(RandomTransforms):
 class RandomOrder(RandomTransforms):
     """Apply a list of transformations in a random order
     """
-    def __call__(self, img):
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+    def __call__(self, img, params=None, return_params=False):
+        if params is None: # no sync
             order = list(range(len(self.transforms)))
             random.shuffle(order)
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                order = list(range(len(self.transforms)))
-                random.shuffle(order)
-                sync_group.shared_params = order
-            else: # sync, read params from shared_params
-                order = sync_group.shared_params
-
+            order = params
         for i in order:
             img = self.transforms[i](img)
+        if return_params:
+            return img, order
         return img
 
 class RandomChoice(RandomTransforms):
     """Apply single transformation randomly picked from a list
     """
-    def __call__(self, img):
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+    def __call__(self, img, params=None, return_params=False):
+        if params is None:
             t = random.choice(self.transforms)
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                t = random.choice(self.transforms)
-                sync_group.shared_params = t
-            else: # sync, read params from shared_params
-                t = sync_group.shared_params
-        
+            t = params
+        if return_params:
+            return t(img), t
         return t(img)
 
 class RandomCrop(object):
@@ -551,7 +546,7 @@ class RandomCrop(object):
         j = random.randint(0, w - tw)
         return i, j, th, tw
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be cropped.
@@ -569,16 +564,12 @@ class RandomCrop(object):
         if self.pad_if_needed and img.size[1] < self.size[0]:
             img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
 
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync 
+        if params is None: # no sync 
             i, j, h, w = self.get_params(img, self.size)
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                i, j, h, w = self.get_params(img, self.size)
-                sync_group.shared_params = (i,j,h,w)
-            else: # sync, read params from shared_params
-                i, j, h, w = sync_group.shared_params
+            i, j, h, w = params
+        if return_params:
+            return F.crop(img, i, j, h, w), (i,j,h,w)
         return F.crop(img, i, j, h, w)
 
     def __repr__(self):
@@ -595,7 +586,7 @@ class RandomHorizontalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be flipped.
@@ -603,19 +594,17 @@ class RandomHorizontalFlip(object):
         Returns:
             PIL Image: Randomly flipped image.
         """
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+        if params is None:
             p = random.random()
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                p = random.random()
-                sync_group.shared_params = p
-            else: # sync, read params from shared_params
-                p = sync_group.shared_params
+            p = params
 
         if p < self.p:
+            if return_params:
+                return F.hflip(img), p
             return F.hflip(img)
+        if return_params:
+            return img, p
         return img
 
     def __repr__(self):
@@ -632,7 +621,7 @@ class RandomVerticalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be flipped.
@@ -640,19 +629,14 @@ class RandomVerticalFlip(object):
         Returns:
             PIL Image: Randomly flipped image.
         """
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+        if params is None: # no sync
             p = random.random()
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                p = random.random()
-                sync_group.shared_params = p
-            else: # sync, read params from shared_params
-                p = sync_group.shared_params
-
+            p = params
         if p < self.p:
             return F.vflip(img)
+        if return_params:
+            return img, p
         return img
 
     def __repr__(self):
@@ -676,7 +660,7 @@ class RandomPerspective(object):
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be Perspectively transformed.
@@ -687,32 +671,21 @@ class RandomPerspective(object):
         if not F._is_pil_image(img):
             raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
         
-        sync_group = getattr( self, 'sync_group', None )
-        if sync_group is None : # no sync or the first transform
+        if params is None : # no sync or the first transform
             p = random.random()
-            if p < self.p:
-                width, height = img.size
-                startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
-                return F.perspective(img, startpoints, endpoints, self.interpolation)
-            return img
+            width, height = img.size
+            startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                p = random.random()
-                sync_group.shared_params = {'p'}
-                if p<self.p:
-                    width, height = img.size
-                    startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
-                    sync_group.shared_params['params'] = (startpoints, endpoints)  
-                    return F.perspective(img, startpoints, endpoints, self.interpolation)
-                return img
-            else: # sync, read params from shared_params
-                p = sync_group.shared_params['p']
-                if p<self.p:
-                    startpoints, endpoints = sync_group.shared_params['params']
-                    return F.perspective(img, startpoints, endpoints, self.interpolation)
-                return img
+            p, startpoints, endpoints = params
 
+        if p<self.p:
+            if return_params:
+                return F.perspective(img, startpoints, endpoints, self.interpolation), (p, startpoints, endpoints)
+            return F.perspective(img, startpoints, endpoints, self.interpolation)
+        if return_params:
+            return img, (p, startpoints, endpoints)
+        return img
+        
     @staticmethod
     def get_params(width, height, distortion_scale):
         """Get parameters for ``perspective`` for a random perspective transform.
@@ -813,7 +786,7 @@ class RandomResizedCrop(object):
         j = (img.size[0] - w) // 2
         return i, j, h, w
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be cropped and resized.
@@ -821,16 +794,13 @@ class RandomResizedCrop(object):
         Returns:
             PIL Image: Randomly cropped and resized image.
         """
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+
+        if params is None: # no sync
             i, j, h, w = self.get_params(img, self.scale, self.ratio)
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                i, j, h, w = self.get_params(img, self.scale, self.ratio)
-                sync_group.shared_params = (i, j, h, w)
-            else: # sync, read params from shared_params
-                i, j, h, w = sync_group.shared_params
+            i, j, h, w = params
+        if return_params:
+            return F.resized_crop(img, i, j, h, w, self.size, self.interpolation), (i,j,h,w)
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
     def __repr__(self):
@@ -884,7 +854,9 @@ class FiveCrop(object):
             assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
             self.size = size
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
+        if return_params:
+            return F.five_crop(img, self.size), None
         return F.five_crop(img, self.size)
 
     def __repr__(self):
@@ -927,7 +899,9 @@ class TenCrop(object):
             self.size = size
         self.vertical_flip = vertical_flip
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
+        if return_params:
+            return F.ten_crop(img, self.size, self.vertical_flip), None
         return F.ten_crop(img, self.size, self.vertical_flip)
 
     def __repr__(self):
@@ -965,7 +939,7 @@ class LinearTransformation(object):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def __call__(self, tensor):
+    def __call__(self, tensor, params=None, return_params=False):
         """
         Args:
             tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
@@ -980,6 +954,8 @@ class LinearTransformation(object):
         flat_tensor = tensor.view(1, -1) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
         tensor = transformed_tensor.view(tensor.size())
+        if return_params:
+            return tensor, None
         return tensor
 
     def __repr__(self):
@@ -1065,7 +1041,7 @@ class ColorJitter(object):
 
         return transform
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Input image.
@@ -1075,18 +1051,13 @@ class ColorJitter(object):
         """
         sync_group = getattr( self, 'sync_group', None )
 
-        if sync_group is None: # no sync
+        if params is None: # no sync
             transform = self.get_params(self.brightness, self.contrast, 
                                         self.saturation, self.hue)
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                transform = self.get_params(self.brightness, self.contrast,
-                                            self.saturation, self.hue)
-                sync_group.shared_params = transform
-            else: # sync, read params from shared_params
-                transform = sync_group.shared_params
-        
+            transform = params
+        if return_params:
+            return transform(img), transform
         return transform(img)
 
     def __repr__(self):
@@ -1145,7 +1116,7 @@ class RandomRotation(object):
 
         return angle
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be rotated.
@@ -1154,16 +1125,12 @@ class RandomRotation(object):
             PIL Image: Rotated image.
         """
         sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+        if params is None: # no sync
             angle = self.get_params(self.degrees)
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                angle = self.get_params(self.degrees)
-                sync_group.shared_params = angle
-            else: # sync, read params from shared_params
-                angle = sync_group.shared_params
-        
+            angle = params
+        if return_params:
+            return F.rotate(img, angle, self.resample, self.expand, self.center), angle
         return F.rotate(img, angle, self.resample, self.expand, self.center)
 
     def __repr__(self):
@@ -1271,23 +1238,17 @@ class RandomAffine(object):
 
         return angle, translations, scale, shear
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
             img (PIL Image): Image to be transformed.
 
         Returns:
             PIL Image: Affine transformed image.
         """
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+        if params is None: # no sync
             params = self.get_params(self.degrees, self.translate, self.scale, self.shear, img.size)
-        else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                params = self.get_params(self.degrees, self.translate, self.scale, self.shear, img.size)
-                sync_group.shared_params = params
-            else: # sync, read params from shared_params
-                params = sync_group.shared_params
+        if return_params:
+            return F.affine(img, *params, resample=self.resample, fillcolor=self.fillcolor), params
         return F.affine(img, *params, resample=self.resample, fillcolor=self.fillcolor)
 
     def __repr__(self):
@@ -1308,7 +1269,7 @@ class RandomAffine(object):
         return s.format(name=self.__class__.__name__, **d)
 
 class ToRGB(object):
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be converted to grayscale.
@@ -1316,10 +1277,12 @@ class ToRGB(object):
         Returns:
             PIL Image: Randomly grayscaled image.
         """
+        if return_params:
+            return img.convert('RGB'), None
         return img.convert('RGB')
 
 class ToGRAY(object):
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be converted to grayscale.
@@ -1327,6 +1290,8 @@ class ToGRAY(object):
         Returns:
             PIL Image: Randomly grayscaled image.
         """
+        if return_params:
+            return img.convert('GRAY'), None
         return img.convert('GRAY')
 
 class Grayscale(object):
@@ -1345,7 +1310,7 @@ class Grayscale(object):
     def __init__(self, num_output_channels=1):
         self.num_output_channels = num_output_channels
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be converted to grayscale.
@@ -1353,6 +1318,8 @@ class Grayscale(object):
         Returns:
             PIL Image: Randomly grayscaled image.
         """
+        if return_params:
+            return F.to_grayscale(img, num_output_channels=self.num_output_channels), None
         return F.to_grayscale(img, num_output_channels=self.num_output_channels)
 
     def __repr__(self):
@@ -1377,7 +1344,7 @@ class RandomGrayscale(object):
         self.p = p
         sync_group = None
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (PIL Image): Image to be converted to grayscale.
@@ -1386,27 +1353,26 @@ class RandomGrayscale(object):
             PIL Image: Randomly grayscaled image.
         """
         num_output_channels = 1 if img.mode == 'L' else 3
-
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+        if params is None: # no sync
             p = random.random()
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None: # sync, the first transform
-                p = random.random()
-                sync_group.shared_params = p
-            else: # sync, read params from shared_params
-                p = sync_group.shared_params
-
+            p = params
         if  p < self.p:
+            if return_params:
+                return F.to_grayscale(img, num_output_channels=num_output_channels), p
             return F.to_grayscale(img, num_output_channels=num_output_channels)
+        
+        if return_params:
+            return img, p
         return img
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={0})'.format(self.p)
 
 class FlipChannels(object):
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
+        if return_params:
+            return F.flip_channels( img ), None
         return F.flip_channels( img )
 
     def __repr__(self):
@@ -1485,33 +1451,24 @@ class RandomErasing(object):
         # Return original image
         return 0, 0, img_h, img_w, img
 
-    def __call__(self, img):
+    def __call__(self, img, params=None, return_params=False):
         """
         Args:
             img (Tensor): Tensor image of size (C, H, W) to be erased.
         Returns:
             img (Tensor): Erased Tensor image.
         """
-        sync_group = getattr(self, 'sync_group', None)
-        if sync_group is None: # no sync
+        if params is None: # no sync
             p = random.uniform(0, 1)
-            if p <self.p:
-                x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value) 
-                return F.erase(img, x, y, h, w, v, self.inplace)
-            return img
+            x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value) 
         else:
-            sync_group = sync_group()
-            if sync_group.shared_params is None : # sync & the first transform
-                p = random.uniform(0, 1)
-                sync_group.shared_params = {'p': p}
-                if p < self.p:
-                    x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
-                    sync_group.shared_params['params'] = x, y, h, w, v
-                    return F.erase(img, x, y, h, w, v, self.inplace)
-                return img
-            else: # sync & read params from shared_params
-                p = sync_group.shared_params['p']
-                if p < self.p:
-                    x, y, h, w, v = sync_group.shared_params['params']
-                    return F.erase(img, x, y, h, w, v, self.inplace)
-                return img
+            p, x, y, h, w, v = params
+
+        if p<self.p:
+            if return_params:
+                return F.erase(img, x, y, h, w, v, self.inplace), (p, x, y, h, w, v)
+            return F.erase(img, x, y, h, w, v, self.inplace)
+
+        if return_params:
+            return img, (p, x, y, h, w, v)
+        return img

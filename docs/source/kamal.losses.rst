@@ -1,27 +1,27 @@
-kamal.losses package
+kamal.criteriones package
 ====================
 
 Submodules
 ----------
 
-kamal.losses.functional module
+kamal.criteriones.functional module
 ------------------------------
 
-.. automodule:: kamal.losses.functional
+.. automodule:: kamal.criteriones.functional
    :members:
    :undoc-members:
    :show-inheritance:
-kamal.losses.losses module
+kamal.criteriones.losses module
 --------------------------
 
-.. automodule:: kamal.losses.losses
+.. automodule:: kamal.criteriones.losses
    :members:
    :undoc-members:
    :show-inheritance:
-kamal.losses.mmd module
+kamal.criteriones.mmd module
 -----------------------
 
-.. automodule:: kamal.losses.mmd
+.. automodule:: kamal.criteriones.mmd
    :members:
    :undoc-members:
    :show-inheritance:
@@ -30,7 +30,7 @@ kamal.losses.mmd module
 Module contents
 ---------------
 
-.. automodule:: kamal.losses
+.. automodule:: kamal.criteriones
    :members:
    :undoc-members:
    :show-inheritance:

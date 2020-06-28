@@ -1,2 +1,1 @@
-from .blocks import ResBlock, CFL_ConvBlock
-from .common_feature import CommonFeatureLearning
+from .common_feature import CommonFeatureTrainer

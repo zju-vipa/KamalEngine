@@ -141,7 +141,7 @@ class VOCSegmentation(VisionDataset):
         return len(self.images)
 
     @classmethod
-    def decode_seg_to_color(cls, mask):
+    def decode_fn(cls, mask):
         """decode semantic mask to RGB image"""
         return cls.cmap[mask]
 

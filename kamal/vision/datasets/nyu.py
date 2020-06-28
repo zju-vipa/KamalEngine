@@ -14,6 +14,7 @@ from .utils import colormap
 
 class NYUv2(VisionDataset):
     """NYUv2 dataset
+    See https://github.com/VainF/nyuv2-python-toolkit for more details.
     
     Args:
         root (string): Root directory path.
@@ -49,16 +50,17 @@ class NYUv2(VisionDataset):
         images_dir = os.path.join(self.root, 'image', self.split)
         self.images = [os.path.join(images_dir, name) for name in img_names]
 
+        self._is_depth = False
         if self.target_type=='semantic':
             semantic_dir = os.path.join(self.root, 'seg%d'%self.num_classes, self.split)
             self.labels = [os.path.join(semantic_dir, name) for name in img_names]
             self.targets = self.labels
-        self._is_seg = ( self.target_type=='semantic' )
-
+        
         if self.target_type=='depth':
             depth_dir = os.path.join(self.root, 'depth', self.split)
             self.depths = [os.path.join(depth_dir, name) for name in img_names]
             self.targets = self.depths
+            self._is_depth = True
         
         if self.target_type=='normal':
             normal_dir = os.path.join(self.root, 'normal', self.split)
@@ -70,17 +72,15 @@ class NYUv2(VisionDataset):
         target = Image.open(self.targets[idx])
         if self.transforms is not None:
             image, target = self.transforms( image, target )
-        else:
-            return image, target
-        if self._is_seg:
-            target = (target.to(dtype=torch.uint8)-1).to(dtype=torch.long)
+            if self._is_depth:
+                target /= 1e3
         return image, target.squeeze(0)
 
     def __len__(self):
         return len(self.images)
 
     @classmethod
-    def decode_seg_to_color(cls, mask: np.ndarray):
+    def decode_fn(cls, mask: np.ndarray):
         """decode semantic mask to RGB image"""
-        mask+=1 # 255 => 0
+        mask = mask.astype('uint8') + 1 # 255 => 0
         return cls.cmap[mask]

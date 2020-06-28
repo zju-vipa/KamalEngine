@@ -19,11 +19,11 @@ class StanfordCars(data.Dataset):
             'car_devkit.tgz':      'https://ai.stanford.edu/~jkrause/cars/car_devkit.tgz',
             'cars_test_annos_withlabels.mat': 'http://imagenet.stanford.edu/internal/car196/cars_test_annos_withlabels.mat'}
 
-    def __init__(self, root, split='train', download=False, transform=None, offset=0):
+    def __init__(self, root, split='train', download=False, transform=None, target_transform=None):
         self.root = os.path.abspath( os.path.expanduser(root) )
         self.split = split
         self.transform = transform
-        self.offset = offset
+        self.target_transform = target_transform
 
         if download:
             self.download()
@@ -60,7 +60,9 @@ class StanfordCars(data.Dataset):
         lbl = self.labels[idx]
         if self.transform is not None:
             img = self.transform(img)
-        return img, lbl+self.offset
+        if self.target_transform is not None:
+            lbl = self.target_transform(lbl)
+        return img, lbl
 
     def download(self):
         import tarfile

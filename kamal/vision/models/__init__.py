@@ -1,2 +1,3 @@
-from . import classification
-from . import segmentation
+from . import classification, segmentation, detection
+
+from torchvision import models as torchvision_models

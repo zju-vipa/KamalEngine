@@ -4,49 +4,42 @@ import numpy as np
 class HistoryBuffer(object):
     def __init__(self, max_length:int=10000):
         self._max_length = max_length
-        self._data = [  ]
+        self._data = [ ]
         self._count = 0
         self._global_avg = 0
 
     def update(self, value, iteration):
         if len(self._data) == self._max_length:
-            self._data.pop(0)
-        self._data.append( (value, iteration) )
+            self._data = self._data[self._max_length//2:] # remove old records
+        self._data.append( (iteration, value) )
         self._count+=1
-        self._global_avg += (value-self._global_avg) / self._count
     
     def latest(self):
-        return self._data[-1][0]
+        assert len(self._data)>0
+        return self._data[-1][1]
     
-    def median(self, window_size: int):
-        """
-        Return the median of the latest `window_size` values in the buffer.
-        """
-        return np.median([x[0] for x in self._data[-window_size:]])
-
     def max(self):
-        return np.max( [x[0] for x in self._data] )
+        assert len(self._data)>0
+        return np.max( [x[1] for x in self._data] )
     
-    def avg(self, window_size: int):
-        return np.mean( [x[0] for x in self._data[-window_size:]] )
-    
-    def global_avg(self):
-        return self.global_avg()
+    def min(self):
+        assert len(self._data)>0
+        return np.min( [x[1] for x in self._data] )
 
-    def values(self):
-        return self._data
+    def avg(self):
+        assert len(self._data)>0
+        return np.mean( [x[1] for x in self._data] )
+    
 
 class History(object):
     def __init__(self, start_iter=0):
         self._history = defaultdict( HistoryBuffer )
+        self._vis_data = dict()
 
         self._iter = start_iter
-        self._latest_scalars = dict()
-        self._vis_data = dict()
         
     def put_scalar(self, name, value):
         self._history[ name ].update( float(value), self._iter )
-        self._latest_scalars[ name ] = float(value)
 
     def put_scalars(self, **kwargs):
         for k, v in kwargs.items():
@@ -59,28 +52,25 @@ class History(object):
         for k, v in kwargs.items():
             self.put_image( k, v )
     
-    def clear_images(self):
-        self._vis_data.clear()
+    def reset(self):
+        self._history = defaultdict( HistoryBuffer )
+        self._vis_data = dict()
 
     def step(self):
         self._iter+=1
-        self._latest_scalars.clear()
-
+    
     def history(self, name):
         return self._history.get(name, None)
     
     def all_histories(self):
         return self._history
 
-    def latest(self):
-        return self._latest_scalars
+    def get_scalar(self, name):
+        return self._history[name].latest()
 
-    def get_scalar(self, name, window_size=None):
-        if window_size is not None:
-            return self._history[name].avg( window_size=window_size )
-        else:
-            return self._history[name].latest()
-    
+    def get_image(self, name):
+        return self._vis_data[name]
+
     @property
     def vis_data(self):
         return self._vis_data

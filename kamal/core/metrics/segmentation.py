@@ -13,10 +13,10 @@ class StreamSegmentationMetrics(StreamMetricsBase):
         self.n_classes = n_classes
         self.confusion_matrix = np.zeros((n_classes, n_classes))
 
-    def update(self, preds, targets):
-        if isinstance(preds, torch.Tensor):
-            preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
-            
+    def update(self, outputs, targets):
+        preds = outputs.max(1)[1]
+        preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
+        
         for p, t in zip(preds, targets):
             self.confusion_matrix += self._fast_hist( p.flatten(), t.flatten() )
     

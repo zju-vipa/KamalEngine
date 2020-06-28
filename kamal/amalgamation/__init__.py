@@ -1,1 +1,2 @@
-from . import common_feature, sbm, combination
+from .layerwise_amalgamation import LayerWiseAmalTrainer
+from .common_feature import CommonFeatureTrainer

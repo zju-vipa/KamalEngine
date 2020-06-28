@@ -52,27 +52,22 @@ def normalize(tensor, mean, std, reverse=False):
     else:
         _mean = mean
         _std = std
-    
     _mean = torch.as_tensor(_mean, dtype=tensor.dtype, device=tensor.device)
     _std = torch.as_tensor(_std, dtype=tensor.dtype, device=tensor.device)
     tensor = (tensor - _mean[None, :, None, None]) / (_std[None, :, None, None])
     return tensor
-
-class Denormalizer(object):
-    def __init__(self, mean, std):
-        self.mean = mean
-        self.std = std
-
-    def __call__(self, x):
-        return normalize(x, self.mean, self.std, reverse=True)
 
 class Normalizer(object):
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
 
-    def __call__(self, x):
-        return normalize(x, self.mean, self.std, reverse=False)
+    def normalize(self, x):
+        return normalize( x, self.mean, self.std )
+    
+    def denormalize(self, x):
+        return normalize( x, self.mean, self.std, reverse=True )
+
 
 def colormap(N=256, normalized=False):
     def bitget(byteval, idx):
@@ -96,7 +91,6 @@ def colormap(N=256, normalized=False):
 
 DEFAULT_COLORMAP = colormap()
 
-
 def flatten_dict(dic):
     flattned = dict()
 
@@ -106,9 +100,9 @@ def flatten_dict(dic):
                 if prefix is None:
                     _flatten( k, v )
                 else:
-                    _flatten( prefix+'/%s'%k, v )
+                    _flatten( prefix+'%s/'%k, v )
             else:
-                flattned[ prefix+'/%s'%k ] = v
+                flattned[ (prefix+'%s/'%k).strip('/') ] = v
         
     _flatten('', dic)
     return flattned

@@ -3,71 +3,77 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F 
 import sys
-from ..loss import KDLoss
+import typing
 
 class TaskBase(abc.ABC):
-    def __init__(self, criterion):
-        self.criterion = criterion
+    def __init__(self, criterions, weights=None):
+        if not isinstance( criterions, typing.Sequence ):
+            criterions = [ criterions ]
+        self.criterions = criterions
+        self.weights = weights
+    
+    def preprocess(self, inputs): 
+        return inputs
 
-    @abc.abstractmethod
+    def postprocess(self, outputs):
+        return outputs
+
+    def get_outputs(self, model, inputs):
+        inputs = self.preprocess( inputs )
+        return model(inputs)
+
+    def get_predictions(self, model, inputs):
+        outputs = self.get_outputs( model, inputs )
+        return self.postprocess( outputs )
+    
     def get_loss(self, model, inputs, targets):
-        pass
+        outputs = self.get_outputs( model, inputs )
+        if isinstance( targets, (list, tuple) ): 
+            if isinstance( outputs, (list, tuple) ): # Multi-Task
+                assert len(outputs)==len(self.criterions) and len(outputs)==len(targets)
+                loss = [ criterion( output, target ) for (criterion, output, target) in zip( self.criterions, outputs, targets ) ]
+            elif isinstance( outputs, torch.Tensor ): # Multi-Loss   
+                loss = [ criterion( outputs, target ) for (criterion, target) in zip( self.criterions, targets ) ]
+        else: # simple training
+            loss = [ self.criterions[0](outputs, targets) ]
+        if self.weights is not None:
+            assert len(self.weights)==len(loss)
+            loss = [ l*w for (l, w) in zip( loss, self.weights ) ]
+        return loss
 
-    @abc.abstractmethod
-    def predict(self, model, inputs):
-        pass 
 
 class ClassificationTask(TaskBase):
-    def __init__(self, criterion=nn.CrossEntropyLoss(ignore_index=255)):
-        super(ClassificationTask, self).__init__(criterion)
+    def __init__(self, criterions=nn.CrossEntropyLoss(), weights=None ):
+        super(ClassificationTask, self).__init__(criterions, weights)
 
-    def get_loss(self, model, inputs, targets): 
-        logits = model( inputs )
-        loss = self.criterion(logits, targets.squeeze())
-        return {'loss': loss}
+    def postprocess(self, outputs):
+        return outputs.max(1)[1]
 
-    def get_logits(self, model, inputs):
-        logits = model( inputs )
-        # multiple output
-        if isinstance(logits, (tuple, list)):
-            logits = logits[-1]
-        return logits
-
-    def predict(self, model, inputs):
-        logits = self.get_logits(model, inputs)
-        preds = logits.max(1)[1]
-        return {'preds': preds}
 
 class SegmentationTask(ClassificationTask):
-    def __init__( self, criterion=nn.CrossEntropyLoss(ignore_index=255) ):
-        super(SegmentationTask, self).__init__(criterion)
+    def __init__( self, criterions=nn.CrossEntropyLoss(ignore_index=255), weights=None ):
+        super(SegmentationTask, self).__init__(criterions, weights)
 
-class ReconstructionTask( TaskBase ):
-    def __init__(self, criterion=nn.MSELoss()):
-        super(ReconstructionTask, self).__init__(criterion)
 
-    def get_loss(self, model, inputs, targets): 
-        outputs = model( inputs )
-        loss = self.criterion(logits, outputs)
-        return {'loss': loss}
+class MonocularDepthTask( TaskBase ):
+    def __init__(self, criterions=nn.MSELoss(), weights=None):
+        super(MonocularDepthTask, self).__init__(criterions, weights)
 
-    def predict(self, model, inputs):
-        outputs = model( inputs )
-        return {'preds': preds}
-
-class DepthTask( ReconstructionTask ):
-    def __init__(self, criterion=nn.L1Loss()):
-        super(DepthTask, self).__init__(criterion)
-    
     def get_loss(self, model, inputs, targets):
-        outputs = model(inputs)
-        outputs = outputs.squeeze(1)
-        loss = self.criterion(outputs, targets)
-        return {'loss': loss}
-    
-    def predict(self, model, inputs):
-        outputs = model(inputs)
-        return {'preds': outputs}
+        outputs = self.get_outputs( model, inputs )
+        if isinstance( targets, (list, tuple) ): 
+            if isinstance( outputs, (list, tuple) ): # Multi-Task
+                assert len(outputs)==len(self.criterions) and len(outputs)==len(targets)
+                loss = [ criterion( output.view_as( target ), target ) for (criterion, output, target) in zip( self.criterions, outputs, targets ) ]
+            elif isinstance( outputs, torch.Tensor ): # Multi-Loss   
+                loss = [ criterion( outputs.view_as( target ), target ) for (criterion, target) in zip( self.criterions, targets ) ]
+        else: # simple training
+            loss = [ self.criterions[0](outputs.view_as( targets ), targets) ]
+        if self.weights is not None:
+            assert len(self.weights)==len(loss)
+            loss = [ l*w for (l, w) in zip( loss, self.weights ) ]
+        return loss
+
 
 class SbmTask(TaskBase):
     def __init__(self, criterions=[], tasks=[]):
@@ -87,41 +93,3 @@ class SbmTask(TaskBase):
     def predict(self, student, inputs, split_size):
         joint_outputs = torch.split(student(inputs), split_size, dim=1)
         return {'preds': joint_outputs}
-
-
-class MultitaskTask(TaskBase):
-    def __init__(self, weights, criterions=[], tasks=[]):
-        self.tasks = []
-        for i, criterion in enumerate(criterions):
-            Task = getattr(sys.modules[__name__], tasks[i]+'Task')(criterion = criterion)
-            self.tasks.append(Task)
-        self.weights = weights
-
-    def get_loss(self, model, inputs, targets_list, split_size):
-        loss = 0.
-        for i, (targets, task, weight) in enumerate(zip(targets_list, self.tasks, self.weights)):
-            outputs = torch.split(model(inputs), split_size, dim=1)[i]
-            if outputs.shape[1] == 1:
-                outputs = outputs.squeeze(1)
-            loss += task.criterion(outputs, targets) * weight
-        return {'loss': loss}
-
-    def predict(self, student, inputs, split_size):
-        joint_outputs = torch.split(student(inputs), split_size, dim=1)
-        return {'preds': joint_outputs}
-
-
-
-class KDClassificationTask(ClassificationTask):
-    def __init__(self, criterion=KDLoss(use_kldiv=True)):
-        super(KDClassificationTask, self).__init__(criterion)
-    
-    def get_loss( self, model, teacher, inputs ):
-        s_logits = model( inputs )
-        t_logits = teacher( inputs )
-        loss = self.criterion( s_logits, t_logits )
-        return {'loss': loss }
-
-class KDSegmentationTask(SegmentationTask):
-    def __init__( self, criterion=KDLoss() ):
-        super(KDSegmentationTask, self).__init__(criterion)

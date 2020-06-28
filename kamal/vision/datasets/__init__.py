@@ -13,6 +13,6 @@ from .sunrgbd import SunRGBD
 from .voc import VOCClassification, VOCSegmentation
 from .dataset import LabelConcatDataset
 
-from torchvision import datasets as torchvision_dataset
+from torchvision import datasets as torchvision_datasets
 
 from .unlabeled import UnlabeledDataset

@@ -1,5 +1,5 @@
 from ...core import engine
-from ...utils import comm, set_mode
+from ...utils import set_mode
 
 import torch
 import torch.nn as nn
