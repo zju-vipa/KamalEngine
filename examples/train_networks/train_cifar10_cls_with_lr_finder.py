@@ -49,7 +49,7 @@ def main():
                    device=device )
     ################ 
     # find the best lr here
-    best_lr = engine.hpo.find_learning_rate( 
+    best_lr = engine.lr_finder.find_learning_rate( 
             trainer, 
             evaluator=engine.evaluator.CriterionEvaluator( val_loader, task ), 
             lr_range=[1e-4, 0.2], 

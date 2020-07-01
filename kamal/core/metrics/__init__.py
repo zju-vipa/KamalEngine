@@ -1,6 +1,6 @@
-from .classification import StreamClassificationMetrics, StreamClassificationTopKMetrics, StreamCEMAPMetrics
-from .segmentation import StreamSegmentationMetrics
-from .reconstruction import StreamReconstructionMetrics
-from .depth import StreamDepthMetrics
-from .normal import StreamAngleMetrics
+from .classification import ClassificationMetrics, ClassificationTopkMetrics, StreamCEMAPMetrics
+from .segmentation import SegmentationMetrics
+from .reconstruction import ReconstructionMetrics
+from .depth import DepthEstimationMetrics
+from .normal import NormalPredictionMetrics
 from .stream_metrics import AverageMeter, StreamMetricsBase

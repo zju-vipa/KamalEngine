@@ -40,6 +40,7 @@ def main():
         engine.callbacks.ValidationCallback( 
             len(train_loader), 
             evaluator, 
+            save_type=('best', ),
             ckpt_tag='nyuv2_seg',
             verbose=False ),
         engine.callbacks.LoggingCallback( interval=10, keys=('total_loss', 'lr') ),

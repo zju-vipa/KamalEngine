@@ -39,8 +39,10 @@ def main():
     trainer.add_callbacks([
         engine.callbacks.ValidationCallback( 
             len(train_loader), 
-            evaluator, 
+            evaluator,
+            save_type=('best', ),
             ckpt_tag='nyuv2_depth',
+            mode='min',
             verbose=False ),
         engine.callbacks.LoggingCallback( interval=10, keys=('total_loss', 'lr') ),
         engine.callbacks.LRSchedulerCallback( scheduler=[sched] ),

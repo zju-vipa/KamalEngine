@@ -158,7 +158,7 @@ def main():
     
     model = model.to(device)
 
-    metrics = stream_metrics.StreamClassificationMetrics()
+    metrics = stream_metrics.ClassificationMetrics()
 
     params_1x = []
     params_10x = []

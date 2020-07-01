@@ -206,8 +206,8 @@
 </dd></dl>
 
 <dl class="class">
-<dt id="kamal.metrics.stream_metrics.StreamAngleMetrics">
-<em class="property">class </em><code class="sig-prename descclassname">kamal.metrics.stream_metrics.</code><code class="sig-name descname">StreamAngleMetrics</code><span class="sig-paren">(</span><em class="sig-param">thresholds</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamAngleMetrics" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.NormalPredictionMetrics">
+<em class="property">class </em><code class="sig-prename descclassname">kamal.metrics.stream_metrics.</code><code class="sig-name descname">NormalPredictionMetrics</code><span class="sig-paren">(</span><em class="sig-param">thresholds</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.NormalPredictionMetrics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kamal.metrics.stream_metrics.StreamMetricsBase</span></code></p>
 <p>This metric is used in surface normal prediction task.</p>
 <dl class="simple">
@@ -217,8 +217,8 @@
 </dd>
 </dl>
 <dl class="method">
-<dt id="kamal.metrics.stream_metrics.StreamAngleMetrics.get_results">
-<code class="sig-name descname">get_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamAngleMetrics.get_results" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.NormalPredictionMetrics.get_results">
+<code class="sig-name descname">get_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.NormalPredictionMetrics.get_results" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt><strong>Returns:</strong></dt><dd><ul class="simple">
 <li><p><strong>mean angle</strong></p></li>
@@ -230,20 +230,20 @@
 </dd></dl>
 
 <dl class="method">
-<dt id="kamal.metrics.stream_metrics.StreamAngleMetrics.reset">
-<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamAngleMetrics.reset" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.NormalPredictionMetrics.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.NormalPredictionMetrics.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Overridden by subclasses</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="kamal.metrics.stream_metrics.StreamAngleMetrics.to_str">
-<em class="property">static </em><code class="sig-name descname">to_str</code><span class="sig-paren">(</span><em class="sig-param">results</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamAngleMetrics.to_str" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.NormalPredictionMetrics.to_str">
+<em class="property">static </em><code class="sig-name descname">to_str</code><span class="sig-paren">(</span><em class="sig-param">results</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.NormalPredictionMetrics.to_str" title="Permalink to this definition">¶</a></dt>
 <dd><p>Overridden by subclasses</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="kamal.metrics.stream_metrics.StreamAngleMetrics.update">
-<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param">preds</em>, <em class="sig-param">targets</em>, <em class="sig-param">masks</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamAngleMetrics.update" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.NormalPredictionMetrics.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param">preds</em>, <em class="sig-param">targets</em>, <em class="sig-param">masks</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.NormalPredictionMetrics.update" title="Permalink to this definition">¶</a></dt>
 <dd><p><strong>Type</strong>: numpy.ndarray or torch.Tensor
 <strong>Shape:</strong></p>
 <blockquote>
@@ -322,8 +322,8 @@
 </dd></dl>
 
 <dl class="class">
-<dt id="kamal.metrics.stream_metrics.StreamDepthMetrics">
-<em class="property">class </em><code class="sig-prename descclassname">kamal.metrics.stream_metrics.</code><code class="sig-name descname">StreamDepthMetrics</code><span class="sig-paren">(</span><em class="sig-param">thresholds</em>, <em class="sig-param">ignore_index=0</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamDepthMetrics" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.DepthEstimationMetrics">
+<em class="property">class </em><code class="sig-prename descclassname">kamal.metrics.stream_metrics.</code><code class="sig-name descname">DepthEstimationMetrics</code><span class="sig-paren">(</span><em class="sig-param">thresholds</em>, <em class="sig-param">ignore_index=0</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.DepthEstimationMetrics" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kamal.metrics.stream_metrics.StreamMetricsBase</span></code></p>
 <p>This metric is used in depth prediction task.</p>
 <dl class="simple">
@@ -334,8 +334,8 @@
 </dd>
 </dl>
 <dl class="method">
-<dt id="kamal.metrics.stream_metrics.StreamDepthMetrics.get_results">
-<code class="sig-name descname">get_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamDepthMetrics.get_results" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.DepthEstimationMetrics.get_results">
+<code class="sig-name descname">get_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.DepthEstimationMetrics.get_results" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt><strong>Returns:</strong></dt><dd><ul class="simple">
 <li><p><strong>absolute relative error</strong></p></li>
@@ -347,20 +347,20 @@
 </dd></dl>
 
 <dl class="method">
-<dt id="kamal.metrics.stream_metrics.StreamDepthMetrics.reset">
-<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamDepthMetrics.reset" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.DepthEstimationMetrics.reset">
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.DepthEstimationMetrics.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Overridden by subclasses</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="kamal.metrics.stream_metrics.StreamDepthMetrics.to_str">
-<em class="property">static </em><code class="sig-name descname">to_str</code><span class="sig-paren">(</span><em class="sig-param">results</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamDepthMetrics.to_str" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.DepthEstimationMetrics.to_str">
+<em class="property">static </em><code class="sig-name descname">to_str</code><span class="sig-paren">(</span><em class="sig-param">results</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.DepthEstimationMetrics.to_str" title="Permalink to this definition">¶</a></dt>
 <dd><p>Overridden by subclasses</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="kamal.metrics.stream_metrics.StreamDepthMetrics.update">
-<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param">preds</em>, <em class="sig-param">targets</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.StreamDepthMetrics.update" title="Permalink to this definition">¶</a></dt>
+<dt id="kamal.metrics.stream_metrics.DepthEstimationMetrics.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param">preds</em>, <em class="sig-param">targets</em><span class="sig-paren">)</span><a class="headerlink" href="#kamal.metrics.stream_metrics.DepthEstimationMetrics.update" title="Permalink to this definition">¶</a></dt>
 <dd><p><strong>Type</strong>: numpy.ndarray or torch.Tensor
 <strong>Shape:</strong></p>
 <blockquote>

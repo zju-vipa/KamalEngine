@@ -1,18 +1,23 @@
-from .stream_metrics import StreamMetricsBase
 from sklearn.metrics import confusion_matrix
 import numpy as np
 import torch
 
-class StreamSegmentationMetrics(StreamMetricsBase):
+from kamal.core.metrics.stream_metrics import StreamMetricsBase
+
+class SegmentationMetrics(StreamMetricsBase):
     """
     Stream Metrics for Semantic Segmentation Task
     """
-    PRIMARY_METRIC = 'mIoU'
+    @property
+    def PRIMARY_METRIC(self):
+        return 'mIoU'
+
     def __init__(self, n_classes, ignore_index=255):
         self.ignore_index=255
         self.n_classes = n_classes
-        self.confusion_matrix = np.zeros((n_classes, n_classes))
+        self.reset()
 
+    @torch.no_grad()
     def update(self, outputs, targets):
         preds = outputs.max(1)[1]
         preds, targets = preds.detach().cpu().numpy(), targets.detach().cpu().numpy()
@@ -20,14 +25,6 @@ class StreamSegmentationMetrics(StreamMetricsBase):
         for p, t in zip(preds, targets):
             self.confusion_matrix += self._fast_hist( p.flatten(), t.flatten() )
     
-    @staticmethod
-    def to_str(results):
-        string = "\n"
-        for k, v in results.items():
-            if k!="class IoU":
-                string += "%s: %.4f\n"%(k, v)
-        return string
-
     def _fast_hist(self, pred, target):
         mask = (target!=self.ignore_index)
         hist = np.bincount(
@@ -38,7 +35,6 @@ class StreamSegmentationMetrics(StreamMetricsBase):
 
     def get_results(self, class_iou=False):
         hist = self.confusion_matrix
-
         acc = np.diag(hist).sum() / hist.sum()
         iu = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
         miou = np.nanmean(iu)

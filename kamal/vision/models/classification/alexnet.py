@@ -53,11 +53,10 @@ def alexnet(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
+    num_classes = kwargs.pop('num_classes', None)
     model = AlexNet(**kwargs)
     if pretrained:
-        pretrained_dict = model_zoo.load_url(model_urls['alexnet'])
-        pretrained_dict = {
-            k: v for k, v in pretrained_dict.items() if 'classifier' not in k}
-        model.load_state_dict(pretrained_dict)
-        # model.load_state_dict(model_zoo.load_url(model_urls['alexnet']))
+        model.load_state_dict(model_zoo.load_url(model_urls['alexnet']))
+    if num_classes is not None and num_classes!=1000:
+        model.classifier[-1] = nn.Linear(4096, num_classes)
     return model

@@ -41,6 +41,11 @@ class TaskBase(abc.ABC):
             loss = [ l*w for (l, w) in zip( loss, self.weights ) ]
         return loss
 
+class MultiTask(TaskBase):
+    def __init__(self, criterions: list, weights=None ):
+        assert len(criterions)>1
+        super(MultiTask, self).__init__(criterions, weights)
+
 
 class ClassificationTask(TaskBase):
     def __init__(self, criterions=nn.CrossEntropyLoss(), weights=None ):

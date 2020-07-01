@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import numpy as np
 
-from .. import metrics
-from ... import utils
+from kamal.core import metrics
+from kamal import utils
 
 class CallbackBase(abc.ABC):
     def __init__(self):
@@ -36,7 +36,8 @@ class ValidationCallback(CallbackBase):
                  ckpt_tag       = 'model',
                  ckpt_dir       = 'checkpoints',
                  weights_only   = True,
-                 verbose        = True):
+                 verbose        = True,
+                 mode           = 'max'):
         
         self._interval = interval
         self._evaluator = evaluator
@@ -48,6 +49,7 @@ class ValidationCallback(CallbackBase):
         self._ckpt_dir = ckpt_dir
         self._ckpt_tag = ckpt_tag
         self._weights_only = weights_only
+        self._mode = mode 
 
         if self._save_type is not None:
             for save_type in self._save_type:
@@ -55,7 +57,8 @@ class ValidationCallback(CallbackBase):
                     'save_model should be None or a subset of (\"best\", \"latest\", \"interval\")'
             os.makedirs(self._ckpt_dir, exist_ok=True)
         
-        self._best_score = 0.0
+        
+        self._best_score = 0.0 if self._mode=='max' else 99999.
         self._best_ckpt = None
         self._latest_ckpt = None
 
@@ -79,10 +82,8 @@ class ValidationCallback(CallbackBase):
                     log_tag = "%s:%s"%(self._model_name, k)
                 trainer.viz.add_scalar(log_tag, v, global_step=trainer.iter)
         
-        primary_metric = self._evaluator.metric.PRIMARY_METRIC
+        primary_metric = self._evaluator.PRIMARY_METRIC
         primary_score = results[primary_metric]
-        #score = results[primary_metric]
-        #trainer.history.put_scalars(score=score)
 
         if self._save_type is not None:
             pth_path_list = []
@@ -103,15 +104,17 @@ class ValidationCallback(CallbackBase):
                 self._latest_ckpt = pth_path
 
             # the best model
-            if 'best' in self._save_type and primary_score > self._best_score:
-                pth_path = os.path.join(self._ckpt_dir, "%s-best-%08d-%s-%.3f.pth" %
-                                        (self._ckpt_tag, trainer.iter, primary_metric, primary_score))
-                # remove existed weights
-                if self._best_ckpt is not None and os.path.exists(self._best_ckpt):
-                    os.remove(self._best_ckpt)
-                pth_path_list.append(pth_path)
-                self._best_score = primary_score
-                self._best_ckpt = pth_path
+            if 'best' in self._save_type:
+                if (primary_score >= self._best_score and self._mode=='max') or \
+                    (primary_score <= self._best_score and self._mode=='min'):
+                    pth_path = os.path.join(self._ckpt_dir, "%s-best-%08d-%s-%.3f.pth" %
+                                            (self._ckpt_tag, trainer.iter, primary_metric, primary_score))
+                    # remove existed weights
+                    if self._best_ckpt is not None and os.path.exists(self._best_ckpt):
+                        os.remove(self._best_ckpt)
+                    pth_path_list.append(pth_path)
+                    self._best_score = primary_score
+                    self._best_ckpt = pth_path
             
             # save model
             if self._verbose:

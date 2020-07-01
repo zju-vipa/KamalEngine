@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
-
 import abc, math, weakref, typing, time
 import numpy as np 
 
-from . import hpo, history, task
-from ...utils.logger import get_logger
-from ...utils import set_mode
+from kamal.core.engine import history, task
+from kamal.utils.logger import get_logger
+from kamal.utils import set_mode
 
 class TrainerBase(abc.ABC):
     def __init__(self, logger=None, viz=None):

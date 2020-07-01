@@ -183,7 +183,7 @@ def main():
     teacher_model_2.to(device)
     joint_model.to(device)
 
-    metrics = stream_metrics.StreamClassificationMetrics()
+    metrics = stream_metrics.ClassificationMetrics()
 
     params_1x = []
     params_10x = []

@@ -12,15 +12,17 @@ class AmalBlock(nn.Module):
         super( AmalBlock, self ).__init__()
         self.cs, self.cts = cs, cts
         self.enc = nn.Conv2d( in_channels=sum(self.cts), out_channels=self.cs, kernel_size=1, stride=1, padding=0, bias=True )
+        self.fam = nn.Conv2d( in_channels=self.cs, out_channels=self.cs, kernel_size=1, stride=1, padding=0, bias=True )
         self.dec = nn.Conv2d( in_channels=self.cs, out_channels=sum(self.cts), kernel_size=1, stride=1, padding=0, bias=True )
     
-    def forward(self, fts):
+    def forward(self, fs, fts):
         rep = self.enc( torch.cat( fts, dim=1 ) )
         _fts = self.dec( rep )
         _fts = torch.split( _fts, self.cts, dim=1 )
-        return rep, _fts
+        _fs = self.fam( fs )
+        return rep, _fs, _fts
 
-class LayerWiseAmalTrainer(engine.trainer.TrainerBase):
+class LayerWiseAmalgamator(engine.trainer.TrainerBase):
     
     def setup(
         self, 
@@ -51,16 +53,24 @@ class LayerWiseAmalTrainer(engine.trainer.TrainerBase):
             amal_blocks.append( (amal_block, hooks, C)  )
             block_params.extend( list(amal_block.parameters()) )
         self._amal_blocks = amal_blocks
-        self._amal_optimimizer = torch.optim.Adam( block_params, lr=1e-3, weight_decay=1e-4 )
-        
+        self._amal_optimimizer = torch.optim.Adam( block_params, lr=1e-3 )
+
+    def reset(self):
+        self._amal_optimimizer = torch.optim.Adam( block_params, lr=1e-3 )
+        if hasattr( self, '_amal_scheduler' ):
+            self._amal_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR( self._amal_optimimizer, T_max=max_iter)
+        self._iter = self._start_iter
+        self._data_loader_iter = iter(data_loader)
+    
     @property
     def data_loader(self):
         return self._data_loader
 
     def run(self, start_iter, max_iter):
+        self._amal_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR( self._amal_optimimizer, T_max=max_iter)
         with set_mode(self.student, training=True), \
              set_mode(self.teachers, training=False):
-            super( LayerWiseAmalTrainer, self ).run( start_iter, max_iter)
+            super( LayerWiseAmalgamator, self ).run( start_iter, max_iter)
 
     def _get_data(self):
         try:
@@ -89,15 +99,18 @@ class LayerWiseAmalTrainer(engine.trainer.TrainerBase):
         for amal_block, hooks, C in self._amal_blocks:
             features = [ h.feat_out for h in hooks ]
             fs, fts = features[0], features[1:]
-            rep, _fts = amal_block( fts )
-            loss_amal += F.mse_loss( fs, rep.detach() )
-            loss_recons += sum( [ F.mse_loss( ft, _ft ) for (ft, _ft) in zip( fts, _fts ) ] )
+            rep, _fs, _fts = amal_block( fs, fts )
+            loss_amal += F.mse_loss( _fs, rep.detach() )
+            loss_recons += sum( [ F.mse_loss( _ft, ft ) for (_ft, ft) in zip( _fts, fts ) ] )
         
         loss_kd = criterion.kldiv( s_out, torch.cat( t_out, dim=1 ) )
+        #loss_kd = F.mse_loss( s_out, torch.cat( t_out, dim=1 ) )
         loss = self._weights[0]*loss_kd + self._weights[1]*loss_amal + self._weights[2]*loss_recons
+        
         loss.backward()
         self.optimizer.step()
         self._amal_optimimizer.step()
+        self._amal_scheduler.step()
         step_time = time.perf_counter() - start_time
 
         # record training info
@@ -105,7 +118,7 @@ class LayerWiseAmalTrainer(engine.trainer.TrainerBase):
             'total_loss': loss.item(),
             'loss_kd': loss_kd.item(),
             'loss_amal': loss_amal.item(),
-            'loss_recons': loss_amal.item(),
+            'loss_recons': loss_recons.item(),
 
             'step_time': step_time,
             'lr': float( self.optimizer.param_groups[0]['lr'] )

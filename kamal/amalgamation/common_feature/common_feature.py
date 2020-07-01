@@ -1,12 +1,54 @@
 
 from kamal.core import engine, criterion, metrics
+from kamal.utils import set_mode
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import typing
+import typing, time
 import numpy as np
 from torchvision.models.resnet import BasicBlock
+
+
+def conv3x3(in_planes, out_planes, stride=1):
+    """3x3 convolution with padding"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                     padding=1, bias=False)
+
+class ResBlock(nn.Module):
+    """ Residual Blocks
+    """
+    def __init__(self, inplanes, planes, stride=1, momentum=0.1):
+        super(ResBlock, self).__init__()
+        self.conv1 = conv3x3(inplanes, planes, stride)
+        #self.bn1 = nn.BatchNorm2d(planes, momentum=momentum)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes)
+        #self.bn2 = nn.BatchNorm2d(planes, momentum=momentum)
+        if stride > 1 or inplanes != planes:
+            self.downsample = nn.Sequential(
+                nn.Conv2d(inplanes, planes, kernel_size=1,
+                          stride=stride, bias=False),
+                #nn.BatchNorm2d(planes, momentum=momentum)
+            )
+        else:
+            self.downsample = None
+
+        self.stride = stride
+
+    def forward(self, x):
+        residual = x
+        out = self.conv1(x)
+        #out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        #out = self.bn2(out)
+        if self.downsample is not None:
+            residual = self.downsample(x)
+        out += residual
+        out = self.relu(out)
+        return out
 
 class CFLBlock(nn.Module):
     """Common Feature Blocks for Convolutional layer
@@ -14,43 +56,43 @@ class CFLBlock(nn.Module):
     This module is used to capture the common features of multiple teachers and calculate mmd with features of student.
 
     **Parameters:**
-        - channel_s (int): channel number of student features
+        - cs (int): channel number of student features
         - channel_ts (list or tuple): channel number list of teacher features
-        - channel_h (int): channel number of hidden features
+        - ch (int): channel number of hidden features
     """
     def __init__(self, cs, cts, ch, k_size=5):
         super(CFLBlock, self).__init__()
         
         self.align_t = nn.ModuleList()
-        for ch_t in channel_ts:
+        for ct in cts:
             self.align_t.append(
                 nn.Sequential(
-                    nn.Conv2d(in_channels=ch_t, out_channels=2*channel_h,
+                    nn.Conv2d(in_channels=ct, out_channels=2*ch,
                               kernel_size=1, bias=False),
                     nn.ReLU(inplace=True)
                 )
             )
 
         self.align_s = nn.Sequential(
-            nn.Conv2d(in_channels=channel_s, out_channels=2*channel_h,
+            nn.Conv2d(in_channels=cs, out_channels=2*ch,
                       kernel_size=1, bias=False),
             nn.ReLU(inplace=True),
         )
 
         self.extractor = nn.Sequential(
-            ResBlock(inplanes=2*channel_h, planes=channel_h, stride=1),
-            ResBlock(inplanes=channel_h, planes=channel_h, stride=1),
-            ResBlock(inplanes=channel_h, planes=channel_h, stride=1),
+            ResBlock(inplanes=2*ch, planes=ch, stride=1),
+            ResBlock(inplanes=ch, planes=ch, stride=1),
+            ResBlock(inplanes=ch, planes=ch, stride=1),
         )
 
         self.dec_t = nn.ModuleList()
-        for ch_t in channel_ts:
+        for ct in cts:
             self.dec_t.append(
                 nn.Sequential(
-                    nn.Conv2d(channel_h, ch_t, kernel_size=3,
+                    nn.Conv2d(ch, ct, kernel_size=3,
                               stride=1, padding=1, bias=False),
                     nn.ReLU(inplace=True),
-                    nn.Conv2d(ch_t, ch_t, kernel_size=1,
+                    nn.Conv2d(ct, ct, kernel_size=1,
                               stride=1, padding=0, bias=False)
                 )
             )
@@ -74,13 +116,14 @@ class CFLBlock(nn.Module):
         return (hs, hts), (_fts, fts)
 
 
-class CommonFeatureTrainer(engine.trainer.TrainerBase):
+class CommonFeatureAmalgamator(engine.trainer.TrainerBase):
     
     def setup(
         self, 
         student,
         teachers,
         layer_groups: typing.Sequence[typing.Sequence],
+        layer_channels: typing.Sequence[typing.Sequence],
         data_loader:  torch.utils.data.DataLoader, 
         optimizer:    torch.optim.Optimizer, 
         weights = [1.0, 1.0, 1.0],
@@ -90,19 +133,17 @@ class CommonFeatureTrainer(engine.trainer.TrainerBase):
         self._data_loader_iter = iter(data_loader)
         if device is None:
             device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
-        self._device = device
-        self.model = self.student = student.to(self._device)
+        self.device = device
+        self.model = self.student = student.to(self.device)
         self.teachers = nn.ModuleList(teachers).to(self.device) 
         self.optimizer = optimizer
-        self.task = task
         self._weights = weights
 
         amal_blocks = []
         block_params = []
-        for group in layer_groups:
-            C = [ layer.out_channels for layer in group ]
+        for group, C in zip( layer_groups, layer_channels ):
             hooks = [ engine.hooks.FeatureHook(layer) for layer in group ]
-            amal_block = CFLBlock(cs=Ci[0], cts=Ci[1:], ch=256).to(self.device).train()
+            amal_block = CFLBlock(cs=C[0], cts=C[1:], ch=256).to(self.device).train()
             amal_blocks.append( (amal_block, hooks, C)  )
             block_params.extend( list(amal_block.parameters()) )
         self._amal_blocks = amal_blocks
@@ -112,7 +153,17 @@ class CommonFeatureTrainer(engine.trainer.TrainerBase):
     def run(self, start_iter, max_iter):
         with set_mode(self.student, training=True), \
              set_mode(self.teachers, training=False):
-            super( CommonFeatureTrainer, self ).run( start_iter, max_iter)
+            super( CommonFeatureAmalgamator, self ).run( start_iter, max_iter)
+
+    def _get_data(self):
+        try:
+            data = next( self._data_loader_iter )
+        except StopIteration:
+            self._data_loader_iter = iter(self._data_loader) # reset iterator
+            data = next( self._data_loader_iter )
+        if not isinstance( data, typing.Sequence ):
+            data = [data, ]
+        return data
 
     def step(self):
         self.optimizer.zero_grad()
@@ -121,7 +172,7 @@ class CommonFeatureTrainer(engine.trainer.TrainerBase):
         start_time = time.perf_counter()
 
         data = self._get_data()
-        data = [ d.to(self._device) for d in data ] # move to device
+        data = [ d.to(self.device) for d in data ] # move to device
 
         s_out = self.student( data[0] )
         with torch.no_grad():
@@ -133,7 +184,7 @@ class CommonFeatureTrainer(engine.trainer.TrainerBase):
             features = [ h.feat_out for h in hooks ]
             fs, fts = features[0], features[1:]
             (hs, hts), (_fts, fts) = amal_block( fs, fts )
-            _loss_amal, _loss_recons = self._cfl_criterion( hs, hts, fts_, fts ) 
+            _loss_amal, _loss_recons = self._cfl_criterion( hs, hts, _fts, fts ) 
             loss_amal += _loss_amal
             loss_recons += _loss_recons
         loss_kd = criterion.kldiv( s_out, torch.cat( t_out, dim=1 ) )

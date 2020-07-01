@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath
 
 from kamal.vision.models import SegNet
 from kamal.vision.datasets import NYUv2
-from kamal.metrics import StreamSegMetrics, StreamDepthMetrics, StreamAngleMetrics
+from kamal.metrics import StreamSegMetrics, DepthEstimationMetrics, NormalPredictionMetrics
 from kamal.criterion import ScaleInvariantLoss, AngleLoss
 from kamal.amalgamation.sbm import JointNet, JointNetOffline
 from torchvision import transforms
@@ -260,8 +260,8 @@ def main():
     )
 
     metrics = [StreamSegMetrics(num_classes), 
-                StreamAngleMetrics(thresholds=[11.25, 22.5, 30]), 
-                StreamDepthMetrics(thresholds=[1.25, 1.25**2, 1.25**3])
+                NormalPredictionMetrics(thresholds=[11.25, 22.5, 30]), 
+                DepthEstimationMetrics(thresholds=[1.25, 1.25**2, 1.25**3])
             ]
 
     params_1x = []
