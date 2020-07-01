@@ -21,8 +21,8 @@ def main():
         train_dst = vision.datasets.CUB200( '../data/CUB200', split='train')
         val_dst = vision.datasets.CUB200( '../data/CUB200', split='test')
     elif args.dataset=='fgvc_aircraft':
-        num_classes=102 
-        train_dst = vision.datasets.FGVCAircraft( '../data/FGVCAircraft/', split='train')
+        num_classes=102  
+        train_dst = vision.datasets.FGVCAircraft( '../data/FGVCAircraft/', split='trainval')
         val_dst = vision.datasets.FGVCAircraft( '../data/FGVCAircraft/', split='test')
     elif args.dataset=='stanford_cars':
         num_classes=196
@@ -30,7 +30,7 @@ def main():
         val_dst = vision.datasets.StanfordCars( '../data/StanfordCars/', split='test')
     else:
         raise NotImplementedError
-    model = vision.models.classification.resnet18( num_classes=num_classes, pretrained=True )
+    model = vision.models.classification.resnet18( num_classes=num_classes, pretrained=False )
     train_dst.transform = sT.Compose( [
                             sT.Resize(224),
                             sT.RandomCrop( 224 ),
@@ -46,9 +46,9 @@ def main():
                             sT.Normalize( mean=[0.485, 0.456, 0.406],
                                         std=[0.229, 0.224, 0.225] )
                         ] )
-    train_loader = torch.utils.data.DataLoader( train_dst, batch_size=64, shuffle=True, num_workers=4 )
-    val_loader = torch.utils.data.DataLoader( val_dst, batch_size=64, num_workers=4 )
-    TOTAL_ITERS=len(train_loader) * 100
+    train_loader = torch.utils.data.DataLoader( train_dst, batch_size=128, shuffle=True, num_workers=4 )
+    val_loader = torch.utils.data.DataLoader( val_dst, batch_size=128, num_workers=4 )
+    TOTAL_ITERS=len(train_loader) * 200
     device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
     optim = torch.optim.SGD( model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4 )
     sched = torch.optim.lr_scheduler.CosineAnnealingLR( optim, T_max=TOTAL_ITERS )
@@ -75,6 +75,7 @@ def main():
                    optimizer=optim,
                    device=device )
     trainer.run(start_iter=0, max_iter=TOTAL_ITERS)
-
+    trainer.callbacks[0].final_save( 'pretrained' )
+    
 if __name__=='__main__':
     main()

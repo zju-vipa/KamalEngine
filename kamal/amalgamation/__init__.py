@@ -1,2 +1,2 @@
-from .layerwise_amalgamation import LayerWiseAmalTrainer
-from .common_feature import CommonFeatureTrainer
+from .layerwise_amalgamation import LayerWiseAmalgamator
+from .common_feature import CommonFeatureAmalgamator

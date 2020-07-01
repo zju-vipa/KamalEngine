@@ -1,8 +1,9 @@
 
 import torch
 import torch.nn.functional as F
-from .mmd import mmd_rbf2
 import torch
+
+from .mmd import mmd_rbf2
 
 def kldiv(logits, targets, T=1.0):
     """ Cross Entropy for soft targets

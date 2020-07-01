@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath
 from kamal.vision.models import SegNet
 from kamal.vision.datasets import NYUv2
 from kamal.criterion import AngleLoss
-from kamal.metrics import StreamAngleMetrics
+from kamal.metrics import NormalPredictionMetrics
 
 import torch
 import torch.nn as nn
@@ -182,7 +182,7 @@ def main():
     model.init_vgg16_params(vgg16)
     model = model.to(device)
 
-    metrics = StreamAngleMetrics(thresholds=[11.25, 22.5, 30])
+    metrics = NormalPredictionMetrics(thresholds=[11.25, 22.5, 30])
 
     params_1x = []
     params_10x = []

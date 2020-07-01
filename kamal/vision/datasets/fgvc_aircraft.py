@@ -90,6 +90,7 @@ class FGVCAircraft(data.Dataset):
         with open(os.path.join(self.root, 'fgvc-aircraft-2013b/data', 'variants.txt')) as f:
             self.object_categories = [
                 line.strip('\n') for line in f.readlines()]
+        print('FGVC-Aircraft, Split: %s, Size: %d' % (self.split, self.__len__()))
 
     def __getitem__(self, index):
         """

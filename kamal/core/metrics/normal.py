@@ -1,19 +1,20 @@
-from .stream_metrics import StreamMetricsBase
 import numpy as np
+import torch
+from kamal.core.metrics.stream_metrics import StreamMetricsBase
 
-class StreamAngleMetrics(StreamMetricsBase):
-    """This metric is used in surface normal prediction task.
+class NormalPredictionMetrics(StreamMetricsBase):
 
-    **Parameters:**
-        - **thresholds** (list of float)
-    """
-    PRIMARY_METRIC = 'mean angle'
+    @property
+    def PRIMARY_METRIC(self):
+        return 'mean angle'
+
     def __init__(self, thresholds):
         self.thresholds = thresholds
         self.preds = None
         self.targets = None
         self.masks = None
 
+    @torch.no_grad()
     def update(self, preds, targets, masks):
         """
         **Type**: numpy.ndarray or torch.Tensor
@@ -30,18 +31,6 @@ class StreamAngleMetrics(StreamMetricsBase):
         self.preds = preds if self.preds is None else np.append(self.preds, preds, axis=0)
         self.targets = targets if self.targets is None else np.append(self.targets, targets, axis=0)
         self.masks = masks if self.masks is None else np.append(self.masks, masks, axis=0)
-
-    @staticmethod
-    def to_str(results):
-        string = "\n"
-        for k, v in results.items():
-            if k!="percents within thresholds":
-                string += "%s: %f\n"%(k, v)
-        
-        string+='percents within thresholds:\n'
-        for k, v in results['percents within thresholds'].items():
-            string += "\tthreshold %f: %f\n"%(k, v)
-        return string
 
     def get_results(self):
         """

@@ -20,6 +20,10 @@ class LabelConcatDataset(VisionDataset):
             root=None, transforms=transforms, transform=transform, target_transform=target_transform)
         assert len(datasets) > 0, 'datasets should not be an empty iterable'
         self.datasets = list(datasets)
+        for d in self.datasets:
+            for t in ('transform', 'transforms', 'target_transform'):
+                if hasattr( d, t ):
+                    setattr( d, t, None )
 
     def __getitem__(self, idx):
         targets_list = []

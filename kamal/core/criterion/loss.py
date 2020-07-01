@@ -1,11 +1,10 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-
-from pytorch_msssim import ssim, ms_ssim, MS_SSIM, SSIM
-from .functional import *
-
 import numpy as np
+from pytorch_msssim import ssim, ms_ssim, MS_SSIM, SSIM
+
+from .functional import *
 
 class KLDiv(object):
     def __init__(self, T=1.0):

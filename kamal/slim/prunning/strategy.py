@@ -1,31 +1,32 @@
-import torch_pruning
+import . import torch_pruning as tp
 import abc
 import torch
 import torch.nn as nn
 import random
 import numpy as np 
 
-_PRUNABLE_LAYER= ( nn.modules.conv._ConvNd, nn.modules.batchnorm._BatchNorm, nn.PReLU, nn.Linear )
+_PRUNABLE_MODULES= tp.DependencyGraph.PRUNABLE_MODULES
+
 
 class BaseStrategy(abc.ABC):
+
     @abc.abstractmethod
-    def __call__(self, model):
+    def select(self, layer_to_prune):
         pass
 
-
-class RandomStrategy(BaseStrategy):
-    def  __call__(self, model, rate=0.1, fake_input=None):
-        if fake_input is None:
-            fake_input = torch.randn( 1,3,256,256 )
-        DG = torch_pruning.DependencyGraph(model, fake_input=fake_input)
+    def  __call__(self, model, rate=0.1, example_inputs=None):
+        if example_inputs is None:
+            example_inputs = torch.randn( 1,3,256,256 )
+        DG = tp.DependencyGraph()
+        DG.build_dependency(model, fake_input=example_inputs)
         
         prunable_layers = []
         total_params = 0
         num_accumulative_conv_params = [ 0, ]
 
         for m in model.modules():
-            if isinstance(m, _PRUNABLE_LAYER ) :
-                nparam = torch_pruning.utils.count_prunable_params( m )
+            if isinstance(m, _PRUNABLE_MODULES ) :
+                nparam = tp.utils.count_prunable_params( m )
                 total_params += nparam
                 if isinstance(m, (nn.modules.conv._ConvNd, nn.Linear)):
                     prunable_layers.append( m )
@@ -46,12 +47,22 @@ class RandomStrategy(BaseStrategy):
             layer_to_prune = map_param_idx_to_conv_layer( random.randint( 0, num_conv_params-1 ) )
             if layer_to_prune.weight.shape[0]<1:
                 continue
-            idx = [ random.randint( 0, layer_to_prune.weight.shape[0]-1 ) ]
-            if isinstance(layer_to_prune, nn.modules.conv._ConvNd):
-                fn = torch_pruning.prune_conv
-            else:
-                fn = torch_pruning.prune_linear
-
+            idx = self.select( layer_to_prune )
+            fn = tp.prune_conv if isinstance(layer_to_prune, nn.modules.conv._ConvNd) else fn = tp.prune_linear
             plan = DG.get_pruning_plan( layer_to_prune, fn, idxs=idx )        
             num_pruned += plan.exec() 
         return model
+
+class RandomStrategy(BaseStrategy):
+    def select(self, layer_to_prune):
+        return [ random.randint( 0, layer_to_prune.weight.shape[0]-1 ) ]
+
+class LNStrategy(BaseStrategy):
+    def __init__(self, n=2):
+        self.n = n
+
+    def select(self, layer_to_prune):
+        w = torch.flatten( layer_to_prune.weight, 1 )
+        norm = torch.norm(w, p=self.n, dim=1)
+        idx = [ norm.min(dim=0)[1] ]
+        return idx

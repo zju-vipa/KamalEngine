@@ -1,1 +1,1 @@
-from .layerwise_ka import LayerWiseAmalTrainer
+from .layerwise_ka import LayerWiseAmalgamator

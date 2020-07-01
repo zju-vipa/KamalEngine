@@ -2,7 +2,7 @@ from __future__ import division
 import torch
 
 import numpy as np
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 
 class StreamMetricsBase(ABC):
     def __init__(self):
@@ -12,6 +12,10 @@ class StreamMetricsBase(ABC):
     def __call__(self, pred, target):
         self.update(pred, target)
 
+    @abstractproperty
+    def PRIMARY_METRIC(self):
+        raise NotImplementedError
+
     @abstractmethod
     def update(self, pred, target):
         """ Overridden by subclasses """
@@ -19,11 +23,6 @@ class StreamMetricsBase(ABC):
     
     @abstractmethod
     def get_results(self):
-        """ Overridden by subclasses """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def to_str(self, metrics):
         """ Overridden by subclasses """
         raise NotImplementedError()
 
@@ -60,3 +59,6 @@ class AverageMeter(object):
         
         for k in keys:
             self.record[k] = {'val': 0.0, 'count': 0}
+
+
+

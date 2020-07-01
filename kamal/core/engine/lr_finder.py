@@ -10,10 +10,10 @@ import typing
 import numpy as np
 from tqdm import tqdm
 
-from . import evaluator, callbacks
+from kamal.core.engine import evaluator, callbacks
 
 @contextlib.contextmanager
-def stack_callbasks(trainer):
+def archive_callbasks(trainer):
     callbacks = trainer.callbacks
     trainer.callbacks = []
     yield
@@ -127,8 +127,8 @@ class LRFinder(object):
         self._lr_callback = callbacks.LRSchedulerCallback(interval=1, scheduler=[lr_sched])
         self._adjust_learning_rate( self.trainer.optimizer, lr_range[0] )
 
-        with stack_callbasks(self.trainer):
-            # add new callbacks
+        with archive_callbasks(self.trainer):
+            # use new callbacks
             self.trainer.add_callbacks([
                 self._finder_callback,
                 self._lr_callback,
@@ -138,22 +138,3 @@ class LRFinder(object):
         self._reset()
         self._adjust_learning_rate( self.trainer.optimizer, lr=best_lr )
         return best_lr
-
-    def plot(self, suggest: bool = False, show: bool = False):
-        import matplotlib.pyplot as plt
-        lrs = []
-        scores = []
-        for rec in self._records:
-            lrs.append( rec[0] )
-            scores.append( rec[1] )
-        
-        fig, ax = plt.subplots()
-        ax.plot(lrs, scores)
-        ax.set_xlabel("Learning rate")
-        ax.set_ylabel("Score")
-        if suggest:
-            index, best_lr = self.suggestion()
-            ax.plot(lrs[index], scores[index], markersize=10, marker='o', color='red')
-        if show:
-            plt.show()
-        return fig

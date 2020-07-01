@@ -1,1 +1,1 @@
-from .common_feature import CommonFeatureTrainer
+from .common_feature import CommonFeatureAmalgamator
