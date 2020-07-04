@@ -28,6 +28,9 @@ class KDDistiller(TrainerBase):
             device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
         self.device = device
 
+        self.student.to(self.device)
+        self.teacher.to(self.device)
+
     def _get_data(self):
         try:
             data = self._data_loader_iter.next()
