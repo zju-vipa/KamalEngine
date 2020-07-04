@@ -11,7 +11,7 @@ class VIDDistiller(KDDistiller):
     def __init__(self, logger=None, viz=None ):
         super(VIDDistiller, self).__init__( logger, viz )
 
-    def setup(self, student, teacher, data_loader, regressor_l, T=1.0, gamma=1.0, alpha=None, beta=None, stu_hooks=[], tea_hooks=[], out_flags=[], device=None):
+    def setup(self, student, teacher, data_loader, optimizer, regressor_l, T=1.0, gamma=1.0, alpha=None, beta=None, stu_hooks=[], tea_hooks=[], out_flags=[], device=None):
         super( VIDDistiller, self ).setup( 
             student, teacher, data_loader, optimizer, T=T, gamma=gamma, alpha=alpha, device=device )
         self.regressor_l = regressor_l
