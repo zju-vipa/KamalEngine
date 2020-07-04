@@ -36,7 +36,7 @@ class ValidationCallback(CallbackBase):
                  ckpt_tag       = 'model',
                  ckpt_dir       = 'checkpoints',
                  weights_only   = True,
-                 verbose        = True,
+                 verbose        = False,
                  mode           = 'max'):
         
         self._interval = interval
@@ -56,7 +56,6 @@ class ValidationCallback(CallbackBase):
                 assert save_type in ('best', 'latest', 'interval'), \
                     'save_model should be None or a subset of (\"best\", \"latest\", \"interval\")'
             os.makedirs(self._ckpt_dir, exist_ok=True)
-        
         
         self._best_score = 0.0 if self._mode=='max' else 99999.
         self._best_ckpt = None
