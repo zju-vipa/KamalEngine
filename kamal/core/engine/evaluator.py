@@ -26,7 +26,7 @@ class ClassificationEvaluator(EvaluatorBase):
                 data_loader, 
                 metric=None,
                 task=task.ClassificationTask(),
-                progress=True):
+                progress=False):
         if metric is None:
             metric = metrics.ClassificationMetrics()
         super(ClassificationEvaluator, self).__init__(data_loader, metric, task)
@@ -53,7 +53,7 @@ class SegmentationEvaluator(ClassificationEvaluator):
                  data_loader, 
                  metric=None,
                  task=task.SegmentationTask(), 
-                 progress=True):
+                 progress=False):
         if metric is None:
             metric = metrics.SegmentationMetrics(num_classes, ignore_index=255)
         super( SegmentationEvaluator, self ).__init__(data_loader=data_loader, metric=metric, task=task, progress=progress)
@@ -64,7 +64,7 @@ class DepthEvaluator(EvaluatorBase):
                 data_loader, 
                 metric=None,
                 task=task.MonocularDepthTask(),
-                progress=True):
+                progress=False):
         if metric is None:
             metric = metrics.DepthEstimationMetrics(thresholds=[1.25, 1.25**2, 1.25**3])
         super(DepthEvaluator, self).__init__(data_loader, metric, task)
@@ -107,7 +107,7 @@ class CriterionEvaluator(EvaluatorBase):
 
 
 class MultitaskEvaluator(EvaluatorBase):
-    def __init__(self, data_loader, task, metric_list, progress=True):
+    def __init__(self, data_loader, task, metric_list, progress=False):
         self.task = task
         self.data_loader = data_loader
         self.metric_list = metric_list
@@ -136,7 +136,7 @@ class MultitaskEvaluator(EvaluatorBase):
         return results
 
 class SbmEvaluator(MultitaskEvaluator):
-    def __init__(self, data_loader, split_size, tasks, task=task.SbmTask(), progress=True):
+    def __init__(self, data_loader, split_size, tasks, task=task.SbmTask(), progress=False):
         super(SbmEvaluator, self).__init__(data_loader, split_size, tasks, task=task, progress=progress)
 
 class KDClassificationEvaluator(EvaluatorBase):
@@ -144,7 +144,7 @@ class KDClassificationEvaluator(EvaluatorBase):
                 data_loader, 
                 teacher,
                 task=task.ClassificationTask(),
-                progress=True):
+                progress=False):
         super(KDClassificationEvaluator, self).__init__(data_loader, task)
         self.metrics = metrics.ClassificationMetrics()
         self.progress = progress

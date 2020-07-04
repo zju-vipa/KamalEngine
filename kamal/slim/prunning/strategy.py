@@ -1,4 +1,4 @@
-import . import torch_pruning as tp
+import torch_pruning as tp
 import abc
 import torch
 import torch.nn as nn
@@ -6,7 +6,6 @@ import random
 import numpy as np 
 
 _PRUNABLE_MODULES= tp.DependencyGraph.PRUNABLE_MODULES
-
 
 class BaseStrategy(abc.ABC):
 
@@ -17,9 +16,10 @@ class BaseStrategy(abc.ABC):
     def  __call__(self, model, rate=0.1, example_inputs=None):
         if example_inputs is None:
             example_inputs = torch.randn( 1,3,256,256 )
+
         DG = tp.DependencyGraph()
-        DG.build_dependency(model, fake_input=example_inputs)
-        
+        DG.build_dependency(model, example_inputs=example_inputs)
+
         prunable_layers = []
         total_params = 0
         num_accumulative_conv_params = [ 0, ]
@@ -48,8 +48,8 @@ class BaseStrategy(abc.ABC):
             if layer_to_prune.weight.shape[0]<1:
                 continue
             idx = self.select( layer_to_prune )
-            fn = tp.prune_conv if isinstance(layer_to_prune, nn.modules.conv._ConvNd) else fn = tp.prune_linear
-            plan = DG.get_pruning_plan( layer_to_prune, fn, idxs=idx )        
+            fn = tp.prune_conv if isinstance(layer_to_prune, nn.modules.conv._ConvNd) else tp.prune_linear
+            plan = DG.get_pruning_plan( layer_to_prune, fn, idxs=idx ) 
             num_pruned += plan.exec() 
         return model
 
@@ -64,5 +64,5 @@ class LNStrategy(BaseStrategy):
     def select(self, layer_to_prune):
         w = torch.flatten( layer_to_prune.weight, 1 )
         norm = torch.norm(w, p=self.n, dim=1)
-        idx = [ norm.min(dim=0)[1] ]
+        idx = [ int(norm.min(dim=0)[1].item()) ]
         return idx
