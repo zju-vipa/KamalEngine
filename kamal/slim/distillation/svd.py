@@ -13,7 +13,7 @@ class SVDDistiller(KDDistiller):
         super(SVDDistiller, self).__init__( logger, viz )
 
     def setup(self, student, teacher, data_loader, optimizer, T=1.0, gamma=1.0, alpha=None, beta=None, stu_hooks=[], tea_hooks=[], out_flags=[], device=None):
-        super( SPDistiller, self ).setup( 
+        super( SVDDistiller, self ).setup( 
             student, teacher, data_loader, optimizer, T=T, gamma=gamma, alpha=alpha, device=device )
 
         self._beta = beta
