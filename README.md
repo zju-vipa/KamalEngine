@@ -7,9 +7,9 @@
 
 **The lightweight algorithm package for Knwoledge Amalgamation,</br> Model Compression and Multitask Learning**
 
-[![PyPI Status](https://badge.fury.io/py/pytorch-lightning.svg)](https://badge.fury.io/py/pytorch-lightning)
-[![ReadTheDocs](https://readthedocs.org/projects/pytorch-lightning/badge/?version=stable)](https://pytorch-lightning.readthedocs.io/en/stable/)
-[![license](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PytorchLightning/pytorch-lightning/blob/master/LICENSE)
+[![PyPI Status]()]()
+[![ReadTheDocs]()]()
+[![license]()]()
 
 </div>
 

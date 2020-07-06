@@ -1,53 +1,50 @@
 import numpy as np
 import torch
+from kamal.core.metrics.stream_metrics import Metric
+from typing import Callable
 
-from kamal.core.metrics.stream_metrics import StreamMetricsBase
+__all__=['Accuracy', 'TopkAccuracy']
 
-class ClassificationMetrics(StreamMetricsBase):
-    @property
-    def PRIMARY_METRIC(self):
-        return "acc"
-
-    def __init__(self):
+class Accuracy(Metric):
+    def __init__(self, output_target_transform: Callable=lambda x,y: (x,y)):
+        super(Accuracy, self).__init__(output_target_transform=output_target_transform)
         self.reset()
 
     @torch.no_grad()
-    def update(self, logits, targets):
-        preds = logits.max(1)[1]
-        self._correct += ( preds.view(-1)==targets.view(-1) ).sum()
+    def update(self, outputs, targets):
+        outputs, targets = self._output_target_transform(outputs, targets)
+        outputs = outputs.max(1)[1]
+        self._correct += ( outputs.view(-1)==targets.view(-1) ).sum()
         self._cnt += torch.numel( targets )
 
     def get_results(self):
-        return {"acc": (self._correct / self._cnt).item() }
+        return (self._correct / self._cnt).detach().cpu()
     
     def reset(self):
         self._correct = self._cnt = 0.0
 
-class ClassificationTopkMetrics(StreamMetricsBase):
-    
-    @property
-    def PRIMARY_METRIC(self):
-        return "acc@%d"%self._topk[0]
 
-    def __init__(self, topk=(1, )):
-        self._max_k = max(topk)
+class TopkAccuracy(Metric):
+    def __init__(self, topk=5, output_target_transform: Callable=lambda x,y: (x,y)):
+        super(TopkAccuracy, self).__init__(output_target_transform=output_target_transform)
         self._topk = topk
         self.reset()
     
     @torch.no_grad()
-    def update(self, logits, targets):
-        _, preds = logits.topk(self._max_k, dim=1, largest=True, sorted=True)
-        correct = preds.eq( targets.view(-1, 1).expand_as(preds) )
-        for k in self._topk:
-            self.topk_correct[k] += correct[:, :k].view(-1).float().sum(0).item()
-        self.total += len(targets)
+    def update(self, outputs, targets):
+        outputs, targets = self._output_target_transform(outputs, targets)
+        _, outputs = outputs.topk(self._topk, dim=1, largest=True, sorted=True)
+        correct = outputs.eq( targets.view(-1, 1).expand_as(outputs) )
+        self._correct += correct[:, :self._topk].view(-1).float().sum(0).item()
+        self._cnt += len(targets)
     
     def get_results(self):
-        return { 'acc@%d'%k: self.topk_correct[k] / self.total for k in self._topk }
+        return self._correct / self._cnt
 
     def reset(self):
-        self.correct = { k:0.0 for k in self._topk }
-        self.total = 0.0
+        self._correct = 0.0
+        self._cnt = 0.0
+
 
 class StreamCEMAPMetrics():
     @property

@@ -32,7 +32,8 @@ class LabelConcatDataset(VisionDataset):
             targets_list.append(target)
         if self.transforms is not None:
             image, *targets_list = self.transforms( image, *targets_list ) 
-        return image, [*targets_list]
+        data = [ image, *targets_list ]
+        return data
 
     def __len__(self):
         return len(self.datasets[0].images)

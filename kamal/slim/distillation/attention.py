@@ -1,6 +1,6 @@
 from .kd import KDDistiller
-from kamal.core.criterion import AttentionLoss
-from kamal.core.criterion import KDLoss
+from kamal.core.criterions import AttentionLoss
+from kamal.core.criterions import KDLoss
 
 import torch
 import torch.nn as nn

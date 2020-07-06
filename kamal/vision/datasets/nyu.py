@@ -72,9 +72,7 @@ class NYUv2(VisionDataset):
         target = Image.open(self.targets[idx])
         if self.transforms is not None:
             image, target = self.transforms( image, target )
-            if self._is_depth:
-                target /= 1e3
-        return image, target.squeeze(0)
+        return image, target
 
     def __len__(self):
         return len(self.images)
