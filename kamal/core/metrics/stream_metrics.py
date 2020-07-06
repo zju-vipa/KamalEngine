@@ -2,19 +2,12 @@ from __future__ import division
 import torch
 
 import numpy as np
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
+from typing import Callable, Union, Any
 
-class StreamMetricsBase(ABC):
-    def __init__(self):
-        """ Overridden by subclasses """
-        raise NotImplementedError()
-
-    def __call__(self, pred, target):
-        self.update(pred, target)
-
-    @abstractproperty
-    def PRIMARY_METRIC(self):
-        raise NotImplementedError
+class Metric(ABC):
+    def __init__(self, output_target_transform: Callable=lambda x,y: (x,y) ):
+        self._output_target_transform = output_target_transform
 
     @abstractmethod
     def update(self, pred, target):
@@ -32,33 +25,37 @@ class StreamMetricsBase(ABC):
         raise NotImplementedError()
 
 
-class AverageMeter(object):
-    """ Average Record
-    """
-    def __init__(self):
-        self.record = dict()
-
-    def update(self, **kargs):
-        for k, v in kargs.items():
-            rec = self.record.get(k, None)
-            if rec is None:
-                self.record[k] = {'val': v, 'count': 1}  # init
-            else:
-                rec['val'] += v
-                rec['count'] += 1
-
-    def get_results(self, *keys):
-        if len(keys)==0:
-            keys = self.record.keys()
-        return {k: (self.record[k]['val']/self.record[k]['count']) for k in args}
-    
-    def reset(self, *keys):
-        if len(keys)==0:
-            self.record = dict()
-            return
+class MetricCompose(object):
+    def __init__(self, metric_dict: dict, primary_metric: Union[str, Callable]):
+        self._metric_dict = metric_dict
+        if isinstance(primary_metric, str):
+            assert primary_metric in self._metric_dict.keys()
+        self._primary_metric = primary_metric
         
-        for k in keys:
-            self.record[k] = {'val': 0.0, 'count': 0}
+    @torch.no_grad()
+    def update(self, outputs, targets):
+        for key, metric in self._metric_dict.items():
+            if isinstance(metric, Metric):
+                metric.update(outputs, targets)
+    
+    def get_results(self):
+        results = {}
+        for key, metric in self._metric_dict.items():
+            if isinstance(metric, Metric):
+                results[key] = metric.get_results()
+        return results
 
+    def reset(self):
+        for key, metric in self._metric_dict.items():
+            if isinstance(metric, Metric):
+                metric.reset()
 
+    def get_primary_metric(self, results: dict) -> (str, Any):
+        if isinstance( self._primary_metric, str ):
+            return self._primary_metric, results[self._primary_metric]
+        elif isinstance(self._primary_metric, Callable):
+            metric_name, metric_score = self._primary_metric( results )
+            return metric_name, metric_score
+        else:
+            raise NotImplementedError
 

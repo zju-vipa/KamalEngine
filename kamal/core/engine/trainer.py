@@ -3,9 +3,9 @@ import torch.nn as nn
 import abc, math, weakref, typing, time
 import numpy as np 
 
-from kamal.core.engine import history, task
-from kamal.utils.logger import get_logger
-from kamal.utils import set_mode
+from kamal.core.engine import history
+from kamal.core import tasks
+from kamal.utils import set_mode, get_logger
 
 class TrainerBase(abc.ABC):
     def __init__(self, logger=None, viz=None):
@@ -13,29 +13,9 @@ class TrainerBase(abc.ABC):
         self._viz = viz
         self.callbacks = []
 
-    @property
-    def logger(self):
-        return self._logger
-
-    @property
-    def viz(self):
-        return self._viz
-
-    @property
-    def max_iter(self):
-        return self._max_iter
-    
-    @property
-    def start_iter(self):
-        return self._start_iter
-
-    @property
-    def iter(self):
-        return self._iter
-    
     def setup(self):
         return self
-    
+
     def run(self, start_iter, max_iter):
         self._iter = start_iter
         self._start_iter, self._max_iter = start_iter, max_iter
@@ -52,7 +32,27 @@ class TrainerBase(abc.ABC):
     def reset(self):
         self._iter = self.start_iter
         self.history = None
-            
+
+    @property
+    def logger(self):
+        return self._logger
+
+    @property
+    def viz(self):
+        return self._viz
+
+    @property
+    def start_iter(self):
+        return self._start_iter
+
+    @property
+    def max_iter(self):
+        return self._max_iter
+    
+    @property
+    def iter(self):
+        return self._iter
+    
     def add_callbacks(self, callbacks: typing.Sequence):
         for callback in callbacks:
             callback.trainer = weakref.ref(self)
@@ -86,11 +86,11 @@ class BasicTrainer(TrainerBase):
         super(BasicTrainer, self).__init__(logger, viz)
 
     def setup(self, 
-              model:        nn.Module, 
-              task:         task.TaskBase, 
-              data_loader:  torch.utils.data.DataLoader, 
-              optimizer:    torch.optim.Optimizer, 
-              device        =None):
+              model: torch.nn.Module, 
+              task: tasks.Task, 
+              data_loader: torch.utils.data.DataLoader, 
+              optimizer: torch.optim.Optimizer, 
+              device: torch.device=None):
         """
         """
         self._data_loader = data_loader
@@ -98,7 +98,6 @@ class BasicTrainer(TrainerBase):
         if device is None:
             device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
         self._device = device
-
         self.model = model.to(self._device)
         self.optimizer = optimizer
         self.task = task
@@ -134,49 +133,40 @@ class BasicTrainer(TrainerBase):
     def step(self):
         self.optimizer.zero_grad()
         start_time = time.perf_counter()
-
         data = self._get_data()
         data = [ d.to(self._device) for d in data ] # move to device
-
-        loss_list = self.task.get_loss( self.model, *data ) # get loss
-        loss = sum( loss_list )
+        loss_dict = self.task.get_loss( self.model, *data ) # get loss
+        loss = sum( loss_dict.values() )
         loss.backward()
         self.optimizer.step()
         step_time = time.perf_counter() - start_time
-
         # record training info
         info = {
             'total_loss': loss.item(),
             'step_time': step_time,
             'lr': float( self.optimizer.param_groups[0]['lr'] )
         }
+        info.update( loss_dict )
         self.history.put_scalars( **info )
 
 
-class BasicKDTrainer(TrainerBase):
+class BasicKDTrainer(BasicTrainer):
     def __init__(   self, 
                     logger=None,
                     viz=None, ):
         super( BasicKDTrainer, self ).__init__(logger, viz )
 
     def setup(self, student, teacher, task, data_loader, optimizer, device=None):
-        self._data_loader = data_loader
-        self._data_loader_iter = iter(data_loader)
-        if device is None:
-            device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
-        self._device = device
-
-        self.model = self.student = student.to(self.device)
+        super(BasicKDTrainer, self).setup( model=student, task=task, data_loader=data_loader, optimizer=optimizer, device=device )
+        self.student = self.model
         self.teacher = teacher.to(self.device)
-        self.optimizer = optimizer
-        self.task = task
         return self
 
     def run( self, start_iter, max_iter ):
         with set_mode(self.student, training=True), \
              set_mode(self.teacher, training=False):
             super( BasicKDTrainer, self ).run( start_iter, max_iter)
-
+    
     @property
     def data_loader(self):
         return self._data_loader

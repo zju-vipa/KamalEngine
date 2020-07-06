@@ -3,7 +3,7 @@ import time
 import torch.nn.functional as F
 from kamal.slim.distillation.kd import KDDistiller
 from kamal.utils import set_mode
-from kamal.core.criterion import kldiv
+from kamal.core.criterions import kldiv
 
 class ZSKTDistiller(KDDistiller):
     def __init__(   self, 

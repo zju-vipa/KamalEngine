@@ -1,5 +1,5 @@
 
-from kamal.core import engine, criterion, metrics
+from kamal.core import engine, criterions, metrics
 from kamal.utils import set_mode
 
 import torch

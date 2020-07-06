@@ -1,6 +1,7 @@
 from .layer import SegnetDown, SegnetUp
 import torch.nn as nn 
 from ...classification import vgg
+from torchvision.models.utils import load_state_dict_from_url
 
 __all__=[   'SegNet',
             'segnet_vgg11', 'segnet_vgg13','segnet_vgg16','segnet_vgg19',
@@ -64,10 +65,10 @@ class SegNet( nn.Module ):
         self.down4 = SegnetDown(channel_list[2],  channel_list[3], num_convs=arch[3], batch_norm=batch_norm) # 512
         self.down5 = SegnetDown(channel_list[3],  channel_list[4], num_convs=arch[4], batch_norm=batch_norm) # 512
 
-        self.up5 = SegnetUp(channel_list[4], channel_list[3], num_convs=arch[4], batch_norm=batch_norm)     # 512
-        self.up4 = SegnetUp(channel_list[3], channel_list[2], num_convs=arch[3], batch_norm=batch_norm)     # 256
-        self.up3 = SegnetUp(channel_list[2], channel_list[1], num_convs=arch[2], batch_norm=batch_norm)     # 128
-        self.up2 = SegnetUp(channel_list[1], channel_list[0], num_convs=arch[1], batch_norm=batch_norm)     # 64
+        self.up5 = SegnetUp(channel_list[4], channel_list[3], num_convs=arch[4], batch_norm=batch_norm)      # 512
+        self.up4 = SegnetUp(channel_list[3], channel_list[2], num_convs=arch[3], batch_norm=batch_norm)      # 256
+        self.up3 = SegnetUp(channel_list[2], channel_list[1], num_convs=arch[2], batch_norm=batch_norm)      # 128
+        self.up2 = SegnetUp(channel_list[1], channel_list[0], num_convs=arch[1], batch_norm=batch_norm)      # 64
         self.up1 = SegnetUp(channel_list[0], self.num_classes, num_convs=arch[0], outer_most=True, batch_norm=batch_norm)
 
         if pretrained_backbone:
@@ -116,7 +117,7 @@ def segnet_vgg11(pretrained=False, progress=True, **kwargs):
     """
     model = SegNet(arch='segnet_vgg11', **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['segnet_vgg11'], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -125,7 +126,7 @@ def segnet_vgg11_bn(pretrained=False, progress=True, **kwargs):
     """
     model = SegNet(arch='segnet_vgg11_bn', **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['segnet_vgg11_bn'], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -134,7 +135,7 @@ def segnet_vgg13(pretrained=False, progress=True, **kwargs):
     """
     model = SegNet(arch='segnet_vgg13', **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['segnet_vgg13'], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -143,7 +144,7 @@ def segnet_vgg13_bn(pretrained=False, progress=True, **kwargs):
     """
     model = SegNet(arch='segnet_vgg13_bn', **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['segnet_vgg13_bn'], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -153,7 +154,7 @@ def segnet_vgg16(pretrained=False, progress=True, **kwargs):
     """
     model = SegNet(arch='segnet_vgg16', **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['segnet_vgg16'], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -162,7 +163,7 @@ def segnet_vgg16_bn(pretrained=False, progress=True, **kwargs):
     """
     model = SegNet(arch='segnet_vgg16_bn', **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['segnet_vgg16_bn'], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -171,7 +172,7 @@ def segnet_vgg19(pretrained=False, progress=True, **kwargs):
     """
     model = SegNet(arch='segnet_vgg19', **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['segnet_vgg19'], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -180,7 +181,7 @@ def segnet_vgg19_bn(pretrained=False, progress=True, **kwargs):
     """
     model = SegNet(arch='segnet_vgg19_bn', **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['segnet_vgg19_bn'], progress=progress)
         model.load_state_dict(state_dict)
     return model
 

@@ -1,4 +1,4 @@
-from kamal import vision, engine, utils
+from kamal import vision, engine, utils, metrics
 from kamal.vision import sync_transforms as sT
 
 import torch, time
@@ -52,24 +52,25 @@ def main():
     device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
     optim = torch.optim.SGD( model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4 )
     sched = torch.optim.lr_scheduler.CosineAnnealingLR( optim, T_max=TOTAL_ITERS )
-    evaluator = engine.evaluator.ClassificationEvaluator( val_loader, progress=False )
-    task = engine.task.ClassificationTask()
+
+    metric = metrics.StandardTaskMetrics.classification()
+    evaluator = engine.evaluator.BasicEvaluator( val_loader, metric=metric, progress=False )
+    task = engine.task.StandardTask.classification()
     trainer = engine.trainer.BasicTrainer( 
         logger=utils.logger.get_logger(args.dataset), 
         viz=SummaryWriter( log_dir='run/%s-%s'%(args.dataset, time.asctime().replace( ' ', '_' ) ) ) 
     )
     trainer.add_callbacks([
-        engine.callbacks.ValidationCallback( 
+        engine.callbacks.EvalAndCkptCallback( 
             interval=len(train_loader), 
             evaluator=evaluator,
-            ckpt_tag='%s-resnet18'%args.dataset,
+            ckpt_prefix='%s-resnet18'%args.dataset,
             save_type=('best', ),
             verbose=False 
         ),
         #engine.callbacks.LoggingCallback( keys=('total_loss', 'lr') ),
-        engine.callbacks.LRSchedulerCallback( scheduler=[sched] )
+        engine.callbacks.LRSchedulerCallback( schedulers=[sched] )
     ])
-
     trainer.setup( model=model, task=task,
                    data_loader=train_loader,
                    optimizer=optim,

@@ -8,7 +8,7 @@ class HistoryBuffer(object):
         self._count = 0
         self._global_avg = 0
 
-    def update(self, value, iteration):
+    def update(self, iteration, value):
         if len(self._data) == self._max_length:
             self._data = self._data[self._max_length//2:] # remove old records
         self._data.append( (iteration, value) )
@@ -39,7 +39,7 @@ class History(object):
         self._iter = start_iter
         
     def put_scalar(self, name, value):
-        self._history[ name ].update( float(value), self._iter )
+        self._history[ name ].update( self._iter, float(value) )
 
     def put_scalars(self, **kwargs):
         for k, v in kwargs.items():
@@ -78,5 +78,3 @@ class History(object):
     @property
     def iter(self):
         return self._iter
-
-

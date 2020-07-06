@@ -1,6 +1,6 @@
 from .kd import KDDistiller
-from kamal.core.criterion import KDLoss
-from kamal.core.criterion import NSTLoss
+from kamal.core.criterions import KDLoss
+from kamal.core.criterions import NSTLoss
 
 import torch
 import torch.nn as nn

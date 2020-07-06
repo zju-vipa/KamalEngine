@@ -1,5 +1,5 @@
 from kamal.core.engine.trainer import TrainerBase
-from kamal.core.criterion import KDLoss
+from kamal.core.criterions import KDLoss
 from kamal.utils.logger import get_logger
 from kamal.utils import set_mode
 from kamal.core.engine.history import History

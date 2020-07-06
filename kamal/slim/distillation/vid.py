@@ -5,7 +5,7 @@ import torch._ops
 import torch.nn.functional as F
 from .kd import KDDistiller
 from kamal.utils import set_mode
-from kamal.core.criterion import KDLoss
+from kamal.core.criterions import KDLoss
 
 class VIDDistiller(KDDistiller):
     def __init__(self, logger=None, viz=None ):

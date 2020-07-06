@@ -1,5 +1,5 @@
 from .kd import KDDistiller
-from kamal.core.criterion import KDLoss
+from kamal.core.criterions import KDLoss
 
 import torch.nn as nn
 import torch._ops
