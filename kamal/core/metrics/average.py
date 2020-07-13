@@ -6,14 +6,15 @@ from typing import Callable
 __all__=['AverageMetric']
 
 class AverageMetric(Metric):
-    def __init__(self, fn:Callable, output_target_transform: Callable=lambda x,y: (x,y)):
-        super(AverageMetric, self).__init__(output_target_transform=output_target_transform)
+    def __init__(self, fn:Callable, attach_to=None):
+        super(AverageMetric, self).__init__(attach_to=attach_to)
         self._fn = fn
         self.reset()
 
     @torch.no_grad()
     def update(self, outputs, targets):
-        outputs, targets = self._output_target_transform(outputs, targets)
+
+        outputs, targets = self._attach(outputs, targets)
         m = self._fn( outputs, targets )
         if x.ndim > 1:
             self._cnt += m.shape[0]

@@ -1,16 +1,12 @@
-from hyperopt import hp, fmin, tpe
 import torch
-from copy import deepcopy
-from ruamel_yaml import YAML
 import os
-import tempfile
-import uuid
+import tempfile, uuid
 import contextlib
 import typing
 import numpy as np
 from tqdm import tqdm
 
-from kamal.core.engine import evaluator, callbacks
+from kamal.core.engine import evaluator
 
 @contextlib.contextmanager
 def archive_callbasks(trainer):
@@ -44,7 +40,7 @@ class _LRFinderScheduler(torch.optim.lr_scheduler._LRScheduler):
         
         return [self.lr_range[0] + (self.lr_range[1]-self.lr_range[0]) * curr_iter / self.max_iter for group in self.optimizer.param_groups]
 
-class _LRFinderCallback(callbacks.CallbackBase):
+class _LRFinderCallback(object):
     def __init__(self,
                  interval,
                  evaluator,

@@ -1,285 +1,119 @@
 import torch
 import torch.nn as nn
-import abc, math, weakref, typing, time
-import numpy as np 
-
-from kamal.core.engine import history
+from kamal.core.engine.engine import Engine, Event, DefaultEvents, State
 from kamal.core import tasks
-from kamal.utils import set_mode, get_logger
+from kamal.utils import set_mode, move_to_device, get_logger, split_batch
+from typing import Callable, Mapping, Any, Sequence
+import time
+import weakref
 
-class TrainerBase(abc.ABC):
-    def __init__(self, logger=None, viz=None):
-        self._logger = logger if logger is not None else get_logger(name='kamal', color=True)
-        self._viz = viz
-        self.callbacks = []
-
-    def setup(self):
-        return self
-
-    def run(self, start_iter, max_iter):
-        self._iter = start_iter
-        self._start_iter, self._max_iter = start_iter, max_iter
-
-        self.history = history.History(start_iter) # init history
-        self.before_train()
-        for self._iter in range( start_iter, max_iter ):
-            self.before_step()
-            self.step()
-            self.after_step()
-            self.history.step()
-        self.after_train()
-
-    def reset(self):
-        self._iter = self.start_iter
-        self.history = None
-
-    @property
-    def logger(self):
-        return self._logger
-
-    @property
-    def viz(self):
-        return self._viz
-
-    @property
-    def start_iter(self):
-        return self._start_iter
-
-    @property
-    def max_iter(self):
-        return self._max_iter
-    
-    @property
-    def iter(self):
-        return self._iter
-    
-    def add_callbacks(self, callbacks: typing.Sequence):
-        for callback in callbacks:
-            callback.trainer = weakref.ref(self)
-        self.callbacks.extend( callbacks )
-
-    @abc.abstractmethod
-    def step(self):
-        pass
-
-    def before_train(self):
-        for callback in self.callbacks:
-            callback.before_train()
-
-    def after_train(self):
-        for callback in self.callbacks:
-            callback.after_train()
-
-    def before_step(self):
-        for callback in self.callbacks:
-            callback.before_step()
-
-    def after_step(self):
-        for callback in self.callbacks:
-            callback.after_step()
-    
-
-class BasicTrainer(TrainerBase):
-    def __init__(   self, 
-                    logger=None,
-                    viz=None):
-        super(BasicTrainer, self).__init__(logger, viz)
+class BasicTrainer(Engine):
+    def __init__( self, 
+                  logger=None,
+                  tb_writer=None):
+        super(BasicTrainer, self).__init__(logger=logger, tb_writer=tb_writer)
 
     def setup(self, 
               model: torch.nn.Module, 
-              task: tasks.Task, 
-              data_loader: torch.utils.data.DataLoader, 
+              task: tasks.Task,
+              dataloader: torch.utils.data.DataLoader,
               optimizer: torch.optim.Optimizer, 
               device: torch.device=None):
-        """
-        """
-        self._data_loader = data_loader
-        self._data_loader_iter = iter(data_loader)
-        if device is None:
-            device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
-        self._device = device
-        self.model = model.to(self._device)
-        self.optimizer = optimizer
-        self.task = task
-        return self
-
-    def run( self, start_iter, max_iter ):
-         with set_mode(self.model, training=True):
-            super( BasicTrainer, self ).run( start_iter, max_iter)
-
-    def reset(self):
-        self._iter = self.start_iter
-        self.history = None
-        self._data_loader_iter = iter(data_loader)
-
-    @property
-    def data_loader(self):
-        return self._data_loader
-
-    @property
-    def device(self):
-        return self._device
-
-    def _get_data(self):
-        try:
-            data = next( self._data_loader_iter )
-        except StopIteration:
-            self._data_loader_iter = iter(self._data_loader) # reset iterator
-            data = next( self._data_loader_iter )
-        if not isinstance( data, typing.Sequence ):
-            data = [data, ]
-        return data
-
-    def step(self):
-        self.optimizer.zero_grad()
-        start_time = time.perf_counter()
-        data = self._get_data()
-        data = [ d.to(self._device) for d in data ] # move to device
-        loss_dict = self.task.get_loss( self.model, *data ) # get loss
-        loss = sum( loss_dict.values() )
-        loss.backward()
-        self.optimizer.step()
-        step_time = time.perf_counter() - start_time
-        # record training info
-        info = {
-            'total_loss': loss.item(),
-            'step_time': step_time,
-            'lr': float( self.optimizer.param_groups[0]['lr'] )
-        }
-        info.update( loss_dict )
-        self.history.put_scalars( **info )
-
-
-class BasicKDTrainer(BasicTrainer):
-    def __init__(   self, 
-                    logger=None,
-                    viz=None, ):
-        super( BasicKDTrainer, self ).__init__(logger, viz )
-
-    def setup(self, student, teacher, task, data_loader, optimizer, device=None):
-        super(BasicKDTrainer, self).setup( model=student, task=task, data_loader=data_loader, optimizer=optimizer, device=device )
-        self.student = self.model
-        self.teacher = teacher.to(self.device)
-        return self
-
-    def run( self, start_iter, max_iter ):
-        with set_mode(self.student, training=True), \
-             set_mode(self.teacher, training=False):
-            super( BasicKDTrainer, self ).run( start_iter, max_iter)
-    
-    @property
-    def data_loader(self):
-        return self._data_loader
-
-    @property
-    def device(self):
-        return self._device
-
-    def _get_data(self):
-        try:
-            data = next( self._data_loader_iter )
-        except StopIteration:
-            self._data_loader_iter = iter(self._data_loader) # reset iterator
-            data = next( self._data_loader_iter )
-        if not isinstance( data, typing.Sequence ):
-            data = [data, ]
-        return data
-
-    def step(self):
-        self.optimizer.zero_grad()
-        start_time = time.perf_counter()
-        # prepare data
-        data = self._get_data()
-        data = [ d.to(self._device) for d in data ] # move to device
-
-        with torch.no_grad():
-            t_out = self.task.get_outputs( self.teacher, data[0] )
-        loss_list = self.task.get_loss( self.student, data[0], [data[1], t_out] )
-        loss = sum( loss_list )
-        loss.backward()
-        self.optimizer.step()
-        step_time = time.perf_counter() - start_time
-
-        # record training info
-        info = {
-            'total_loss': loss.item(),
-            'step_time': step_time,
-            'lr': float( self.optimizer.param_groups[0]['lr'] )
-        }
-        self.history.put_scalars( **info )
-
-
-class MultitaskTrainer(BasicTrainer):
-    def __init__(self, task, model, teachers, split_size, logger=None, viz=None):
-        super(MultitaskTrainer, self).__init__(task, model, logger=logger, viz=viz)
-        self.teachers = teachers
-        self.split_size = split_size
-
-    def train(self, start_iter, max_iter, train_loader, optimizer,  device=None):
-        # init data_loader & optimizer
+        
         if device is None:
             device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
         self.device = device
+        if isinstance(task, Sequence):
+            task = tasks.TaskCompose(task)
+        self.task = task
+        self.model = model
+        self.dataloader = dataloader
+        self.optimizer = optimizer
+        return self
+
+    def run( self, max_iter, start_iter=0, epoch_length=None):
         self.model.to(self.device)
-        for i in range(len(self.teachers)):
-            self.teachers[i].to(self.device)
         with set_mode(self.model, training=True):
-            for i in range(len(self.teachers)):
-                set_mode(self.teachers[i], training=False)
-            super( MultitaskTrainer, self ).train(start_iter, max_iter, train_loader, optimizer, device=device)
+            super( BasicTrainer, self ).run( self.step_fn, self.dataloader, start_iter=start_iter, max_iter=max_iter, epoch_length=epoch_length)
 
-    def step(self):
-        self.optimizer.zero_grad()
+    @staticmethod
+    def basic_criterion_wrapper( name, criterion: Callable, scaling=1.0 ):
+        def wrapper(engine, batch):
+            output = engine.model( batch[0] )
+            return { name: criterion( output, batch[1] )*scaling }
+        return wrapper
+
+    def step_fn(self, engine, batch):
+        model = self.model
         start_time = time.perf_counter()
-        
-        try:
-            data = next( self._train_loader_iter )
-        except StopIteration:
-            self._train_loader_iter = iter(self.train_loader) # reset iterator
-            data = next( self._train_loader_iter )
-        if not isinstance( data, typing.Iterable ):
-            data = [data, ]
-            
-        data[0] = data[0].to(self.device)# move to device
-        data[1] = [d.to(self.device) for d in data[1]]
-        loss_dict = self.task.get_loss( self.model, data[0], data[1], self.split_size ) # get loss
+        batch = move_to_device(batch, self.device)
+        inputs, targets = split_batch(batch)
+        outputs = model(inputs)
+        loss_dict = self.task.get_loss(outputs, targets) # get loss
         loss = sum( loss_dict.values() )
+        self.optimizer.zero_grad()
         loss.backward()
-
-        # optimize
         self.optimizer.step()
         step_time = time.perf_counter() - start_time
+        metrics = { loss_name: loss_value.item() for (loss_name, loss_value) in loss_dict.items() }
+        metrics.update({
+            'total_loss': loss.item(),
+            'step_time': step_time,
+            'lr': float( self.optimizer.param_groups[0]['lr'] )
+        })
+        return metrics
 
-        # record training info
-        info = loss_dict
-        info['total_loss'] = loss
-        info['step_time'] = step_time
-        info['lr'] = float( self.optimizer.param_groups[0]['lr'] )
-        self._gather_training_info( info )
 
+class KDTrainer(BasicTrainer):
 
-    def reset(self):
-        self.history = None
-        self._train_loader_iter = iter(train_loader)
-        self.iter = self.start_iter
+    def setup(self, 
+              student: torch.nn.Module, 
+              teacher: torch.nn.Module, 
+              task: tasks.Task,
+              dataloader: torch.utils.data.DataLoader,
+              optimizer: torch.optim.Optimizer, 
+              device: torch.device=None):
 
-    def _gather_training_info(self, info): 
-        info = {
-            k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v)
-            for k, v in info.items()
-        }
-        current_lr = info.pop('lr')
-        all_info = comm.gather(info)
-        if comm.is_main_process():
-            if "step_time" in all_info[0]:
-                step_time = np.max([x.pop("step_time") for x in all_info])
-                self.history.put_scalar("step_time", step_time)
-                self.history.put_scalar("lr", current_lr)
-            # average the rest training info
-            info = {
-                k: np.mean([x[k] for x in all_info]) for k in all_info[0].keys()
-            }
-            total_losses_reduced = sum(loss for loss in info.values())
-            self.history.put_scalar("total_loss", total_losses_reduced)
-            if len(info) > 1:
-                self.history.put_scalars(**info)
+        super(KDTrainer, self).setup(
+            model=student, task=task, dataloader=dataloader, optimizer=optimizer, device=device)
+        if isinstance(teacher, (list, tuple)):
+            if len(teacher)==1:
+                teacher=teacher[0]
+            else:
+                teacher = nn.ModuleList(teacher)
+        self.student = self.model
+        self.teacher = teacher
+        return self
+
+    def run( self, max_iter, start_iter=0, epoch_length=None):
+        self.student.to(self.device)
+        self.teacher.to(self.device)
+
+        with set_mode(self.student, training=True), \
+             set_mode(self.teacher, training=False):
+            super( BasicTrainer, self ).run(
+                self.step_fn, self.dataloader, start_iter=start_iter, max_iter=max_iter, epoch_length=epoch_length)
+
+    def step_fn(self, engine, batch):
+        model = self.model
+        start_time = time.perf_counter()
+        batch = move_to_device(batch, self.device)
+        inputs, targets = split_batch(batch)
+        outputs = model(inputs)
+        if isinstance(self.teacher, nn.ModuleList):
+            soft_targets = [ t(inputs) for t in self.teacher ]
+        else:
+            soft_targets = self.teacher(inputs)
+        loss_dict = self.task.get_loss(outputs, soft_targets) # get loss
+        loss = sum( loss_dict.values() )
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        step_time = time.perf_counter() - start_time
+        metrics = { loss_name: loss_value.item() for (loss_name, loss_value) in loss_dict.items() }
+        metrics.update({
+            'total_loss': loss.item(),
+            'step_time': step_time,
+            'lr': float( self.optimizer.param_groups[0]['lr'] )
+        })
+        return metrics

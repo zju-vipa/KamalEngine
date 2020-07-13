@@ -3,15 +3,15 @@ import torch
 from typing import Callable
 
 class ConfusionMatrix(Metric):
-    def __init__(self, num_classes, ignore_idx=None, output_target_transform: Callable=lambda x,y: (x,y)):
-        super(ConfusionMatrix, self).__init__(output_target_transform=output_target_transform)
+    def __init__(self, num_classes, ignore_idx=None, attach_to=None):
+        super(ConfusionMatrix, self).__init__(attach_to=attach_to)
         self._num_classes = num_classes   
         self._ignore_idx = ignore_idx     
         self.reset()
 
     @torch.no_grad()
     def update(self, outputs, targets):
-        outputs, targets = self._output_target_transform(outputs, targets)
+        outputs, targets = self._attach(outputs, targets)
         if self.confusion_matrix.device != outputs.device:
             self.confusion_matrix = self.confusion_matrix.to(device=outputs.device)
         preds = outputs.max(1)[1].flatten()
@@ -32,7 +32,7 @@ class ConfusionMatrix(Metric):
         self.confusion_matrix = torch.zeros(self._num_classes, self._num_classes, dtype=torch.int64, requires_grad=False)
 
 class IoU(Metric):
-    def __init__(self, confusion_matrix: ConfusionMatrix):
+    def __init__(self, confusion_matrix: ConfusionMatrix, attach_to=None):
         self._confusion_matrix = confusion_matrix
 
     def update(self, outputs, targets):

@@ -9,16 +9,20 @@ __all__=['MeanSquaredError', 'RootMeanSquaredError', 'MeanAbsoluteError',
          'AbsoluteRelativeDifference', 'SquaredRelativeDifference', 'Threshold' ]
 
 class MeanSquaredError(Metric):
-    def __init__(self, output_target_transform: Callable=lambda x,y: (x.view_as(y), y) ):
-        super(MeanSquaredError, self).__init__( output_target_transform=output_target_transform )
+    def __init__(self, log_scale=False, attach_to=None):
+        super(MeanSquaredError, self).__init__( attach_to=attach_to )
         self.reset()
+        self.log_scale=log_scale
 
     @torch.no_grad()
-    def update(self, ouputs, targets):
-        ouputs, targets = self._output_target_transform(ouputs, targets)
-        diff = torch.sum((ouputs - targets)**2)
+    def update(self, outputs, targets):
+        outputs, targets = self._attach(outputs, targets)
+        if self.log_scale:
+            diff = torch.sum((torch.log(outputs+1e-8) - torch.log(targets+1e-8))**2)
+        else:
+            diff = torch.sum((outputs - targets)**2)
         self._accum_sq_diff += diff
-        self._cnt += torch.numel(ouputs)
+        self._cnt += torch.numel(outputs)
 
     def get_results(self):
         return (self._accum_sq_diff / self._cnt).detach().cpu()
@@ -34,16 +38,16 @@ class RootMeanSquaredError(MeanSquaredError):
 
 
 class MeanAbsoluteError(Metric):
-    def __init__(self, output_target_transform: Callable=lambda x,y: (x.view_as(y), y) ):
-        super(MeanAbsoluteError, self).__init__( output_target_transform=output_target_transform )
+    def __init__(self, attach_to=None ):
+        super(MeanAbsoluteError, self).__init__( attach_to=attach_to )
         self.reset()
 
     @torch.no_grad()
-    def update(self, ouputs, targets):
-        ouputs, targets = self._output_target_transform(ouputs, targets)
-        diff = torch.sum((ouputs - targets).abs())
+    def update(self, outputs, targets):
+        outputs, targets = self._attach(outputs, targets)
+        diff = torch.sum((outputs - targets).abs())
         self._accum_abs_diff += diff
-        self._cnt += torch.numel(ouputs)
+        self._cnt += torch.numel(outputs)
 
     def get_results(self):
         return (self._accum_abs_diff / self._cnt).detach().cpu()
@@ -54,17 +58,17 @@ class MeanAbsoluteError(Metric):
 
 
 class ScaleInveriantMeanSquaredError(Metric):
-    def __init__(self, output_target_transform: Callable=lambda x,y: (x.view_as(y), y) ):
-        super(ScaleInveriantMeanSquaredError, self).__init__( output_target_transform=output_target_transform )
+    def __init__(self, attach_to=None ):
+        super(ScaleInveriantMeanSquaredError, self).__init__( attach_to=attach_to )
         self.reset()
 
     @torch.no_grad()
-    def update(self, ouputs, targets):
-        ouputs, targets = self._output_target_transform(ouputs, targets)
-        diff_log = torch.log( ouputs+1e-8 ) - torch.log( targets+1e-8 )
+    def update(self, outputs, targets):
+        outputs, targets = self._attach(outputs, targets)
+        diff_log = torch.log( outputs+1e-8 ) - torch.log( targets+1e-8 )
         self._accum_log_diff = diff_log.sum()
         self._accum_sq_log_diff = (diff_log**2).sum()
-        self._cnt += torch.numel(ouputs)
+        self._cnt += torch.numel(outputs)
 
     def get_results(self):
         return ( self._accum_sq_log_diff / self._cnt - 0.5 * (self._accum_log_diff**2 / self._cnt**2) ).detach().cpu()
@@ -76,16 +80,16 @@ class ScaleInveriantMeanSquaredError(Metric):
 
 
 class RelativeDifference(Metric):
-    def __init__(self, output_target_transform: Callable=lambda x,y: (x.view_as(y), y) ):
-        super(RelativeDifference, self).__init__( output_target_transform=output_target_transform )
+    def __init__(self, attach_to=None ):
+        super(RelativeDifference, self).__init__( attach_to=attach_to )
         self.reset()
 
     @torch.no_grad()
-    def update(self, ouputs, targets):
-        ouputs, targets = self._output_target_transform(ouputs, targets)
-        diff = (ouputs - targets).abs()
+    def update(self, outputs, targets):
+        outputs, targets = self._attach(outputs, targets)
+        diff = (outputs - targets).abs()
         self._accum_abs_rel += (diff/targets).sum()
-        self._cnt += torch.numel(ouputs)
+        self._cnt += torch.numel(outputs)
 
     def get_results(self):
         return (self._accum_abs_rel / self._cnt).detach().cpu()
@@ -96,16 +100,16 @@ class RelativeDifference(Metric):
 
 
 class AbsoluteRelativeDifference(Metric):
-    def __init__(self, output_target_transform: Callable=lambda x,y: (x.view_as(y), y) ):
-        super(AbsoluteRelativeDifference, self).__init__( output_target_transform=output_target_transform )
+    def __init__(self, attach_to=None ):
+        super(AbsoluteRelativeDifference, self).__init__( attach_to=attach_to )
         self.reset()
 
     @torch.no_grad()
-    def update(self, ouputs, targets):
-        ouputs, targets = self._output_target_transform(ouputs, targets)
-        diff = (ouputs - targets).abs()
+    def update(self, outputs, targets):
+        outputs, targets = self._attach(outputs, targets)
+        diff = (outputs - targets).abs()
         self._accum_abs_rel += (diff/targets).sum()
-        self._cnt += torch.numel(ouputs)
+        self._cnt += torch.numel(outputs)
 
     def get_results(self):
         return (self._accum_abs_rel / self._cnt).detach().cpu()
@@ -116,16 +120,16 @@ class AbsoluteRelativeDifference(Metric):
 
 
 class AbsoluteRelativeDifference(Metric):
-    def __init__(self, output_target_transform: Callable=lambda x,y: (x.view_as(y), y) ):
-        super(AbsoluteRelativeDifference, self).__init__( output_target_transform=output_target_transform )
+    def __init__(self, attach_to=None ):
+        super(AbsoluteRelativeDifference, self).__init__( attach_to=attach_to )
         self.reset()
 
     @torch.no_grad()
-    def update(self, ouputs, targets):
-        ouputs, targets = self._output_target_transform(ouputs, targets)
-        diff = (ouputs - targets).abs()
+    def update(self, outputs, targets):
+        outputs, targets = self._attach(outputs, targets)
+        diff = (outputs - targets).abs()
         self._accum_abs_rel += (diff/targets).sum()
-        self._cnt += torch.numel(ouputs)
+        self._cnt += torch.numel(outputs)
 
     def get_results(self):
         return (self._accum_abs_rel / self._cnt).detach().cpu()
@@ -136,16 +140,16 @@ class AbsoluteRelativeDifference(Metric):
 
 
 class SquaredRelativeDifference(Metric):
-    def __init__(self, output_target_transform: Callable=lambda x,y: (x.view_as(y), y) ):
-        super(SquaredRelativeDifference, self).__init__( output_target_transform=output_target_transform )
+    def __init__(self, attach_to=None ):
+        super(SquaredRelativeDifference, self).__init__( attach_to=attach_to )
         self.reset()
 
     @torch.no_grad()
-    def update(self, ouputs, targets):
-        ouputs, targets = self._output_target_transform(ouputs, targets)
-        diff = (ouputs - targets)**2
+    def update(self, outputs, targets):
+        outputs, targets = self._attach(outputs, targets)
+        diff = (outputs - targets)**2
         self._accum_sq_rel += (diff/targets).sum()
-        self._cnt += torch.numel(ouputs)
+        self._cnt += torch.numel(outputs)
 
     def get_results(self):
         return (self._accum_sq_rel / self._cnt).detach().cpu()
@@ -156,19 +160,19 @@ class SquaredRelativeDifference(Metric):
 
 
 class Threshold(Metric):
-    def __init__(self, thresholds=[1.25, 1.25**2, 1.25**3], output_target_transform: Callable=lambda x,y: (x.view_as(y), y) ):
-        super(Threshold, self).__init__( output_target_transform=output_target_transform )
+    def __init__(self, thresholds=[1.25, 1.25**2, 1.25**3], attach_to=None ):
+        super(Threshold, self).__init__( attach_to=attach_to )
         self.thresholds = thresholds
         self.reset()
         
 
     @torch.no_grad()
-    def update(self, ouputs, targets):
-        ouputs, targets = self._output_target_transform(ouputs, targets)
-        sigma = torch.max(ouputs / targets, targets / ouputs)
+    def update(self, outputs, targets):
+        outputs, targets = self._attach(outputs, targets)
+        sigma = torch.max(outputs / targets, targets / outputs)
         for thres in self.thresholds:
             self._accum_thres[thres]+=torch.sum( sigma<thres )
-        self._cnt += torch.numel(ouputs)
+        self._cnt += torch.numel(outputs)
 
     def get_results(self):
         return { thres: (self._accum_thres[thres] / self._cnt).detach().cpu() for thres in self.thresholds }

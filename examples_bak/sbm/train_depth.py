@@ -68,7 +68,7 @@ def main():
         optimizer, args.total_iters)
     evaluator = engine.evaluator.DepthEvaluator(val_loader)
     trainer = engine.trainer.SimpleTrainer(
-        task=task, model=model, viz=Visdom(port='19999', env='depth_NYUv2_vgg11_bn'))
+        task=task, model=model, tb_writer=Visdom(port='19999', env='depth_NYUv2_vgg11_bn'))
 
     trainer.add_callbacks([
         engine.callbacks.LoggingCallback(

@@ -99,7 +99,7 @@ def main():
     evaluator = engine.evaluator.SbmEvaluator(
         val_loader, split_size=split_size, task=task, tasks=tasks)
     trainer = amalgamation.sbm.SbmTrainer(
-        task=task, model=joint_model, teachers=[teacher_seg_model, teacher_dep_model], split_size=split_size, viz=Visdom(port='19999', env='sbm'))
+        task=task, model=joint_model, teachers=[teacher_seg_model, teacher_dep_model], split_size=split_size, tb_writer=Visdom(port='19999', env='sbm'))
 
     trainer.add_callbacks([
         engine.callbacks.LoggingCallback(
