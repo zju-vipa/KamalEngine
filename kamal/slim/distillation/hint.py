@@ -1,5 +1,5 @@
 from .kd import KDDistiller
-from kamal.core.criterions import KDLoss
+from kamal.core.tasks.loss import KDLoss
 
 import torch.nn as nn
 import torch._ops
@@ -8,16 +8,15 @@ import time
 
 
 class HintDistiller(KDDistiller):
-    def __init__(self, logger=None, viz=None ):
-        super(HintDistiller, self).__init__( logger, viz )
+    def __init__(self, logger=None, tb_writer=None ):
+        super(HintDistiller, self).__init__( logger, tb_writer )
 
     def setup(self, 
-              student, teacher, regressor, data_loader, optimizer, 
-              hint_layer=2, T=1.0, gamma=1.0, 
-              alpha=None, beta=None, 
+              student, teacher, regressor, dataloader, optimizer, 
+              hint_layer=2, T=1.0, alpha=1.0, beta=1.0, gamma=1.0, 
               stu_hooks=[], tea_hooks=[], out_flags=[], device=None):
         super( HintDistiller, self ).setup( 
-            student, teacher, data_loader, optimizer, T=T, gamma=gamma, alpha=alpha, device=device )
+            student, teacher, dataloader, optimizer, T=T, alpha=alpha, beta=beta, gamma=gamma, device=device )
         self.regressor = regressor
         self._hint_layer = hint_layer
         self._beta = beta
@@ -25,39 +24,13 @@ class HintDistiller(KDDistiller):
         self.tea_hooks = tea_hooks
         self.out_flags = out_flags
         self.regressor.to(device)
-        
-    def step(self):
-        self.optimizer.zero_grad()
-        start_time = time.perf_counter()
-
-        data, targets = self._get_data()
-        data, targets = data.to(self.device), targets.to(self.device)
-
-        s_out = self.student(data)
-        feat_s = [f.feat_out if flag else f.feat_in for (
-            f, flag) in zip(self.stu_hooks, self.out_flags)]
-        with torch.no_grad():
-            t_out = self.teacher(data)
-            feat_t = [f.feat_out.detach() if flag else f.feat_in for (
-                f, flag) in zip(self.tea_hooks, self.out_flags)]
+    
+    def additional_kd_loss(self, engine, batch):
+        feat_s = [f.feat_out if flag else f.feat_in for (f, flag) in zip(self.stu_hooks, self.out_flags)]
+        feat_t = [f.feat_out.detach() if flag else f.feat_in for (f, flag) in zip(self.tea_hooks, self.out_flags)]
         f_s = self.regressor(feat_s[self._hint_layer])
         f_t = feat_t[self._hint_layer]
-        loss = self._gamma * nn.CrossEntropyLoss()(s_out, targets) + self._alpha * \
-            KDLoss(T=self._T, use_kldiv=True)(s_out, t_out) + \
-            self._beta * nn.MSELoss()(f_s, f_t)
-        loss.backward()
-
-        # update weights
-        self.optimizer.step()
-        step_time = time.perf_counter() - start_time
-
-        # record training info
-        info = {'loss': loss}
-        info['total_loss'] = float(loss.item())
-        info['step_time'] = float(step_time)
-        info['lr'] = float(self.optimizer.param_groups[0]['lr'])
-        self.history.put_scalars(**info)
-
+        return nn.functional.mse_loss(f_s, f_t)
 
 class Regressor(nn.Module):
     """

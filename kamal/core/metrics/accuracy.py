@@ -6,13 +6,13 @@ from typing import Callable
 __all__=['Accuracy', 'TopkAccuracy']
 
 class Accuracy(Metric):
-    def __init__(self, output_target_transform: Callable=lambda x,y: (x,y)):
-        super(Accuracy, self).__init__(output_target_transform=output_target_transform)
+    def __init__(self, attach_to=None):
+        super(Accuracy, self).__init__(attach_to=attach_to)
         self.reset()
 
     @torch.no_grad()
     def update(self, outputs, targets):
-        outputs, targets = self._output_target_transform(outputs, targets)
+        outputs, targets = self._attach(outputs, targets)
         outputs = outputs.max(1)[1]
         self._correct += ( outputs.view(-1)==targets.view(-1) ).sum()
         self._cnt += torch.numel( targets )
@@ -25,14 +25,14 @@ class Accuracy(Metric):
 
 
 class TopkAccuracy(Metric):
-    def __init__(self, topk=5, output_target_transform: Callable=lambda x,y: (x,y)):
-        super(TopkAccuracy, self).__init__(output_target_transform=output_target_transform)
+    def __init__(self, topk=5, attach_to=None):
+        super(TopkAccuracy, self).__init__(attach_to=attach_to)
         self._topk = topk
         self.reset()
     
     @torch.no_grad()
     def update(self, outputs, targets):
-        outputs, targets = self._output_target_transform(outputs, targets)
+        outputs, targets = self._attach(outputs, targets)
         _, outputs = outputs.topk(self._topk, dim=1, largest=True, sorted=True)
         correct = outputs.eq( targets.view(-1, 1).expand_as(outputs) )
         self._correct += correct[:, :self._topk].view(-1).float().sum(0).item()

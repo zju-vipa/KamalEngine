@@ -37,7 +37,7 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.total_iters)
     evaluator = engine.evaluator.SegmentationEvaluator( 13, val_loader )
-    trainer = engine.trainer.SimpleTrainer( task=task, model=model, viz=Visdom(port='29999', env='test') )
+    trainer = engine.trainer.SimpleTrainer( task=task, model=model, tb_writer=Visdom(port='29999', env='test') )
     
     trainer.add_callbacks( [
         engine.callbacks.LoggingCallback(

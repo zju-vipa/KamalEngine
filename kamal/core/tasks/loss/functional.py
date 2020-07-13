@@ -34,7 +34,7 @@ def mmd_loss(f1, f2, sigmas, normalized=False):
         f1 = F.normalize(f1, p=2, dim=1)
         f2 = F.normalize(f2, p=2, dim=1)
 
-    return mmd_rbf2(f1, f2, sigmas=sigmas)
+    return _mmd_rbf2(f1, f2, sigmas=sigmas)
 
 def psnr(img1, img2, size_average=True, data_range=255):
     N = img1.shape[0]
@@ -61,7 +61,7 @@ def soft_cross_entropy(logits, targets, T=1.0, size_average=True):
     else:
         return ce * T * T
 
-def mmd_rbf2(x, y, sigmas=None):
+def _mmd_rbf2(x, y, sigmas=None):
     N, _ = x.shape
     xx, yy, zz = torch.mm(x, x.t()), torch.mm(y, y.t()), torch.mm(x, y.t())
 

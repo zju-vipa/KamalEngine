@@ -3,10 +3,13 @@ import math
 import torch 
 import random
 from copy import deepcopy
-
-from ruamel.yaml import YAML
-
 import contextlib
+
+def split_batch(batch):
+    inputs, *targets = batch
+    if len(targets)==1:
+        targets = targets[0]
+    return inputs, targets
 
 @contextlib.contextmanager
 def set_mode(model, training=True):
@@ -14,17 +17,16 @@ def set_mode(model, training=True):
     model.train(training)
     yield
     model.train(ori_mode)
-    
-def save_yaml(dic: dict, filepath: str):
-    yaml=YAML()  
-    with open(filepath, 'w') as f:
-        yaml.dump(doc, f)
 
-def load_yaml(filepath):
-    yaml=YAML()  
-    with open(filepath, 'r') as f:
-        return yaml.load(f)
-    
+def move_to_device(obj, device):
+    if isinstance(obj, torch.Tensor):
+        return obj.to(device=device)
+    elif isinstance( obj, (list, tuple) ):
+        return [ o.to(device=device) for o in obj ]
+    elif isinstance(obj, nn.Module):
+        return obj.to(device=device)
+
+
 def pack_images(images, col=None, channel_last=False):
     # N, C, H, W
     if isinstance(images, (list, tuple) ):
@@ -58,10 +60,17 @@ def normalize(tensor, mean, std, reverse=False):
     return tensor
 
 class Normalizer(object):
-    def __init__(self, mean, std):
+    def __init__(self, mean, std, reverse=False):
         self.mean = mean
         self.std = std
+        self.reverse = reverse
 
+    def __call__(self, x):
+        if self.reverse:
+            return self.denormalize(x)
+        else:
+            return self.normalize(x)
+            
     def normalize(self, x):
         return normalize( x, self.mean, self.std )
     
@@ -100,9 +109,9 @@ def flatten_dict(dic):
                 if prefix is None:
                     _flatten( k, v )
                 else:
-                    _flatten( prefix+'%s/'%k, v )
+                    _flatten( prefix+'%s.'%k, v )
             else:
-                flattned[ (prefix+'%s/'%k).strip('/') ] = v
+                flattned[ (prefix+'%s.'%k).strip('.') ] = v
         
     _flatten('', dic)
     return flattned
@@ -115,64 +124,3 @@ def setup_seed(seed):
 
 def count_parameters(model):
     return sum( [ p.numel() for p in model.parameters() ] )
-
-class TaskSplitter():
-    def __init__(self, dataset, class_split, data_attr, targets_attr):
-        self.class_split = class_split
-        data = getattr( dataset, data_attr)
-        targets = getattr( dataset, targets_attr )
-        n_parts = len(class_split)
-        self.dataset_split = [ deepcopy( dataset ) for _ in range(n_parts) ]
-        
-        for p in range(n_parts):
-            setattr( self.dataset_split[p], data_attr, [] )
-            setattr( self.dataset_split[p], targets_attr, [] )
-            data_p = getattr( self.dataset_split[p], data_attr)
-            targets_p = getattr( self.dataset_split[p], targets_attr)
-            for new_c, c in enumerate(self.class_split[p]):
-                for i, (d, t) in enumerate( zip(data, targets) ):
-                    if t==c:
-                        data_p.append( d )
-                        targets_p.append( new_c )
-        
-            if isinstance( data, np.ndarray ):
-                setattr( self.dataset_split[p], data_attr, np.array(data_p) )
-            if isinstance( targets, np.ndarray ):
-                setattr( self.dataset_split[p], targets_attr, np.array(targets_p) )
-
-    @staticmethod
-    def create_class_split(num_classes, n_parts):
-        class_list = np.random.permutation( num_classes )
-        class_split = np.array_split( class_list, n_parts )
-        class_split = [ l.tolist() for l in class_split ]
-        return class_split
-
-    def get_class_split(self):
-        return self.class_split
-
-    def get_dataset_split(self):
-        return self.dataset_split
-
-    def get_class_mapping(self, parts: list):
-        mapping = np.concatenate( [ self.class_split[p] for p in parts ], axis=0)
-        return mapping
-
-from torch.utils.data import ConcatDataset
-class TaskMerger(ConcatDataset):
-    def __init__(self, datasets, num_classes: list):
-        super( TaskMerger, self ).__init__(datasets)
-        offset.insert( 0, 0 )
-        self.offset = num_classes
-
-    def __getitem__(self, idx):
-        if idx < 0:
-            if -idx > len(self):
-                raise ValueError("absolute value of index should not exceed dataset length")
-            idx = len(self) + idx
-        dataset_idx = bisect.bisect_right(self.cumulative_sizes, idx)
-        if dataset_idx == 0:
-            sample_idx = idx
-        else:
-            sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
-        data, target = self.datasets[dataset_idx][sample_idx]
-        return data, target+self.offset[ dataset_idx ]

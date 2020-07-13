@@ -5,62 +5,29 @@ import torch._ops
 import torch.nn.functional as F
 from .kd import KDDistiller
 from kamal.utils import set_mode
-from kamal.core.criterions import KDLoss
+from kamal.core.tasks.loss import KDLoss
 
 class VIDDistiller(KDDistiller):
-    def __init__(self, logger=None, viz=None ):
-        super(VIDDistiller, self).__init__( logger, viz )
+    def __init__(self, logger=None, tb_writer=None ):
+        super(VIDDistiller, self).__init__( logger, tb_writer )
 
-    def setup(self, student, teacher, data_loader, optimizer, regressor_l, T=1.0, gamma=1.0, alpha=None, beta=None, stu_hooks=[], tea_hooks=[], out_flags=[], device=None):
+    def setup(self, student, teacher, dataloader, optimizer, regressor_l, T=1.0, alpha=1.0, beta=1.0, gamma=1.0, stu_hooks=[], tea_hooks=[], out_flags=[], device=None):
         super( VIDDistiller, self ).setup( 
-            student, teacher, data_loader, optimizer, T=T, gamma=gamma, alpha=alpha, device=device )
+            student, teacher, dataloader, optimizer, T=T, alpha=alpha, beta=beta, gamma=gamma, device=device )
         self.regressor_l = regressor_l
         self.stu_hooks = stu_hooks
         self.tea_hooks = tea_hooks
         self.out_flags = out_flags
-        self._beta = beta
         self.regressor_l = [regressor.to(self.device).train() for regressor in self.regressor_l]
 
-    def step(self):
-        self.optimizer.zero_grad()
-        start_time = time.perf_counter()
-
-        data, targets = self._get_data()
-        data, targets = data.to(self.device), targets.to(self.device)
- 
-        s_out = self.student(data)
+    def additional_kd_loss(self, engine, batch):
         feat_s =  [f.feat_out if flag else f.feat_in for (f, flag) in zip(self.stu_hooks, self.out_flags)]
-        with torch.no_grad():
-            t_out = self.teacher(data)
-            feat_t = [f.feat_out.detach() if flag else f.feat_in for (f, flag) in zip(self.tea_hooks, self.out_flags)]
+        feat_t = [f.feat_out.detach() if flag else f.feat_in for (f, flag) in zip(self.tea_hooks, self.out_flags)]
         g_s = feat_s[1:-1]
         g_t = feat_t[1:-1]
-        loss_vid = [c(f_s, f_t) for f_s, f_t, c in zip(g_s, g_t, self.regressor_l)]
-        loss = self._gamma * nn.CrossEntropyLoss()(s_out, targets) + self._alpha * \
-            KDLoss(T=self._T, use_kldiv=True)(s_out, t_out)  + self._beta * sum(loss_vid)
-        loss.backward()
-
-        # update weights
-        self.optimizer.step()
-        step_time = time.perf_counter() - start_time
-
-        # record training info
-        info = {'loss': loss}
-        info['total_loss'] = float(loss.item())
-        info['step_time'] = float(step_time)
-        info['lr'] = float(self.optimizer.param_groups[0]['lr'])
-        self.history.put_scalars(**info)
+        return sum([c(f_s, f_t) for f_s, f_t, c in zip(g_s, g_t, self.regressor_l)])
 
 class VIDRegressor(nn.Module):
-    """
-        Variational Information Distillation for Knowledge Transfer (CVPR 2019)
-        @inproceedings{tian2019crd,
-        title={Contrastive Representation Distillation},
-        author={Yonglong Tian and Dilip Krishnan and Phillip Isola},
-        booktitle={International Conference on Learning Representations},
-        year={2020}
-        }
-    """
     def __init__(self,
                 num_input_channels,
                 num_mid_channel,

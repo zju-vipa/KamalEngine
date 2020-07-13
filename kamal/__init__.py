@@ -1,3 +1,3 @@
-from .core import tasks, metrics, engine
+from .core import tasks, metrics, engine, callbacks
 
 from . import amalgamation, slim, vision
