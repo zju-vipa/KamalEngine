@@ -59,7 +59,7 @@ class Event(object):
             return Event(self.value, event_trigger=Event.once_trigger() )
         if event_trigger is not None:
             return Event( self.value, event_trigger=event_trigger )
-        return Event()
+        return Event(self.value)
 
     def __hash__(self):
         return hash(self._name_)
@@ -189,6 +189,7 @@ class Engine(abc.ABC):
                     if event.trigger!=event.default_trigger:
                         callback = self._trigger_wrapper(self, event.trigger, callback )
                     self._callbacks[event].append( callback )
+        return callbacks
 
     @staticmethod
     def _trigger_wrapper(engine, trigger, callback):

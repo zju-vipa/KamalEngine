@@ -102,7 +102,7 @@ class VisualizeSegmentation(VisualizeOutputs):
     def __init__(
         self, model, dataset: torch.utils.data.Dataset, idx_list_or_num_vis: Union[int, Sequence]=5, 
         cmap = colormap(),
-        attach_to: int=0,
+        attach_to=None,
 
         normalizer: Callable=None,
         prepare_fn: Callable=None,
@@ -126,7 +126,7 @@ class VisualizeDepth(VisualizeOutputs):
         idx_list_or_num_vis: Union[int, Sequence]=5, 
         max_depth = 10,
         log_scale = True,
-        attach_to: int=0,
+        attach_to = None,
 
         normalizer: Callable=None,
         prepare_fn: Callable=None,

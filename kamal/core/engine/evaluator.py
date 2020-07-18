@@ -25,7 +25,7 @@ class BasicEvaluator(Engine):
         self.add_callback( DefaultEvents.AFTER_STEP, callbacks=self._update_pbar)
         self._model = None
         self._tag = tag
-        if not isinstance(eval_fn, Callable):
+        if eval_fn is None:
             eval_fn = BasicEvaluator.default_eval_fn
         self.eval_fn = eval_fn
 
@@ -65,6 +65,50 @@ class BasicEvaluator(Engine):
         outputs = model( inputs )
         evaluator.metric.update( outputs, targets )
         
+    
+class TeacherEvaluator(BasicEvaluator):
+    def __init__(self,
+                 dataloader: torch.utils.data.DataLoader,
+                 teacher: torch.nn.Module,
+                 task,
+                 metric: metrics.MetricCompose,
+                 eval_fn: Callable=None,
+                 tag: str='Eval',
+                 progress: bool=False ):
+        if eval_fn is None:
+            eval_fn = TeacherEvaluator.default_eval_fn
+        super( TeacherEvaluator, self ).__init__(dataloader=dataloader, metric=metric, eval_fn=eval_fn, tag=tag, progress=progress)
+        self._teacher = teacher
+        self.task = task
 
+    def eval(self, model, device=None):
+        self.teacher.to(device)
+        with set_mode(self.teacher, training=False):
+            return super(TeacherEvaluator, self).eval( model, device=device )
 
+    @property
+    def model(self):
+        if self._model is not None:
+            return self._model()
+        return None
 
+    @property
+    def teacher(self):
+        return self._teacher
+
+    def step_fn(self, engine, batch):
+        batch = move_to_device(batch, self.device)
+        self.eval_fn( engine, batch )
+        
+    @staticmethod
+    def default_eval_fn(evaluator, batch):
+        model = evaluator.model
+        teacher = evaluator.teacher
+
+        inputs, targets = split_batch(batch)
+        outputs = model( inputs )
+
+        # get teacher outputs
+        t_outputs = teacher(inputs)
+        targets = evaluator.task.predict( t_outputs )
+        evaluator.metric.update( outputs, targets )

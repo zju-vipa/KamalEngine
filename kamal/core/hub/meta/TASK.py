@@ -1,0 +1,5 @@
+CLASSIFICATION = 'classification'
+SEGMENTATION = 'segmentation'
+DETECTION = 'detection'
+DEPTH = 'depth'
+AUTOENCODER = 'autoencoder'

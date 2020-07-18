@@ -6,10 +6,13 @@ from copy import deepcopy
 import contextlib
 
 def split_batch(batch):
-    inputs, *targets = batch
-    if len(targets)==1:
-        targets = targets[0]
-    return inputs, targets
+    if isinstance(batch, (list, tuple)):
+        inputs, *targets = batch
+        if len(targets)==1:
+            targets = targets[0]
+        return inputs, targets
+    else:
+        return [batch, None] 
 
 @contextlib.contextmanager
 def set_mode(model, training=True):

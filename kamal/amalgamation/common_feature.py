@@ -190,6 +190,7 @@ class CommonFeatureAmalgamator(Engine):
         dataloader:  torch.utils.data.DataLoader, 
         optimizer:    torch.optim.Optimizer, 
         weights = [1.0, 1.0, 1.0],
+        on_layer_input=False,
         device = None,
     ):
         self._dataloader = dataloader
@@ -201,11 +202,17 @@ class CommonFeatureAmalgamator(Engine):
         self._teachers = nn.ModuleList(teachers).to(self._device) 
         self._optimizer = optimizer
         self._weights = weights
+        self._on_layer_input = on_layer_input
 
         amal_blocks = []
         for group, C in zip( layer_groups, layer_channels ):
             hooks = [ FeatureHook(layer) for layer in group ]
-            amal_block = CFL_ConvBlock(cs=C[0], cts=C[1:], ch=C[0]//4).to(self._device).train()
+            if isinstance(group[0], nn.Linear):
+                amal_block = CFL_FCBlock( cs=C[0], cts=C[1:], ch=C[0]//4 ).to(self._device).train()
+                print("Building FC Blocks")
+            else:
+                amal_block = CFL_ConvBlock(cs=C[0], cts=C[1:], ch=C[0]//4).to(self._device).train()
+                print("Building Conv Blocks")
             amal_blocks.append( (amal_block, hooks, C)  )
         self._amal_blocks = amal_blocks
         self._cfl_criterion = tasks.loss.CFLLoss( sigmas=[0.001, 0.01, 0.05, 0.1, 0.2, 1, 2] )
@@ -226,14 +233,18 @@ class CommonFeatureAmalgamator(Engine):
 
     def step_fn(self, engine, batch):
         start_time = time.perf_counter()
-        data = move_to_device(batch, self._device)
-        s_out = self._student( data[0] )
+        batch = move_to_device(batch, self._device)
+        if isinstance(batch, torch.Tensor):
+            data = batch
+        else:
+            data = batch[0]
+        s_out = self._student( data )
         with torch.no_grad():
-            t_out = [ teacher( data[0] ) for teacher in self._teachers ]
+            t_out = [ teacher( data ) for teacher in self._teachers ]
         loss_amal = 0
         loss_recons = 0
         for amal_block, hooks, C in self._amal_blocks:
-            features = [ h.feat_out for h in hooks ]
+            features = [ h.feat_in if self._on_layer_input else h.feat_out for h in hooks ]
             fs, fts = features[0], features[1:]
             (hs, hts), (_fts, fts) = amal_block( fs, fts )
             _loss_amal, _loss_recons = self._cfl_criterion( hs, hts, _fts, fts ) 

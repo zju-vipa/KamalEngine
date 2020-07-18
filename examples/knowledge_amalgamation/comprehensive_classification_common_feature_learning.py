@@ -18,14 +18,11 @@ def main():
     car_val_dst = vision.datasets.StanfordCars( '../data/StanfordCars', split='test')
     aircraft_train_dst = vision.datasets.FGVCAircraft( '../data/FGVCAircraft', split='trainval')
     aircraft_val_dst = vision.datasets.FGVCAircraft( '../data/FGVCAircraft', split='test')
-
     car_teacher = vision.models.classification.resnet18( num_classes=196, pretrained=False )
     aircraft_teacher = vision.models.classification.resnet18( num_classes=102, pretrained=False )
     student = vision.models.classification.resnet18( num_classes=196+102, pretrained=False )
-
     car_teacher.load_state_dict( torch.load( args.car_ckpt ) )
     aircraft_teacher.load_state_dict( torch.load( args.aircraft_ckpt ) )
-    
     train_transform = sT.Compose( [
                             sT.RandomResizedCrop(224),
                             sT.RandomHorizontalFlip(),
@@ -71,7 +68,7 @@ def main():
     sched = torch.optim.lr_scheduler.CosineAnnealingLR( optim, T_max=TOTAL_ITERS )
     trainer = amalgamation.CommonFeatureAmalgamator( 
         logger=utils.logger.get_logger('cfl'), 
-        tb_writer=SummaryWriter( log_dir='../run/cfl-%s'%( time.asctime().replace( ' ', '_' ) ) ) 
+        tb_writer=SummaryWriter( log_dir='run/cfl-%s'%( time.asctime().replace( ' ', '_' ) ) ) 
     )
     
     trainer.add_callback( 
@@ -87,7 +84,7 @@ def main():
         engine.DefaultEvents.AFTER_STEP,
         callbacks=callbacks.LRSchedulerCallback(schedulers=[sched]))
 
-    layer_groups = [ (student.layer4, car_teacher.layer4, aircraft_teacher.layer4) ]
+    layer_groups = [ (student.fc, car_teacher.fc, aircraft_teacher.fc) ]
     layer_channels = [ ( 512,512,512 ) ]
 
     trainer.setup( student=student, 
@@ -97,6 +94,7 @@ def main():
                    dataloader=train_loader,
                    optimizer=optim,
                    device=device,
+                   on_layer_input=True,
                    weights=[1., 10., 10.] )
     trainer.run(start_iter=0, max_iter=TOTAL_ITERS)
 

@@ -146,3 +146,11 @@ class StandardMetrics(object):
                 'percents within thresholds': metrics.Threshold( thresholds=[1.25, 1.25**2, 1.25**3] )
             }
         )
+        
+    @staticmethod
+    def loss_metric(loss_fn):
+        return metrics.MetricCompose(
+            metric_dict={
+                'loss': metrics.AverageMetric( loss_fn )
+            }
+        )

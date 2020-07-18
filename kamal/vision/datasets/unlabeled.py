@@ -22,9 +22,14 @@ class UnlabeledDataset(Dataset):
     def __init__(self, root, transform=None, postfix=['png', 'jpg', 'jpeg', 'JPEG']):
         self.root = root
         self.transform = transform
+        if isinstance(root, (list, tuple)):
+            self.data = []
+            for _root in self.root:
+                data = _collect_all_images( _root, postfix=postfix )
+                self.data.extend( data )
+        else:
+            self.data = _collect_all_images( self.root, postfix=postfix  )
 
-        self.data = _collect_all_images( root, postfix=postfix )
-        
     def __getitem__(self, idx):
         data = Image.open( self.data[idx] )
         if self.transform is not None:
