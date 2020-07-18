@@ -79,8 +79,8 @@ def main():
                       'rmse': metrics.RootMeanSquaredError(attach_to=1) })
     evaluator = engine.evaluator.BasicEvaluator( dataloader=val_loader, metric=metric, progress=False )
     
-    task = [ kamal.tasks.StandardTask.segmentation(attach_to=[0,0]), 
-                kamal.tasks.StandardTask.monocular_depth(attach_to=[1,1]) ]
+    task = [ kamal.tasks.StandardTask.segmentation(attach_to=0), 
+                kamal.tasks.StandardTask.monocular_depth(attach_to=1) ]
     trainer = engine.trainer.BasicTrainer( 
         logger=kamal.utils.logger.get_logger('nyuv2_multitasking'), 
         tb_writer=SummaryWriter( log_dir='run/nyuv2_multitasking-%s'%( time.asctime().replace( ' ', '_' ) ) ) 

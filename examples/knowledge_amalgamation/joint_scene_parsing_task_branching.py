@@ -68,6 +68,11 @@ def main():
         logger=kamal.utils.logger.get_logger('nyuv2_task_branching'), 
         tb_writer=SummaryWriter( log_dir='run/nyuv2_task_branching-%s'%( time.asctime().replace( ' ', '_' ) ) ) 
     )
+    trainer.setup( joint_student=student, 
+                   teachers=[seg_teacher, depth_teacher], tasks=student_tasks,
+                   dataloader=train_loader,
+                   optimizer=optim,
+                   device=device )
 
     trainer.add_callback( 
         engine.DefaultEvents.AFTER_STEP(every=10), 
@@ -95,11 +100,7 @@ def main():
                 normalizer=kamal.utils.Normalizer( mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], reverse=True),
             )
         ])
-    trainer.setup( joint_student=student, 
-                   teachers=[seg_teacher, depth_teacher], tasks=student_tasks,
-                   dataloader=train_loader,
-                   optimizer=optim,
-                   device=device )
+    
     trainer.run( start_iter=0, max_iter=TOTAL_ITERS )
 
 if __name__=='__main__':

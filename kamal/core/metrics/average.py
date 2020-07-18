@@ -16,7 +16,8 @@ class AverageMetric(Metric):
 
         outputs, targets = self._attach(outputs, targets)
         m = self._fn( outputs, targets )
-        if x.ndim > 1:
+
+        if m.ndim > 1:
             self._cnt += m.shape[0]
             self._accum += m.sum(0)
         else:

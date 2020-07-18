@@ -76,9 +76,14 @@ class LayerWiseAmalgamator(Engine):
     def step_fn(self, engine, batch):
         start_time = time.perf_counter()
         batch = move_to_device(batch, self._device)
-        s_out = self.student( batch[0] )
+        if isinstance(batch, torch.Tensor):
+            data = batch
+        else:
+            data = batch[0]
+            
+        s_out = self.student( data )
         with torch.no_grad():
-            t_out = [ teacher( batch[0] ) for teacher in self.teachers ]
+            t_out = [ teacher( data ) for teacher in self.teachers ]
         loss_amal = 0
         loss_recons = 0
         for amal_block, hooks, C in self._amal_blocks:
