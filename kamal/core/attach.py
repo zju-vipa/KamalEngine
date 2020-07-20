@@ -3,7 +3,7 @@ from numbers import Number
 from kamal.core import exceptions
 
 class AttachTo(object):
-    """ Attach task, metrics or visualizer to specified tensors
+    """ Attach task, metrics or visualizer to specified model outputs
     """
     def __init__(self, attach_to=None):
         if attach_to is not None and not isinstance(attach_to, (Sequence, Number, str, Callable) ):
