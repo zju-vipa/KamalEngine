@@ -56,7 +56,7 @@ class EvalAndCkpt(Callback):
 
     def __call__(self, trainer):
         model = self._model()
-        results = self._evaluator.eval( model )  
+        results = self._evaluator.eval( model, device=trainer.device )  
         results = utils.flatten_dict(results)
         current_score = results[self.metric_name]
 
