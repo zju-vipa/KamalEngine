@@ -63,8 +63,8 @@ def save(
         if overwrite:
             shutil.copy2(src=code_path, dst=os.path.join( export_code_path, 'hubconf.py' )) # overwrite old files
 
-    if hasattr(model, 'ATLAS_INFO'):
-        del model.ATLAS_INFO
+    if hasattr(model, 'SETUP_INFO'):
+        del model.SETUP_INFO
     if hasattr(model, 'METADATA'):
         del model.METADATA
 
