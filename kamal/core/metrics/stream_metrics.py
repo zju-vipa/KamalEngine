@@ -30,6 +30,16 @@ class Metric(ABC):
 class MetricCompose(dict):
     def __init__(self, metric_dict: Mapping):
         self._metric_dict = metric_dict
+
+    def add_metrics( self, metric_dict: Mapping):
+        if isinstance(metric_dict, MetricCompose):
+            metric_dict = metric_dict.metrics
+        self._metric_dict.update(metric_dict)
+        return self
+
+    @property
+    def metrics(self):
+        return self._metric_dict
         
     @torch.no_grad()
     def update(self, outputs, targets):

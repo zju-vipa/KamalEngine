@@ -12,10 +12,12 @@ def main():
     model = vision.models.segmentation.segnet_vgg16_bn(num_classes=num_classes, pretrained_backbone=True)
     train_dst = vision.datasets.NYUv2( 
         'data/NYUv2', split='train', target_type='semantic', transforms=sT.Compose([
-            sT.Multi( sT.Resize(240),  sT.Resize(240, interpolation=Image.NEAREST)),
+            sT.Multi( sT.Resize(240), sT.Resize(240, interpolation=Image.NEAREST)),
+            sT.Sync(  sT.RandomRotation(5),  sT.RandomRotation(5)),
+            sT.Multi( sT.ColorJitter(0.2, 0.2, 0.2), None),
             sT.Sync(  sT.RandomCrop(240),  sT.RandomCrop(240)),
-            sT.Sync(  sT.RandomHorizontalFlip(), sT.RandomHorizontalFlip() ),  
-            sT.Multi( sT.ToTensor(), sT.ToTensor( normalize=False, dtype=torch.long ) ),
+            sT.Sync(  sT.RandomHorizontalFlip(), sT.RandomHorizontalFlip() ),
+            sT.Multi( sT.ToTensor(), sT.ToTensor( normalize=False, dtype=torch.long) ),
             sT.Multi( sT.Normalize( mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225] ), sT.Lambda(lambd=lambda x: x.squeeze()) )
         ]) )
     val_dst = vision.datasets.NYUv2( 
@@ -34,7 +36,6 @@ def main():
     # KAE Part
     metric = kamal.tasks.StandardMetrics.segmentation(num_classes=num_classes)
     evaluator = engine.evaluator.BasicEvaluator( dataloader=val_loader, metric=metric, progress=False )
-
     task = kamal.tasks.StandardTask.segmentation()
     trainer = engine.trainer.BasicTrainer( 
         logger=kamal.utils.logger.get_logger('nyuv2_seg'), 
@@ -45,7 +46,6 @@ def main():
                    dataloader=train_loader,
                    optimizer=optim,
                    device=device )
-
     trainer.add_callback( 
         engine.DefaultEvents.AFTER_STEP(every=10), 
         callbacks=callbacks.MetricsLogging(keys=('total_loss', 'lr')))

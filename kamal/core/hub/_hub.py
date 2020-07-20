@@ -29,9 +29,9 @@ def save(
     
     entry_name:     str,
     spec_name:      str,
-    code_path:      str, # path to src code dir or atlas_entry.py
-    
-    metadata:       dict = None,
+    code_path:      str, # path to SOURCE_CODE_DIR or hubconfig.py
+
+    metadata:       dict, 
     tags:           dict = None,
     ignore_files:   Sequence = None,
     save_arch:      bool = False,

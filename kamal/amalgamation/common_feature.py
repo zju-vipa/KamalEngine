@@ -234,10 +234,7 @@ class CommonFeatureAmalgamator(Engine):
     def step_fn(self, engine, batch):
         start_time = time.perf_counter()
         batch = move_to_device(batch, self._device)
-        if isinstance(batch, torch.Tensor):
-            data = batch
-        else:
-            data = batch[0]
+        data = batch[0]
         s_out = self._student( data )
         with torch.no_grad():
             t_out = [ teacher( data ) for teacher in self._teachers ]

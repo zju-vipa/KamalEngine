@@ -10,6 +10,38 @@ from . import loss
 from kamal.core import metrics, exceptions
 from kamal.core.attach import AttachTo
 
+
+class Task(object):
+    def __init__(self, 
+                 name: str, 
+                 loss_fn: Callable,
+                 scaling:float=1.0,
+                 pred_fn: Callable=lambda x: x,
+                 forward_fn: Callable=lambda model, x: model(x),
+                 attach_to=None):
+        self._attach = AttachTo(attach_to)
+        self.loss_fn = loss_fn
+        self.pred_fn = pred_fn
+        self.forward_fn = forward_fn
+        self.scaling = scaling
+        self.name = name
+
+    def forward(self, model, input):
+        return self.forward_fn( model, input )
+    
+    def get_loss(self, outputs, targets):
+        outputs, targets = self._attach(outputs, targets)
+        return { self.name: self.loss_fn( outputs, targets ) * self.scaling }
+
+    def predict(self, outputs):
+        outputs = self._attach(outputs)
+        return self.pred_fn(outputs)
+        
+    def __repr__(self):
+        rep = "Task: [%s loss_fn=%s scaling=%.4f attach=%s]"%(self.name, str(self.loss_fn), self.scaling, self._attach)
+        return rep
+
+
 class Task(object):
     def __init__(self, 
                  name: str, 
@@ -115,35 +147,36 @@ class StandardTask:
 class StandardMetrics(object):
 
     @staticmethod
-    def classification():
+    def classification(attach_to=None):
         return metrics.MetricCompose(
-            metric_dict={'acc': metrics.Accuracy()}
+            metric_dict={'acc': metrics.Accuracy(attach_to=attach_to)}
         )
 
     @staticmethod
-    def regression():
+    def regression(attach_to=None):
         return metrics.MetricCompose(
-            metric_dict={'mse': metrics.MeanSquaredError()}
+            metric_dict={'mse': metrics.MeanSquaredError(attach_to=attach_to)}
         )
 
     @staticmethod
-    def segmentation(num_classes, ignore_idx=255):
-        confusion_matrix = metrics.ConfusionMatrix(num_classes=num_classes, ignore_idx=ignore_idx)
+    def segmentation(num_classes, ignore_idx=255, attach_to=None):
+        confusion_matrix = metrics.ConfusionMatrix(num_classes=num_classes, ignore_idx=ignore_idx, attach_to=attach_to)
         return metrics.MetricCompose(
-            metric_dict={'acc': metrics.Accuracy(), 'confusion_matrix': confusion_matrix , 
+            metric_dict={'acc': metrics.Accuracy(attach_to=attach_to), 
+                         'confusion_matrix': confusion_matrix , 
                          'miou': metrics.mIoU(confusion_matrix)}
         )
 
     @staticmethod
-    def monocular_depth():
+    def monocular_depth(attach_to=None):
         return metrics.MetricCompose(
             metric_dict={
-                'rmse': metrics.RootMeanSquaredError(),
-                'rmse_log': metrics.RootMeanSquaredError( log_scale=True ),
-                'rmse_scale_inv': metrics.ScaleInveriantMeanSquaredError(),
-                'abs rel': metrics.AbsoluteRelativeDifference(),
-                'sq rel': metrics.SquaredRelativeDifference(), 
-                'percents within thresholds': metrics.Threshold( thresholds=[1.25, 1.25**2, 1.25**3] )
+                'rmse': metrics.RootMeanSquaredError(attach_to=attach_to),
+                'rmse_log': metrics.RootMeanSquaredError( log_scale=True,attach_to=attach_to ),
+                'rmse_scale_inv': metrics.ScaleInveriantMeanSquaredError(attach_to=attach_to),
+                'abs rel': metrics.AbsoluteRelativeDifference(attach_to=attach_to),
+                'sq rel': metrics.SquaredRelativeDifference(attach_to=attach_to), 
+                'percents within thresholds': metrics.Threshold( thresholds=[1.25, 1.25**2, 1.25**3], attach_to=attach_to )
             }
         )
         
