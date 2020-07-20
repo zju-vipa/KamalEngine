@@ -109,6 +109,9 @@ class TeacherEvaluator(BasicEvaluator):
         outputs = model( inputs )
 
         # get teacher outputs
-        t_outputs = teacher(inputs)
-        targets = evaluator.task.predict( t_outputs )
+        if isinstance(teacher, torch.nn.ModuleList):
+            targets = [ task.predict(tea(inputs)) for (tea, task) in zip(teacher, evaluator.task)  ]
+        else:
+            t_outputs = teacher(inputs)
+            targets = evaluator.task.predict( t_outputs )
         evaluator.metric.update( outputs, targets )

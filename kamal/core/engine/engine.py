@@ -166,6 +166,8 @@ class Engine(abc.ABC):
         except StopIteration:
             self.state.dataloader_iter = iter(self.state.dataloader) # reset iterator
             batch = next( self.state.dataloader_iter )
+        if not isinstance(batch, (list, tuple)):
+            batch = [ batch, ] # no targets
         return batch
 
     @property
