@@ -141,12 +141,12 @@ def load(path: str, entry_name:str=None, spec_name: str=None, pretrained=True, *
             entry_name = pth_file.split('-')[0]
             entry_fn = getattr( module, entry_name )
         else:
+            entry_fn = getattr( module, entry_name )
             if spec_name is None:
-                pth_file = [pth for pth in os.listdir( os.path.join(path, _WEIGHTS_DIR) ) if spec_name in pth]
+                pth_file = [pth for pth in os.listdir( os.path.join(path, _WEIGHTS_DIR) ) if pth.startswith(entry_name) ]
                 assert len(pth_file)<=1, "Loading models with more than one weight files (.pth) is ambiguous"
                 pth_file = pth_file[0]
             else:
-                entry_fn = getattr( module, entry_name )
                 pth_file = '%s-%s.pth'%(entry_name, spec_name)
         
         try:
@@ -178,7 +178,7 @@ def load_metadata(path, entry_name=None, spec_name=None):
             pth_file = pth_file[0]
         else:
             if spec_name is None:
-                pth_file = [pth for pth in os.listdir( os.path.join(path, _WEIGHTS_DIR) ) if spec_name in pth]
+                pth_file = [pth for pth in os.listdir( os.path.join(path, _WEIGHTS_DIR) ) if pth.startswith(entry_name) ]
                 assert len(pth_file)<=1, "Loading models with more than one weight files (.pth) is ambiguous"
                 pth_file = pth_file[0]
             else:

@@ -80,7 +80,7 @@ class TeacherEvaluator(BasicEvaluator):
         super( TeacherEvaluator, self ).__init__(dataloader=dataloader, metric=metric, eval_fn=eval_fn, tag=tag, progress=progress)
         self._teacher = teacher
         self.task = task
-
+    
     def eval(self, model, device=None):
         self.teacher.to(device)
         with set_mode(self.teacher, training=False):
