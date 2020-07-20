@@ -23,13 +23,16 @@ _TAGS_DIR = "tag"
 
 yaml = YAML()
 
+def _replace_invalid_char(name):
+    return name.replace('-', '_').replace(' ', '_')
+
 def save(
     model:          torch.nn.Module,
     export_dir:     str,
     
     entry_name:     str,
     spec_name:      str,
-    code_path:      str, # path to SOURCE_CODE_DIR or hubconfig.py
+    code_path:      str, # path to SOURCE_CODE_DIR or hubconf.py
 
     metadata:       dict, 
     tags:           dict = None,
@@ -37,48 +40,42 @@ def save(
     save_arch:      bool = False,
     overwrite:      bool = False,
 ):
-    entry_name = entry_name.replace('-', '_')
+    entry_name = _replace_invalid_char(entry_name)
     if spec_name is not None:
-        spec_name = spec_name.replace('-', '_')
+        spec_name = _replace_invalid_char(spec_name)
+
+    if not os.path.isdir(export_dir):
+        overwrite = True
 
     export_dir = os.path.abspath(export_dir)
     export_code_path = os.path.join(export_dir, _CODE_DIR)
     export_weights_path = os.path.join(export_dir, _WEIGHTS_DIR)
-    
-    if not os.path.isdir(export_dir):
-        overwrite = True
-
     os.makedirs(export_dir, exist_ok=True)
     os.makedirs(export_code_path, exist_ok=True)
     os.makedirs(export_weights_path, exist_ok=True)
-    
+
     code_path = os.path.abspath(code_path)
     if os.path.isdir( code_path ):
-        code_files = [os.path.join(code_path, f)for f in os.listdir(code_path)]
-        if ignore_files is not None:
-            ignore_files = [os.path.abspath(f) for f in _glob_list( ignore_files, recursive=True )]
-            for f in ignore_files:
-                if f in code_files:
-                    code_files.remove(f)
         if overwrite:
-            for f in code_files:
-                _copy_file_or_tree(src=f, dst=export_code_path) # overwrite old files
-
+            shutil.rmtree(export_code_path)
+            _copy_file_or_tree(src=code_path, dst=export_code_path) # overwrite old files
     elif code_path.endswith('.py'):
         if overwrite:
-            shutil.copy2(src=code_path, dst=os.path.join( export_code_path, 'atlas_entry.py' )) # overwrite old files
+            shutil.copy2(src=code_path, dst=os.path.join( export_code_path, 'hubconf.py' )) # overwrite old files
 
-    #if isinstance(metadata, dict):
-    #    metadata.pop( 'entry_name', None )
-    
+    if hasattr(model, 'ATLAS_INFO'):
+        del model.ATLAS_INFO
+    if hasattr(model, 'METADATA'):
+        del model.METADATA
+
     model_and_metadata = {
         'model': model if save_arch else model.state_dict(),
         'metadata': metadata,
     }
     temp_pth = os.path.join(export_weights_path, 'temp.pth')
     torch.save(model_and_metadata, temp_pth)
-    _md5 = md5( temp_pth )
     if spec_name is None:
+        _md5 = md5( temp_pth )
         spec_name = _md5
     shutil.move( temp_pth, os.path.join(export_weights_path, '%s-%s.pth'%(entry_name, spec_name)) )
 
@@ -92,11 +89,11 @@ def list_entry(path):
         entry_file = path
     elif os.path.isdir(path):
         code_dir = os.path.join( path, _CODE_DIR )
-        entry_file = os.path.join(path, _CODE_DIR, 'atlas_entry.py')
+        entry_file = os.path.join(path, _CODE_DIR, 'hubconf.py')
     else:
         raise NotImplementedError
     sys.path.insert(0, code_dir)
-    spec = importlib.util.spec_from_file_location('atlas_entry', entry_file)
+    spec = importlib.util.spec_from_file_location('hubconf', entry_file)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     entry_list = [ ( f, getattr(module, f) ) for f in dir(module) if callable(getattr(module, f)) and not f.startswith('_') ]
@@ -128,7 +125,7 @@ def load(path: str, entry_name:str=None, spec_name: str=None, pretrained=True, *
         sys.path.insert(0, code_dir)
 
         spec = importlib.util.spec_from_file_location(
-            'atlas_entry', os.path.join(code_dir, 'atlas_entry.py'))
+            'hubconf', os.path.join(code_dir, 'hubconf.py'))
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
@@ -137,19 +134,25 @@ def load(path: str, entry_name:str=None, spec_name: str=None, pretrained=True, *
             for dep in deps:
                 _import_with_auto_install(dep)
 
-        if entry_name is None and spec_name is None: # auto select
+        if entry_name is None: # auto select
             pth_file = [pth for pth in os.listdir( os.path.join(path, _WEIGHTS_DIR) )]
-            assert len(pth_file)<=1, "There should be only one model if entry_name==None and spec_name==None"
+            assert len(pth_file)<=1, "Loading models with more than one weight files (.pth) is ambiguous"
             pth_file = pth_file[0]
             entry_name = pth_file.split('-')[0]
             entry_fn = getattr( module, entry_name )
-        elif entry_name is not None and spec_name is not None:
-            entry_fn = getattr( module, entry_name )
-            pth_file = '%s-%s.pth'%(entry_name, spec_name)
         else:
-            raise NotImplementedError
+            if spec_name is None:
+                pth_file = [pth for pth in os.listdir( os.path.join(path, _WEIGHTS_DIR) ) if spec_name in pth]
+                assert len(pth_file)<=1, "Loading models with more than one weight files (.pth) is ambiguous"
+                pth_file = pth_file[0]
+            else:
+                entry_fn = getattr( module, entry_name )
+                pth_file = '%s-%s.pth'%(entry_name, spec_name)
+        
+        try:
+            model_and_metadata = torch.load(os.path.join(path, _WEIGHTS_DIR, pth_file), map_location='cpu' )
+        except: raise FileNotFoundError
 
-        model_and_metadata = torch.load(os.path.join(path, _WEIGHTS_DIR, pth_file), map_location='cpu' )
         if isinstance( model_and_metadata['model'], torch.nn.Module ):
             model = model_and_metadata['model']
         else:
@@ -159,25 +162,33 @@ def load(path: str, entry_name:str=None, spec_name: str=None, pretrained=True, *
             model = entry_fn( **entry_args )
             if pretrained:
                 model.load_state_dict( model_and_metadata['model'] )
-        model_and_metadata['metadata']['entry_name'] = entry_name
+        
+        # setup metadata and atlas info
         model.METADATA = model_and_metadata['metadata']
-        model.ATLAS_INFO = {"path": path, "entry_name": entry_name}
+        model.SETUP_INFO = {"path": path, "entry_name": entry_name}
         return model
     raise NotImplementedError
 
 def load_metadata(path, entry_name=None, spec_name=None):
     path = os.path.abspath(path)
     if os.path.isdir(path):
-        if entry_name is None and spec_name is None: # auto select
+        if entry_name is None: # auto select
             pth_file = [pth for pth in os.listdir( os.path.join(path, _WEIGHTS_DIR) )]
-            assert len(pth_file)<=1, "There should be only one model if entry_name==None and spec_name==None"
+            assert len(pth_file)<=1, "Loading models with more than one weight files (.pth) is ambiguous"
             pth_file = pth_file[0]
         else:
-            pth_file = '%s-%s.pth'%( entry_name, spec_name )
-        metadata = torch.load( os.path.join( path, _WEIGHTS_DIR, pth_file ), map_location='cpu' )['metadata']
+            if spec_name is None:
+                pth_file = [pth for pth in os.listdir( os.path.join(path, _WEIGHTS_DIR) ) if spec_name in pth]
+                assert len(pth_file)<=1, "Loading models with more than one weight files (.pth) is ambiguous"
+                pth_file = pth_file[0]
+            else:
+                pth_file = '%s-%s.pth'%(entry_name, spec_name)
+        try:
+            metadata = torch.load( os.path.join( path, _WEIGHTS_DIR, pth_file ), map_location='cpu' )['metadata']
+        except:
+            FileNotFoundError
         return metadata
     
-
 def load_tags(path, entry_name, spec_name):
     path = os.path.abspath(path)
     tags_path = os.path.join(path, _TAGS_DIR, '%s-%s.yml'%( entry_name, spec_name ))
@@ -193,11 +204,10 @@ def save_tags(tags, path, entry_name, spec_name):
     os.makedirs( os.path.join( path, _TAGS_DIR ), exist_ok=True )
     _yaml_dump(tags_path, tags)
 
-
-
 def _yaml_dump(f, obj):
     with open(f, 'w') as f:
         yaml.dump(obj, f)
+        
 def _yaml_load(f):
     with open(f, 'r') as f:
         return yaml.load(f)
@@ -220,37 +230,12 @@ def md5(fname):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
-def _extract_module_source(net):
-    dep = set()
-    code = set()
-    mod = inspect.getmodule(net)
-    src_path = inspect.getsourcefile(mod)
-    code.add(src_path)
-    for name, obj in inspect.getmembers(mod):
-        if inspect.ismodule(obj) or inspect.isfunction(obj) or inspect.isclass(obj):
-            module_name = inspect.getmodule(obj).__name__
-            if '.' in module_name:
-                module_name = module_name.split('.')[0]
-            try:
-                module_path = inspect.getfile(obj)
-            except:
-                print('{!r} is a built-in module'.format(obj))
-                pass
-            if re.search('python\d.\d', module_path):
-                if 'site-packages' in module_path:
-                    dep.add(module_name)
-            else:
-                code.add(module_path)
-    return code, dep
-
-
 def _get_package_name_and_version(package):
     _version_sym_list = ('==', '>=', '<=')
     for sym in _version_sym_list:
         if sym in package:
             return package.split(sym)
     return package, None
-
 
 def _import_with_auto_install(package):
     package_name, version = _get_package_name_and_version(package)
@@ -268,22 +253,10 @@ def _import_with_auto_install(package):
 
 from distutils.dir_util import copy_tree
 def _copy_file_or_tree(src, dst):
-    if os.path.isdir(src):
-        return copy_tree( src, dst )
+    if os.path.isfile(src):
+        shutil.copy2(src=src, dst=dst)
     else:
-        return shutil.copy2(src=src, dst=dst)
-
-    #base_path = os.getcwd()
-    #dst_subpath = src[len(base_path)+1:]
-    #dst_path = os.path.join(dst, dst_subpath)
-    #if os.path.isfile(src):
-    #    dst_dirpath = os.path.dirname(dst_path)
-    #    if not os.path.exists(dst_dirpath):
-    #         os.makedirs(dst_dirpath)
-    #    shutil.copy(src=src, dst=dst_path)
-    #else:
-    #    shutil.copytree(src=src, dst=dst_path)
-    #return dst_subpath
+        copy_tree(src=src, dst=dst)
 
 def _glob_list(path_list, recursive=False):
     results = []

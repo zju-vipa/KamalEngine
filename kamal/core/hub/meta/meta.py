@@ -7,13 +7,13 @@ import torch
 __all__ = ['yaml', 'ImageInput', 'MetaData', 'AtlasEntryBase']
 
 # Model Metadata
-def Metadata( name:           str=None,
-              dataset:        str=None,
-              task:           int=None,
-              url:            str=None,
-              input:          dict=None,
-              entry_args:     dict=None,
-              other_metadata: dict=None):
+def Metadata( name:           str,
+              dataset:        str,
+              task:           int,
+              url:            str,
+              input:          dict,
+              entry_args:     dict,
+              other_metadata: dict):
     if task in [TASK.SEGMENTATION, TASK.CLASSIFICATION]:
         assert 'num_classes' in other_metadata
     return dict(
