@@ -54,7 +54,9 @@ class LayerWiseAmalgamator(Engine):
             amal_block = AmalBlock(cs=C[0], cts=C[1:]).to(self.device).train()
             amal_blocks.append( (amal_block, hooks, C)  )
         self._amal_blocks = amal_blocks
-
+    @property
+    def device(self):
+        return self._device
     def run(self, max_iter, start_iter=0, epoch_length=None ):
         block_params = []
         for block, _, _ in self._amal_blocks:

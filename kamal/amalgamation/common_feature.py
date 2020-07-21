@@ -217,6 +217,10 @@ class CommonFeatureAmalgamator(Engine):
         self._amal_blocks = amal_blocks
         self._cfl_criterion = tasks.loss.CFLLoss( sigmas=[0.001, 0.01, 0.05, 0.1, 0.2, 1, 2] )
 
+    @property
+    def device(self):
+        return self._device
+    
     def run(self, max_iter, start_iter=0, epoch_length=None):
         block_params = []
         for block, _, _ in self._amal_blocks:

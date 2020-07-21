@@ -28,7 +28,7 @@ def _replace_invalid_char(name):
 
 def save(
     model:          torch.nn.Module,
-    export_dir:     str,
+    save_path:     str,
     
     entry_name:     str,
     spec_name:      str,
@@ -44,13 +44,13 @@ def save(
     if spec_name is not None:
         spec_name = _replace_invalid_char(spec_name)
 
-    if not os.path.isdir(export_dir):
+    if not os.path.isdir(save_path):
         overwrite = True
 
-    export_dir = os.path.abspath(export_dir)
-    export_code_path = os.path.join(export_dir, _CODE_DIR)
-    export_weights_path = os.path.join(export_dir, _WEIGHTS_DIR)
-    os.makedirs(export_dir, exist_ok=True)
+    save_path = os.path.abspath(save_path)
+    export_code_path = os.path.join(save_path, _CODE_DIR)
+    export_weights_path = os.path.join(save_path, _WEIGHTS_DIR)
+    os.makedirs(save_path, exist_ok=True)
     os.makedirs(export_code_path, exist_ok=True)
     os.makedirs(export_weights_path, exist_ok=True)
 
@@ -80,7 +80,7 @@ def save(
     shutil.move( temp_pth, os.path.join(export_weights_path, '%s-%s.pth'%(entry_name, spec_name)) )
 
     if tags is not None:
-        save_tags( tags, export_dir, entry_name, spec_name )
+        save_tags( tags, save_path, entry_name, spec_name )
 
 def list_entry(path):
     path = os.path.abspath( os.path.expanduser( path ) )

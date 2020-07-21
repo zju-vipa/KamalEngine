@@ -162,7 +162,9 @@ class PruningKDTrainer(KDTrainer):
         self.model = self.student = student.to(self.device)
         self.teachers = nn.ModuleList(teachers).to(self.device) 
         self.get_optimizer_and_scheduler = get_optimizer_and_scheduler
-    
+    @property
+    def device(self):
+        return self._device
     def run(self, max_iter, start_iter=0, epoch_length=None, pruning_rounds=3, target_model_size=0.6 ):
         pruning_size_per_round = 1 - math.pow( target_model_size, 1/pruning_rounds )
         prunner = Pruner( strategy.LNStrategy(n=1) )

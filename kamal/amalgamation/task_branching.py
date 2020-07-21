@@ -208,6 +208,10 @@ class TaskBranchingAmalgamator(Engine):
         self.optimizer = optimizer
 
         self.is_finetuning=False
+        
+    @property
+    def device(self):
+        return self._device
 
     def run(self, max_iter, start_iter=0, epoch_length=None, stage_callback=None ):
         # Branching

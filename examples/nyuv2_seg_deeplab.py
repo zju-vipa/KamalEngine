@@ -12,11 +12,12 @@ def main():
     model = vision.models.segmentation.deeplabv3_resnet50(num_classes=num_classes, pretrained_backbone=True)
     train_dst = vision.datasets.NYUv2( 
         'data/NYUv2', split='train', target_type='semantic', transforms=sT.Compose([
-            sT.Multi( sT.Resize(256),  sT.Resize(256, interpolation=Image.NEAREST)),
+            sT.Multi( sT.Resize(240), sT.Resize(240, interpolation=Image.NEAREST)),
+            sT.Sync(  sT.RandomRotation(5),  sT.RandomRotation(5)),
+            sT.Multi( sT.ColorJitter(0.2, 0.2, 0.2), None),
             sT.Sync(  sT.RandomCrop(240),  sT.RandomCrop(240)),
-            sT.Sync(  sT.RandomHorizontalFlip(), sT.RandomHorizontalFlip() ),  
-            sT.Multi( sT.ColorJitter(0.2, 0.2, 0.2), None ),
-            sT.Multi( sT.ToTensor(), sT.ToTensor( normalize=False, dtype=torch.long ) ),
+            sT.Sync(  sT.RandomHorizontalFlip(), sT.RandomHorizontalFlip() ),
+            sT.Multi( sT.ToTensor(), sT.ToTensor( normalize=False, dtype=torch.long) ),
             sT.Multi( sT.Normalize( mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225] ), sT.Lambda(lambd=lambda x: x.squeeze()) )
         ]) )
     val_dst = vision.datasets.NYUv2( 
@@ -65,12 +66,12 @@ def main():
                 normalizer=kamal.utils.Normalizer( mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], reverse=True),
             )])
 
-    import matplotlib.pyplot as plt
-    lr_finder = kamal.engine.lr_finder.LRFinder()
-    best_lr = lr_finder.find( optim, model, trainer, lr_range=[1e-8, 1.0], max_iter=100, smooth_momentum=0.9 )
-    fig = lr_finder.plot(polyfit=4)
-    plt.savefig('lr_finder_deeplab.png')
-    lr_finder.adjust_learning_rate(optim, best_lr)
+    #import matplotlib.pyplot as plt
+    #lr_finder = kamal.engine.lr_finder.LRFinder()
+    #best_lr = lr_finder.find( optim, model, trainer, lr_range=[1e-8, 1.0], max_iter=100, smooth_momentum=0.9 )
+    #fig = lr_finder.plot(polyfit=4)
+    #plt.savefig('lr_finder_deeplab.png')
+    #lr_finder.adjust_learning_rate(optim, best_lr)
 
     trainer.run( start_iter=0, max_iter=TOTAL_ITERS )
 

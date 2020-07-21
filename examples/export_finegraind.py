@@ -21,7 +21,7 @@ if __name__=='__main__':
     
     kamal.hub.save(
         model,
-        export_dir='exported/finegraind_%s_resnet18'%args.dataset,
+        save_path='exported/finegraind_%s_resnet18'%args.dataset,
         entry_name='resnet18',
         spec_name=None,
         code_path=__file__,
