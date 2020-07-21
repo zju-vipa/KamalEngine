@@ -24,7 +24,7 @@ if __name__=='__main__':
     model.load_state_dict( torch.load(args.ckpt) )
     kamal.hub.save(
         model,
-        export_dir='exported/segnet_vgg16_bn_nyuv2_%s'%args.task,
+        save_path='exported/segnet_vgg16_bn_nyuv2_%s'%args.task,
         entry_name='segnet_vgg16_bn',
         spec_name=None,
         code_path=__file__,
