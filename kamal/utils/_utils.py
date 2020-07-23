@@ -112,9 +112,9 @@ def flatten_dict(dic):
                 if prefix is None:
                     _flatten( k, v )
                 else:
-                    _flatten( prefix+'%s.'%k, v )
+                    _flatten( prefix+'%s/'%k, v )
             else:
-                flattned[ (prefix+'%s.'%k).strip('.') ] = v
+                flattned[ (prefix+'%s/'%k).strip('/') ] = v
         
     _flatten('', dic)
     return flattned
