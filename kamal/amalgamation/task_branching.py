@@ -228,7 +228,7 @@ class TaskBranchingAmalgamator(Engine):
         self.is_finetuning = True
         with set_mode(self.student, training=True), \
              set_mode(self.teachers, training=False):
-            super( TaskBranchingAmalgamator, self ).run(self.step_fn, self._dataloader, start_iter=max_iter//2, max_iter=max_iter, epoch_length=epoch_length)
+            super( TaskBranchingAmalgamator, self ).run(self.step_fn, self._dataloader, start_iter=max_iter-max_iter//2, max_iter=max_iter, epoch_length=epoch_length)
 
     def find_the_best_branch(self, dataloader):
         
