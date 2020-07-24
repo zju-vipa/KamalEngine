@@ -49,7 +49,7 @@ class Event(object):
             return Event(self.value, event_trigger=Event.every_trigger(every) )
         if once is not None:
             return Event(self.value, event_trigger=Event.once_trigger() )
-        return Event()
+        return Event(self.value)
 
     def __hash__(self):
         return hash(self._name_)
