@@ -24,8 +24,8 @@ def main():
     seg_teacher.load_state_dict( torch.load(args.seg_ckpt) )
     depth_teacher.load_state_dict( torch.load( args.depth_ckpt ) )
     student = vision.models.segmentation.segnet_vgg16_bn(num_classes=1, pretrained_backbone=True)
-    student = amalgamation.JointSegNet( teachers=[seg_teacher, depth_teacher], student=student)
-
+    student = amalgamation.task_branching.BranchySegNet( out_channels=[13, 1], segnet_fn=vision.models.segmentation.segnet_vgg16_bn )
+    
     # target is not necessary
     train_dst = vision.datasets.NYUv2( '../data/NYUv2', split='train', target_type='semantic' )
     seg_val_dst = vision.datasets.NYUv2( '../data/NYUv2', split='test', target_type='semantic' )

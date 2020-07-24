@@ -20,11 +20,11 @@ import numpy as np
 from collections import defaultdict
 import numbers
 
-class BranchSegNet(nn.Module):
-    def __init__(self, teacher_list, segnet_fn=vision.models.segmentation.segnet_vgg16_bn):
-        super(BranchSegNet, self).__init__()
+class BranchySegNet(nn.Module):
+    def __init__(self, out_channels, segnet_fn=vision.models.segmentation.segnet_vgg16_bn):
+        super(BranchySegNet, self).__init__()
         channels=[512, 512, 256, 128, 64]
-        self.register_buffer( 'branch_indices', torch.zeros((len(teacher_list),)) )
+        self.register_buffer( 'branch_indices', torch.zeros((len(out_channels),)) )
 
         self.student_b_decoders_list = nn.ModuleList()
         self.student_adaptors_list = nn.ModuleList()
@@ -34,8 +34,8 @@ class BranchSegNet(nn.Module):
             se = int(channels[i]/4)
             ses.append(16 if se < 16 else se)
 
-        for teacher in teacher_list:
-            segnet = self.get_segnet( teacher, segnet_fn )
+        for oc in out_channels:
+            segnet = self.get_segnet( oc, segnet_fn )
             decoders = nn.ModuleList(deepcopy(list(segnet.children())[5:]))
             adaptors = nn.ModuleList()
             for i in range(5):
@@ -56,26 +56,8 @@ class BranchSegNet(nn.Module):
         assert len(branch_indices)==len(self.student_b_decoders_list)
         self.branch_indices = torch.from_numpy( np.array( branch_indices ) ).to(self.branch_indices.device)
 
-    def get_segnet(self, teacher, segnet_fn):
-        metadata = teacher.METADATA
-        task = metadata['task']
-        if task==meta.TASK.DEPTH:
-            return segnet_fn(pretrained_backbone=True, num_classes=1)
-        elif task==meta.TASK.SEGMENTATION:
-            return segnet_fn(pretrained_backbone=True, num_classes=metadata['other_metadata']['num_classes'])
-        else:
-            # try to infer the output shape
-            teacher.cpu()
-            input_shape = metadata['input']['size']
-            channel = [1, ] if metadata['input']['space']=='gray' else [3, ]
-            if isinstance(input_shape, numbers.Number):
-                input_shape = [ input_shape, input_shape ]
-            input_shape = channel+input_shape
-        
-            with torch.no_grad(), set_mode(teacher, training=False):
-                output = teacher( torch.randn( 1, *input_shape) )
-            output_channel = output.shape[1]
-            return segnet_fn( pretrained_backbone=True, num_classes=output_channel )
+    def get_segnet(self, oc, segnet_fn):
+        return segnet_fn( num_classes=oc, pretrained_backbone=True )
 
     def forward(self, inputs):
         output_list = []
