@@ -9,7 +9,7 @@ import torch
 from torch.nn import Module
 from torch.utils.data import Dataset
 
-from depara.attribution_map import attribution_map, attr_map_similarity
+from .attribution_map import attribution_map, attr_map_similarity
 
 
 def graph_to_array(graph: networkx.Graph):
