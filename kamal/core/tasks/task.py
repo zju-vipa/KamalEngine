@@ -4,56 +4,36 @@ import torch.nn as nn
 import torch.nn.functional as F 
 import sys
 import typing
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Any
 from collections import Mapping, Sequence
 from . import loss
 from kamal.core import metrics, exceptions
 from kamal.core.attach import AttachTo
 
-
 class Task(object):
-    def __init__(self, 
-                 name: str, 
-                 loss_fn: Callable,
-                 scaling:float=1.0,
-                 pred_fn: Callable=lambda x: x,
-                 forward_fn: Callable=lambda model, x: model(x),
-                 attach_to=None):
-        self._attach = AttachTo(attach_to)
-        self.loss_fn = loss_fn
-        self.pred_fn = pred_fn
-        self.forward_fn = forward_fn
-        self.scaling = scaling
+    def __init__(self, name):
         self.name = name
-
-    def forward(self, model, input):
-        return self.forward_fn( model, input )
     
-    def get_loss(self, outputs, targets):
-        outputs, targets = self._attach(outputs, targets)
-        return { self.name: self.loss_fn( outputs, targets ) * self.scaling }
+    @abc.abstractmethod
+    def get_loss( self, outputs, targets ) -> Dict:
+        pass
 
-    def predict(self, outputs):
-        outputs = self._attach(outputs)
-        return self.pred_fn(outputs)
-        
-    def __repr__(self):
-        rep = "Task: [%s loss_fn=%s scaling=%.4f attach=%s]"%(self.name, str(self.loss_fn), self.scaling, self._attach)
-        return rep
+    @abc.abstractmethod
+    def predict(self, outputs) -> Any:
+        pass
 
-
-class Task(object):
+class GeneralTask(Task):
     def __init__(self, 
                  name: str, 
                  loss_fn: Callable, 
                  scaling:float=1.0, 
                  pred_fn: Callable=lambda x: x,
                  attach_to=None):
+        super(GeneralTask, self).__init__(name)
         self._attach = AttachTo(attach_to)
         self.loss_fn = loss_fn
         self.pred_fn = pred_fn
         self.scaling = scaling
-        self.name = name
 
     def get_loss(self, outputs, targets):
         outputs, targets = self._attach(outputs, targets)
@@ -68,7 +48,7 @@ class Task(object):
         return rep
 
 class TaskCompose(list):
-    def __init__(self, tasks:list):
+    def __init__(self, tasks: list):
         for task in tasks:
             if isinstance(task, Task):
                 self.append(task)
@@ -93,7 +73,7 @@ class TaskCompose(list):
 class StandardTask:
     @staticmethod
     def classification(name='ce', scaling=1.0, attach_to=None):
-        return Task( name=name, 
+        return GeneralTask( name=name, 
                      loss_fn=nn.CrossEntropyLoss(), 
                      scaling=scaling, 
                      pred_fn=lambda x: x.max(1)[1], 
@@ -101,7 +81,7 @@ class StandardTask:
 
     @staticmethod
     def binary_classification(name='bce', scaling=1.0, attach_to=None):
-        return Task(name=name, 
+        return GeneralTask(name=name, 
                     loss_fn=F.binary_cross_entropy_with_logits, 
                     scaling=scaling, 
                     pred_fn=lambda x: (x>0.5), 
@@ -109,7 +89,7 @@ class StandardTask:
 
     @staticmethod
     def regression(name='mse', scaling=1.0, attach_to=None):
-        return Task(name=name, 
+        return GeneralTask(name=name, 
                     loss_fn=nn.MSELoss(), 
                     scaling=scaling,
                     pred_fn=lambda x: x, 
@@ -117,7 +97,7 @@ class StandardTask:
 
     @staticmethod
     def segmentation(name='ce', scaling=1.0, attach_to=None):
-        return Task(name=name, 
+        return GeneralTask(name=name, 
                     loss_fn=nn.CrossEntropyLoss(ignore_index=255), 
                     scaling=scaling, 
                     pred_fn=lambda x: x.max(1)[1], 
@@ -125,7 +105,7 @@ class StandardTask:
     
     @staticmethod
     def monocular_depth(name='l1', scaling=1.0, attach_to=None):
-        return Task(name=name, 
+        return GeneralTask(name=name, 
                     loss_fn=nn.L1Loss(), 
                     scaling=scaling, 
                     pred_fn=lambda x: x, 
@@ -137,7 +117,7 @@ class StandardTask:
 
     @staticmethod
     def distillation(name='kld', T=1.0, scaling=1.0, attach_to=None):
-        return Task(name=name, 
+        return GeneralTask(name=name, 
                     loss_fn=loss.KLDiv(T=T), 
                     scaling=scaling, 
                     pred_fn=lambda x: x.max(1)[1],

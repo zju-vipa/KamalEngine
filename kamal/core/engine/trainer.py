@@ -36,13 +36,6 @@ class BasicTrainer(Engine):
         with set_mode(self.model, training=True):
             super( BasicTrainer, self ).run( self.step_fn, self.dataloader, start_iter=start_iter, max_iter=max_iter, epoch_length=epoch_length)
 
-    @staticmethod
-    def basic_criterion_wrapper( name, criterion: Callable, scaling=1.0 ):
-        def wrapper(engine, batch):
-            output = engine.model( batch[0] )
-            return { name: criterion( output, batch[1] )*scaling }
-        return wrapper
-
     def step_fn(self, engine, batch):
         model = self.model
         start_time = time.perf_counter()

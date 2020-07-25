@@ -7,7 +7,6 @@ import shutil, inspect
 import importlib.util
 from glob import glob
 
-from . import pickle_module
 from ruamel.yaml import YAML
 from ruamel.yaml import comments
 from ._module_mapping import PACKAGE_NAME_TO_IMPORT_NAME
