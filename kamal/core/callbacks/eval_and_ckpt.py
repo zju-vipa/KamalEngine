@@ -18,7 +18,7 @@ class EvalAndCkpt(Callback):
                  log_tag:str         ='model',
                  weights_only:bool   =True,
                  verbose:bool        =False,):
-
+        super(EvalAndCkpt, self).__init__()
         self.metric_name = metric_name
         assert metric_mode in ('max', 'min'), "metric_mode should be 'max' or 'min'"
         self._metric_mode = metric_mode
@@ -112,19 +112,17 @@ class EvalAndCkpt(Callback):
                 if self._verbose and trainer.logger:
                     trainer.logger.info("\t%s" % (pth_path))
     
-    def final_ckpt(self, ckpt_prefix=None, ckpt_dir=None):
-        trainer = self.trainer()
-        model = getattr(trainer, self.model_attr_name)
-
+    def final_ckpt(self, ckpt_prefix=None, ckpt_dir=None, add_md5=False):
         if ckpt_dir is None:
             ckpt_dir = self._ckpt_dir
         if ckpt_prefix is None:
             ckpt_prefix = self._ckpt_prefix
-
         if self._save_type is not None:
-            if 'latest' in self._save_type and self._latest_ckpt is not None:
-                os.makedirs(ckpt_dir, exist_ok=True)
-                shutil.copy2(self._latest_ckpt, os.path.join(ckpt_dir, "%slatest.pth"%ckpt_prefix))
+            #if 'latest' in self._save_type and self._latest_ckpt is not None:
+            #    os.makedirs(ckpt_dir, exist_ok=True)
+            #    save_name = "%slatest%s.pth"%(ckpt_prefix, "" if not add_md5 else "-%s"%utils.md5(self._latest_ckpt))
+            #    shutil.copy2(self._latest_ckpt, os.path.join(ckpt_dir, save_name))
             if 'best' in self._save_type and self._best_ckpt is not None:
                 os.makedirs(ckpt_dir, exist_ok=True)
-                shutil.copy2(self._best_ckpt, os.path.join(ckpt_dir, "%sbest.pth"%ckpt_prefix))
+                save_name = "%sbest%s.pth"%(ckpt_prefix, "" if not add_md5 else "-%s"%utils.md5(self._best_ckpt))
+                shutil.copy2(self._best_ckpt, os.path.join(ckpt_dir, save_name))

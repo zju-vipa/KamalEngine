@@ -5,6 +5,7 @@ class LRSchedulerCallback(Callback):
     r""" LR scheduler callback
     """
     def __init__(self, schedulers=None):
+        super(LRSchedulerCallback, self).__init__()
         if not isinstance(schedulers, Sequence):
             schedulers = ( schedulers, )
         self._schedulers = schedulers

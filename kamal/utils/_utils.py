@@ -3,7 +3,7 @@ import math
 import torch 
 import random
 from copy import deepcopy
-import contextlib
+import contextlib, hashlib
 
 def split_batch(batch):
     if isinstance(batch, (list, tuple)):
@@ -127,3 +127,10 @@ def setup_seed(seed):
 
 def count_parameters(model):
     return sum( [ p.numel() for p in model.parameters() ] )
+
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
