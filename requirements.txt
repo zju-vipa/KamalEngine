@@ -1,10 +1,11 @@
 torch
 torchvision
 pandas
-pytorch-mssim
-torch-pruning
 termcolor
 hyperopt
 scikit-learn
 numpy
 captum
+ruamel.yaml
+torch-pruning
+networkx

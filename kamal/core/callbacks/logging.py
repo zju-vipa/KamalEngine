@@ -1,8 +1,10 @@
 from .base import Callback
 import numbers
+from tqdm import tqdm
 
 class MetricsLogging(Callback):
     def __init__(self, keys):
+        super(MetricsLogging, self).__init__()
         self._keys = keys
 
     def __call__(self, engine):
@@ -25,4 +27,18 @@ class MetricsLogging(Callback):
                     content += " %s=%s"%(key, value)
                 
         engine.logger.info(content)
+    
+class ProgressCallback(Callback):
+    def __init__(self, max_iter=100, tag=None):
+        self._max_iter = max_iter
+        self._tag = tag
+        #self._pbar = tqdm(total=self._max_iter, desc=self._tag)
+    
+    def __call__(self, engine):
+        self._pbar.update(1)
+        if self._pbar.n==self._max_iter:
+            self._pbar.close()
+    
+    def reset(self):
+        self._pbar = tqdm(total=self._max_iter, desc=self._tag)
     
