@@ -22,16 +22,14 @@ class BasicEvaluator(Engine):
         self.dataloader = dataloader
         self.metric = metric
         self.progress = progress
-        self.add_callback( DefaultEvents.AFTER_STEP, callbacks=self._update_pbar)
+        if progress:
+            self.porgress_callback = self.add_callback( 
+                DefaultEvents.AFTER_STEP, callbacks=callbacks.ProgressCallback(max_iter=len(self.dataloader), tag=tag))
         self._model = None
         self._tag = tag
         if eval_fn is None:
             eval_fn = BasicEvaluator.default_eval_fn
         self.eval_fn = eval_fn
-
-    def _update_pbar(self, engine):
-        if self.progress:
-            self._pbar.update(1)
 
     def eval(self, model, device=None):
         device = device if device is not None else \
@@ -41,11 +39,9 @@ class BasicEvaluator(Engine):
         self.metric.reset()
         model.to(device)
         if self.progress:
-            self._pbar = tqdm(total=len(self.dataloader), desc=self._tag)
+            self.porgress_callback.callback.reset()
         with torch.no_grad(), set_mode(model, training=False):
             super(BasicEvaluator, self).run( self.step_fn, self.dataloader, max_iter=len(self.dataloader) )
-        if self.progress:
-            self._pbar.close()
         return self.metric.get_results()
     
     @property
