@@ -109,7 +109,6 @@ class VisualizeSegmentation(VisualizeOutputs):
         decode_fn: Callable=None,
         tag: str='seg'
     ):
-        super(VisualizeSegmentation, self).__init__()
         if prepare_fn is None:
             prepare_fn = VisualizeOutputs.get_prepare_fn(attach_to=attach_to, pred_fn=lambda x: x.max(1)[1])
         if decode_fn is None:
@@ -134,7 +133,6 @@ class VisualizeDepth(VisualizeOutputs):
         decode_fn: Callable=None,
         tag: str='depth'
     ):
-        super(VisualizeDepth, self).__init__()
         if prepare_fn is None:
             prepare_fn = VisualizeOutputs.get_prepare_fn(attach_to=attach_to, pred_fn=lambda x: x)
         if decode_fn is None:
