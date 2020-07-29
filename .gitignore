@@ -23,3 +23,5 @@ stanford_dogs_resnet18
 pretrained
 zoo
 probe_data
+test_zoo
+exported_metrics
