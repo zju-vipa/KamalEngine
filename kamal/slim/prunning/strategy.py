@@ -31,8 +31,8 @@ class BaseStrategy(abc.ABC):
                 if isinstance(m, (nn.modules.conv._ConvNd, nn.Linear)):
                     prunable_layers.append( m )
                     num_accumulative_conv_params.append( num_accumulative_conv_params[-1]+nparam )
-        prunable_layers.pop(-1)
-        num_accumulative_conv_params.pop(-1)
+        prunable_layers.pop(-1) # remove the last layer
+        num_accumulative_conv_params.pop(-1) # remove the last layer
         
         num_conv_params = num_accumulative_conv_params[-1]
         num_accumulative_conv_params = [ ( num_accumulative_conv_params[i], num_accumulative_conv_params[i+1] ) for i in range(len(num_accumulative_conv_params)-1) ]
