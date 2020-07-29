@@ -18,6 +18,7 @@ from . import depara
 import os, abc
 from typing import Callable
 from kamal import hub
+import json, numbers
 
 class Node(object):
     def __init__(self, hub_root, entry_name, spec_name):
@@ -70,8 +71,49 @@ class TransferabilityGraph(object):
     def add_metric(self, metric_name, metric):
         self._graphs[metric_name] = g = nx.DiGraph()
         g.add_nodes_from( self._models.values() )
-        
         for n1 in self._models.values():
             for n2 in self._models.values():
-                g.add_edge(n1, n2, weight=metric( n1, n2 ))
+                if n1!=n2 and not g.has_edge(n1, n2):
+                    g.add_edge(n1, n2, dist=metric( n1, n2 ))
         
+    def export_to_json(self, metric_name, output_filename, topk=None, normalize=False):
+        graph = self._graphs.get( metric_name, None )
+        assert graph is not None
+        graph_data={
+            'nodes': [],
+            'edges': [],
+        }
+        node_to_idx = {}
+        for i, node in enumerate(self._models.values()):
+            tags = node.tag
+            metadata = node.metadata
+            node_data = { k:v for (k, v) in tags.items() if isinstance(v, (numbers.Number, str) ) }
+            node_data['name'] = metadata['name']
+            node_data['id'] = i
+            graph_data['nodes'].append(node_data)
+            node_to_idx[node] = i
+
+        # record Edges
+        edge_list = graph_data['edges']
+        topk_dist = { idx: [] for idx in range(len( self._models )) }
+        for i, edge in enumerate(graph.edges.data('dist')):
+            s, t, d = int( node_to_idx[edge[0]] ), int( node_to_idx[edge[1]] ), float(edge[2])
+            topk_dist[s].append(d)
+            edge_list.append([
+                s, t, d # source, target, distance
+            ])
+
+        if isinstance(topk, int):
+            for i, dist in topk_dist.items():
+                dist.sort()
+                topk_dist[i] = dist[topk]
+            graph_data['edges']  = [ edge for edge in edge_list if edge[2] < topk_dist[edge[0]] ]
+
+        if normalize:
+            edge_dist = [e[2] for e in graph_data['edges']]
+            min_dist, max_dist = min(edge_dist), max(edge_dist)
+            for e in graph_data['edges']:
+                e[2] = (e[2] - min_dist+1e-8) / (max_dist - min_dist+1e-8)
+    
+        with open(output_filename, 'w') as fp:
+            json.dump(graph_data, fp)
