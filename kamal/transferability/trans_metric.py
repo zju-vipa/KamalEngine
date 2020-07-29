@@ -67,10 +67,9 @@ class DeparaMetric(TransMetric):
         return depara.graph_similarity(attrgraph_1, attrgraph_2)
 
 class AttrMapMetric(DeparaMetric):
-    def _get_attr_graph(self, n):
+    def _get_attr_map(self, n):
         transform = self._get_transform(n.metadata)
-        data = torch.stack( [ transform( d ) for d in self.data ], dim=0 )
-        
+        data = torch.stack( [ transform( d ).to(self.device) for d in self.data ], dim=0 )
         return depara.attribution_map(
             n.model.to(self.device),
             attribution_type=InputXGradient,
@@ -82,8 +81,8 @@ class AttrMapMetric(DeparaMetric):
         attrgraph_1 = self._cache.get(n1, None)
         attrgraph_2 = self._cache.get(n2, None)
         if attrgraph_1 is None:
-            self._cache[n1] = attrgraph_1 = self._get_attr_graph(n1)
+            self._cache[n1] = attrgraph_1 = self._get_attr_map(n1)
         if attrgraph_2 is None:
-            self._cache[n2] = attrgraph_2 = self._get_attr_graph(n2)
-        return depara.graph_similarity(attrgraph_1, attrgraph_2)
+            self._cache[n2] = attrgraph_2 = self._get_attr_map(n2)
+        return depara.attr_map_distance(attrgraph_1, attrgraph_2)
     
