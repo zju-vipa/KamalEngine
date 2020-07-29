@@ -59,7 +59,8 @@ def attribution_map(
 def attr_map_distance(map_1: torch.Tensor, map_2: torch.Tensor):
     if map_1.shape != map_2.shape:
         map_1 = torch.nn.functional.interpolate( map_1, size=map_2.shape[-2:] )
-    dist = torch.dist(map_1.flatten(1), map_2.flatten(1), p=2).mean()
+    #dist = torch.dist(map_1.flatten(1), map_2.flatten(1), p=2).mean()
+    dist = 1 - torch.cosine_similarity(map_1.flatten(1), map_2.flatten(1)).mean()
     return dist.item()
 
 def attr_map_similarity(map_1: torch.Tensor, map_2: torch.Tensor):
