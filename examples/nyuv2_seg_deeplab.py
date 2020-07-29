@@ -65,14 +65,6 @@ def main():
                 idx_list_or_num_vis=10,
                 normalizer=kamal.utils.Normalizer( mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], reverse=True),
             )])
-
-    #import matplotlib.pyplot as plt
-    #lr_finder = kamal.engine.lr_finder.LRFinder()
-    #best_lr = lr_finder.find( optim, model, trainer, lr_range=[1e-8, 1.0], max_iter=100, smooth_momentum=0.9 )
-    #fig = lr_finder.plot(polyfit=4)
-    #plt.savefig('lr_finder_deeplab.png')
-    #lr_finder.adjust_learning_rate(optim, best_lr)
-
     trainer.run( start_iter=0, max_iter=TOTAL_ITERS )
 
 if __name__=='__main__':
