@@ -1,12 +1,12 @@
 
 from captum.attr import InputXGradient
 from torchvision.models import resnet34
-from kamal.transferability.depara import get_attribution_graph, graph_similarity
+from kamal.transferability import depara 
 
 import torch 
 
 model_1 = resnet34(num_classes=10)
-graph_1 = get_attribution_graph(
+graph_1 = depara.get_attribution_graph(
     model_1,
     attribution_type=InputXGradient,
     with_noise=False,
@@ -15,7 +15,7 @@ graph_1 = get_attribution_graph(
 )
 
 model_2 = resnet34(num_classes=10)
-graph_2 = get_attribution_graph(
+graph_2 = depara.get_attribution_graph(
     model_2,
     attribution_type=InputXGradient,
     with_noise=False,
@@ -23,4 +23,4 @@ graph_2 = get_attribution_graph(
     device=torch.device("cpu")
 )
 
-print(graph_similarity(graph_1, graph_2))
+print(depara.graph_similarity(graph_1, graph_2))

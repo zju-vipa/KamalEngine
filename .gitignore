@@ -14,7 +14,7 @@ modelzoo
 pruned_models
 models_old
 logs
-run
+run*
 
 exported
 
@@ -22,3 +22,6 @@ cub200_resnet18
 stanford_dogs_resnet18
 pretrained
 zoo
+probe_data
+test_zoo
+exported_metrics
