@@ -17,5 +17,4 @@ if __name__=='__main__':
         images = [ Image.open( os.path.join(probe_set_root, probe_set, img) ) for img in imgs_set ]
         metric = AttrMapMetric(images, device=torch.device('cuda'))
         TG.add_metric( probe_set, metric)
-
-    TG.export_to('exported_metrics/')
+        TG.export_to_json(probe_set, 'exported_metrics/%s.json'%(probe_set), topk=5, normalize=True)
