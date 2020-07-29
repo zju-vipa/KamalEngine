@@ -191,7 +191,15 @@ class Engine(abc.ABC):
                     if event.trigger!=event.default_trigger:
                         callback = self._trigger_wrapper(self, event.trigger, callback )
                     self._callbacks[event].append( callback )
-        return callbacks
+        callbacks = [ RemovableCallback(self, event, c) for c in callbacks ]
+        return ( callbacks[0] if len(callbacks)==1 else callbacks )
+
+    def remove_callback(self, event, callback):
+        for c in self._callbacks[event]:
+            if c==callback:
+                self._callbacks.remove( callback )
+                return True
+        return False
 
     @staticmethod
     def _trigger_wrapper(engine, trigger, callback):
@@ -217,3 +225,21 @@ class Engine(abc.ABC):
         self._callbacks = defaultdict(list)
         yield
         self._callbacks = temp
+
+class RemovableCallback:
+    def __init__(self, engine, event, callback):
+        self._engine = weakref.ref(engine)
+        self._callback = weakref.ref(callback)
+        self._event = weakref.ref(event)
+    
+    @property
+    def callback(self):
+        return self._callback()
+
+    def remove(self):
+        engine = self._engine()
+        callback = self._callback()
+        event = self._event()
+        return engine.remove_callback(event, callback)
+
+        

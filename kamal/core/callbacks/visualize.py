@@ -22,7 +22,7 @@ class VisualizeOutputs(Callback):
                  prepare_fn: Callable=None,
                  decode_fn: Callable=None, # decode targets and preds
                  tag: str='viz'):
-
+        super(VisualizeOutputs, self).__init__()
         self._dataset = dataset
         self._model = weakref.ref(model)
         if isinstance(idx_list_or_num_vis, int):
