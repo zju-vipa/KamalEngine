@@ -25,3 +25,5 @@ zoo
 probe_data
 test_zoo
 exported_metrics
+export*
+tests
