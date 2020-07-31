@@ -99,26 +99,27 @@ Build a new multi-task model by combining & pruning weight matrixs from distinct
 <img src="docs/imgs/attrmap.png"  width = "100%" alt="icon"/> 
 
 ```
-@inproceedings{song2020depara,
-  title={DEPARA: Deep Attribution Graph for Deep Knowledge Transferability},
-  author={Song, Jie and Chen, Yixin and Ye, Jingwen and Wang, Xinchao and Shen, Chengchao and Mao, Feng and Song, Mingli},
-  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
-  pages={3922--3930},
-  year={2020}
-}
-```
-
-#### 6. DEPARA: Deep Attribution Graph for Deep Knowledge Transferability
-
-<img src="docs/imgs/attrgraph.png"  width = "100%" alt="icon"/> 
-
-```
 @inproceedings{song2019deep,
   title={Deep model transferability from attribution maps},
   author={Song, Jie and Chen, Yixin and Wang, Xinchao and Shen, Chengchao and Song, Mingli},
   booktitle={Advances in Neural Information Processing Systems},
   pages={6182--6192},
   year={2019}
+}
+```
+
+
+#### 6. DEPARA: Deep Attribution Graph for Deep Knowledge Transferability
+
+<img src="docs/imgs/attrgraph.png"  width = "100%" alt="icon"/> 
+
+```
+@inproceedings{song2020depara,
+  title={DEPARA: Deep Attribution Graph for Deep Knowledge Transferability},
+  author={Song, Jie and Chen, Yixin and Ye, Jingwen and Wang, Xinchao and Shen, Chengchao and Mao, Feng and Song, Mingli},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={3922--3930},
+  year={2020}
 }
 ```
 
