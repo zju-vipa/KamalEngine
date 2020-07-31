@@ -8,7 +8,7 @@ import torch
 from PIL import Image
 
 if __name__=='__main__':
-    zoo = './test_zoo'
+    zoo = './zoo/classification'
     TG = TransferabilityGraph(zoo)
     probe_set_root = './probe_data'
     for probe_set in os.listdir( probe_set_root ):
