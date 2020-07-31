@@ -125,7 +125,7 @@ Build a new multi-task model by combining & pruning weight matrixs from distinct
 
 ## Transferability Graph
 
-This is an example for deep model transferability on 300 different classification models. see [examples/transferability](examples/transferability) for more details.
+This is an example for deep model transferability on 300 classification models. see [examples/transferability](examples/transferability) for more details.
 
 <img src="docs/imgs/transgraph.png" width ="100%" alt="icon"/> 
 
