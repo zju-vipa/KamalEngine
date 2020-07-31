@@ -40,7 +40,6 @@ class DeparaMetric(TransMetric):
         space = input_metadata['space']
         drange = input_metadata['range']
         normalize = input_metadata['normalize']
-        print(metadata)
         if size==None:
             size=224
         if isinstance(size, (list, tuple)):
@@ -76,10 +75,12 @@ class DeparaMetric(TransMetric):
         attrgraph_1 = self._cache.get(n1, None)
         attrgraph_2 = self._cache.get(n2, None)
         if attrgraph_1 is None:
-            self._cache[n1] = attrgraph_1 = self._get_attr_graph(n1)
+            self._cache[n1] = attrgraph_1 = self._get_attr_graph(n1).cpu()
         if attrgraph_2 is None:
-            self._cache[n2] = attrgraph_2 = self._get_attr_graph(n2)
-        return depara.graph_similarity(attrgraph_1, attrgraph_2)
+            self._cache[n2] = attrgraph_2 = self._get_attr_graph(n2).cpu()
+        result = depara.graph_similarity(attrgraph_1, attrgraph_2)
+        self._cache[n1] = self._cache[n1]
+        self._cache[n2] = self._cache[n2]
 
 class AttrMapMetric(DeparaMetric):
     def _get_attr_map(self, n):
@@ -96,8 +97,10 @@ class AttrMapMetric(DeparaMetric):
         attrgraph_1 = self._cache.get(n1, None)
         attrgraph_2 = self._cache.get(n2, None)
         if attrgraph_1 is None:
-            self._cache[n1] = attrgraph_1 = self._get_attr_map(n1)
+            self._cache[n1] = attrgraph_1 = self._get_attr_map(n1).cpu()
         if attrgraph_2 is None:
-            self._cache[n2] = attrgraph_2 = self._get_attr_map(n2)
-        return depara.attr_map_distance(attrgraph_1, attrgraph_2)
-    
+            self._cache[n2] = attrgraph_2 = self._get_attr_map(n2).cpu()
+        result = depara.attr_map_distance(attrgraph_1, attrgraph_2)
+        self._cache[n1] = self._cache[n1]
+        self._cache[n2] = self._cache[n2]
+        return result

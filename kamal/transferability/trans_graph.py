@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================
-
+import torch
 import networkx as nx
 from . import depara
 import os, abc
 from typing import Callable
 from kamal import hub
 import json, numbers
+
+from tqdm import tqdm
 
 class Node(object):
     def __init__(self, hub_root, entry_name, spec_name):
@@ -72,10 +74,16 @@ class TransferabilityGraph(object):
         self._graphs[metric_name] = g = nx.DiGraph()
         g.add_nodes_from( self._models.values() )
         for n1 in self._models.values():
-            for n2 in self._models.values():
+            for n2 in tqdm(self._models.values()):
                 if n1!=n2 and not g.has_edge(n1, n2):
-                    g.add_edge(n1, n2, dist=metric( n1, n2 ))
-        
+                    try:
+                        g.add_edge(n1, n2, dist=metric( n1, n2 ))
+                    except:
+                        ori_device = metric.device
+                        metric.device = torch.device('cpu')
+                        g.add_edge(n1, n2, dist=metric( n1, n2 ))
+                        metric.device = ori_device
+    
     def export_to_json(self, metric_name, output_filename, topk=None, normalize=False):
         graph = self._graphs.get( metric_name, None )
         assert graph is not None
@@ -89,8 +97,11 @@ class TransferabilityGraph(object):
             metadata = node.metadata
             node_data = { k:v for (k, v) in tags.items() if isinstance(v, (numbers.Number, str) ) }
             node_data['name'] = metadata['name']
+            node_data['task'] = metadata['task']
+            node_data['dataset'] = metadata['dataset']
+            node_data['url'] = metadata['url']
             node_data['id'] = i
-            graph_data['nodes'].append(node_data)
+            graph_data['nodes'].append({'tags': node_data})
             node_to_idx[node] = i
 
         # record Edges

@@ -136,8 +136,9 @@ def load(path: str, entry_name:str=None, spec_name: str=None, pretrained=True, *
 
     code_dir = os.path.join(path, _CODE_DIR)
     if os.path.isdir(path):
+        cwd = os.getcwd()
+        os.chdir(code_dir)
         sys.path.insert(0, code_dir)
-
         spec = importlib.util.spec_from_file_location(
             'hubconf', os.path.join(code_dir, 'hubconf.py'))
         module = importlib.util.module_from_spec(spec)
@@ -180,6 +181,8 @@ def load(path: str, entry_name:str=None, spec_name: str=None, pretrained=True, *
         # setup metadata and atlas info
         model.METADATA = model_and_metadata['metadata']
         model.SETUP_INFO = {"path": path, "entry_name": entry_name}
+        sys.path.pop(0)
+        os.chdir(cwd)
         return model
     raise NotImplementedError
 
