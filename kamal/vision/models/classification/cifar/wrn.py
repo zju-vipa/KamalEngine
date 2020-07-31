@@ -1,7 +1,4 @@
-'''
-Adapted from https://github.com/polo5/ZeroShotKnowledgeTransfer/blob/master/models/wresnet.py 
-Original Author: Wei Yang
-'''
+#Adapted from https://github.com/polo5/ZeroShotKnowledgeTransfer/blob/master/models/wresnet.py 
 
 import math
 import torch
