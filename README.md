@@ -7,65 +7,57 @@
 
 </div>
 
+## Introduction
 
-KAmalEngine (KAE) aims at building a lightweight algorithm package for Knowledge Amalgamation and Transferability Estimation. 
+KAmalEngine (KAE) aims at building a lightweight algorithm package for Knowledge Amalgamation and Model Transferability Estimation. 
 
-Features
+Features:
 
-  * Support several amalgamation and distillation algorithms
-  * Easy-to-use Interfaces for multi-tasking training
+  * Algorithms for knowledge amalgamation and distillation 
   * Deep model transferability estimation based on attribution maps
   * Predefined callbacks & metrics for evaluation and visualization
 
-    <img src="docs/imgs/vis_seg.png" width = "40%" alt="icon"/>  
-    <img src="docs/imgs/vis_depth.png"  width = "40%" alt="icon"/> 
-
-
-
 ## Algorithms
 
-Student Becoming the Master
+### Knolwedge Amalgamation
 
-
-### Student Becoming the Master (Task Branching)
-Knowledge amalgamation for multiple teachers by feature projection.  
+#### 1. Task Branching
 [Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) (*CVPR 2019*)  
 
 <img src="docs/imgs/sbm_results.png"  width = "100%" alt="icon"/> 
 
-### Common Feature Learning
-Extract common features from multiple teacher models.  
+#### 2. Common Feature Learning
 [Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](http://arxiv.org/abs/1906.10546) (*IJCAI 2019*)
 
 Feature Space             |  Common Space
 :-------------------------:|:-------------------------:
 ![cfl-feature-space](docs/imgs/feature_space_tsne_0.png)  |  ![cfl-feature-space](docs/imgs/common_space_tsne_0.png)
 
-### Amalgamating Knowledge towards Comprehensive Classification
-Layer-wise amalgamation  
+### 3. Layerwise Amalgamation
 [Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) (*AAAI 2019*)  
 
 <img src="docs/imgs/layerwise.png"  width = "100%" alt="icon"/> 
 
-### Recombination
+### 4. Recombination
 Build a new multi-task model by combining & pruning weight matrixs from distinct-task teachers.
 
 <img src="docs/imgs/recombination.png"  width = "100%" alt="icon"/> 
 
-### Deep model transferability from attribution maps
-Estimate model transferability using attribution map.
+
+### Deep Model trasnferability
+
+#### 1. Deep model transferability from attribution maps
 
 <img src="docs/imgs/attrmap.png"  width = "100%" alt="icon"/> 
 
-### DEPARA: Deep Attribution Graph for Deep Knowledge Transferability
-Constructing attribution graph for model transferability estimation.
+#### 2. DEPARA: Deep Attribution Graph for Deep Knowledge Transferability
 
 <img src="docs/imgs/attrgraph.png"  width = "100%" alt="icon"/> 
 
-<figure>
-<img src="docs/imgs/transgraph.png"  width = "100%" alt="icon"/> 
-<figcaption align="center">Transferability Graph on classification models</figcaption>
-</figure>
+
+## Transferability Graph
+
+<img src="docs/imgs/transgraph.png" width ="100%" alt="icon"/> 
 
 
 ## Citation
