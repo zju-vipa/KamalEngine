@@ -4,7 +4,6 @@
 
 # KAmalEngine
 
-
 </div>
 
 ## Introduction
@@ -16,6 +15,18 @@ Features:
   * Algorithms for knowledge amalgamation and distillation 
   * Deep model transferability estimation based on attribution maps
   * Predefined callbacks & metrics for evaluation and visualization
+
+<div  align="center">  
+<img src="docs/introduction.png"  width = "91%" alt="icon"/> 
+
+<img src="docs/imgs/raw.gif"  width = "30%" alt="icon"/>
+<img src="docs/imgs/sbm_seg.gif"  width = "30%" alt="icon"/>
+<img src="docs/imgs/sbm_dep.gif"  width = "30%" alt="icon"/>
+
+<img src="docs/imgs/raw2.gif"  width = "30%" alt="icon"/>
+<img src="docs/imgs/sbm_seg2.gif"  width = "30%" alt="icon"/>
+<img src="docs/imgs/sbm_dep2.gif"  width = "30%" alt="icon"/>
+</div>
 
 ## Algorithms
 
@@ -33,12 +44,12 @@ Feature Space             |  Common Space
 :-------------------------:|:-------------------------:
 ![cfl-feature-space](docs/imgs/feature_space_tsne_0.png)  |  ![cfl-feature-space](docs/imgs/common_space_tsne_0.png)
 
-### 3. Layerwise Amalgamation
+#### 3. Layerwise Amalgamation
 [Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) (*AAAI 2019*)  
 
 <img src="docs/imgs/layerwise.png"  width = "100%" alt="icon"/> 
 
-### 4. Recombination
+#### 4. Recombination
 Build a new multi-task model by combining & pruning weight matrixs from distinct-task teachers.
 
 <img src="docs/imgs/recombination.png"  width = "100%" alt="icon"/> 
@@ -59,6 +70,15 @@ Build a new multi-task model by combining & pruning weight matrixs from distinct
 
 <img src="docs/imgs/transgraph.png" width ="100%" alt="icon"/> 
 
+## Team
+
+<div>
+<img src="docs/zhejianglab-logo.png" width = "30%" height = "30%" alt="icon"/>  
+</div>
+
+<div>
+<img src="docs/vipa-logo.png" width = "30%" height = "30%" alt="icon"/>  
+</div>
 
 ## Citation
 ```
@@ -128,4 +148,5 @@ Build a new multi-task model by combining & pruning weight matrixs from distinct
   year={2019}
 }
 ```
+
 
