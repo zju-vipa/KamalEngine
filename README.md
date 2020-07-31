@@ -137,8 +137,3 @@ Constructing attribution graph for model transferability estimation.
 }
 ```
 
-<img src="docs/zhejianglab-logo.png"  height = "50"/>
-<br>
-<img src="docs/vipa-logo.png"  height = "100"/>  
-
-
