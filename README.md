@@ -10,10 +10,10 @@ KAmalEngine (KAE) aims at building a lightweight algorithm package for Knowledge
 
 Features:
 
-  * Basic algorithms for knowledge amalgamation and distillation 
+  * Algorithms for knowledge amalgamation and distillation 
   * Deep model transferability estimation based on attribution maps
-  * Easy-to-use interface for multi-tasking amalgamation
   * Predefined callbacks & metrics for evaluation and visualization
+  * Easy-to-use tools for multi-tasking training, e.g. synchronized transform
 
 <div  align="center">  
 <img src="docs/imgs/algorithm.png"  width = "91%" alt="icon"/> 
@@ -23,68 +23,16 @@ Features:
 <img src="docs/imgs/sbm_dep2.gif"  width = "30%" alt="icon"/>
 </div>
 
-## Algorithms
+## Quick Start
 
-### Knolwedge Amalgamation
+Please see [quick_start.md](docs/quick_start.md) for the basic usage of KAE. We also provide several examples under [examples](examples/), including [knowledge amalgamation](examples/knowledge_amalgamation), [model slimming](examples/model_slimming) and [transferability](examples/transferability).
+
+## Algorithms Details
 
 #### 1. Task Branching
 [Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) (*CVPR 2019*)  
 
 <img src="docs/imgs/sbm_results.png"  width = "100%" alt="icon"/> 
-
-#### 2. Common Feature Learning
-[Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](http://arxiv.org/abs/1906.10546) (*IJCAI 2019*)
-
-Feature Space             |  Common Space
-:-------------------------:|:-------------------------:
-![cfl-feature-space](docs/imgs/feature_space_tsne_0.png)  |  ![cfl-feature-space](docs/imgs/common_space_tsne_0.png)
-
-#### 3. Layerwise Amalgamation
-[Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) (*AAAI 2019*)  
-
-<img src="docs/imgs/layerwise.png"  width = "100%" alt="icon"/> 
-
-#### 4. Recombination
-Build a new multi-task model by combining & pruning weight matrixs from distinct-task teachers.
-
-<img src="docs/imgs/recombination.png"  width = "100%" alt="icon"/> 
-
-
-### Deep Model trasnferability
-
-#### 1. Deep model transferability from attribution maps
-
-<img src="docs/imgs/attrmap.png"  width = "100%" alt="icon"/> 
-
-#### 2. DEPARA: Deep Attribution Graph for Deep Knowledge Transferability
-
-<img src="docs/imgs/attrgraph.png"  width = "100%" alt="icon"/> 
-
-
-## Transferability Graph
-
-<img src="docs/imgs/transgraph.png" width ="100%" alt="icon"/> 
-
-## Team
-
-<div>
-<img src="docs/zhejianglab-logo.png" width = "30%" height = "30%" alt="icon"/>  
-</div>
-
-<div>
-<img src="docs/vipa-logo.png" width = "30%" height = "30%" alt="icon"/>  
-</div>
-
-## Citation
-```
-@inproceedings{shen2019amalgamating,
-  author={Shen, Chengchao and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
-  title={Amalgamating Knowledge towards Comprehensive Classification},
-  booktitle={AAAI Conference on Artificial Intelligence (AAAI)},
-  pages={3068--3075},
-  year={2019}
-}
-```
 
 ```
 @inproceedings{ye2019student,
@@ -96,6 +44,13 @@ Build a new multi-task model by combining & pruning weight matrixs from distinct
 }
 ```
 
+#### 2. Common Feature Learning
+[Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](http://arxiv.org/abs/1906.10546) (*IJCAI 2019*)
+
+Feature Space             |  Common Space
+:-------------------------:|:-------------------------:
+![cfl-feature-space](docs/imgs/feature_space_tsne_0.png)  |  ![cfl-feature-space](docs/imgs/common_space_tsne_0.png)
+
 ```
 @inproceedings{luo2019knowledge,
   title={Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning},
@@ -105,24 +60,29 @@ Build a new multi-task model by combining & pruning weight matrixs from distinct
 }
 ```
 
+#### 3. Layerwise Amalgamation
+[Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) (*AAAI 2019*)  
+
+<img src="docs/imgs/layerwise.png"  width = "100%" alt="icon"/> 
+
 ```
-@inproceedings{shen2019customizing,
-  author={Shen, Chengchao and Xue, Mengqi and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
-  title={Customizing student networks from heterogeneous teachers via adaptive knowledge amalgamation},
-  booktitle={The IEEE International Conference on Computer Vision (ICCV)},
+@inproceedings{shen2019amalgamating,
+  author={Shen, Chengchao and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
+  title={Amalgamating Knowledge towards Comprehensive Classification},
+  booktitle={AAAI Conference on Artificial Intelligence (AAAI)},
+  pages={3068--3075},
   year={2019}
 }
 ```
 
-```
-@inproceedings{Ye_Amalgamating_2019,
-  year={2019},
-  author={Ye, Jingwen and Wang, Xinchao and Ji, Yixin and Ou, Kairi and Song, Mingli},
-  title={Amalgamating Filtered Knowledge: Learning Task-customized Student from Multi-task Teachers}
-  booktitle={Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI)},
-  year={2019},
-}
-```
+#### 4. Recombination
+Build a new multi-task model by combining & pruning weight matrixs from distinct-task teachers.
+
+<img src="docs/imgs/recombination.png"  width = "100%" alt="icon"/> 
+
+#### 5. Deep model transferability from attribution maps
+
+<img src="docs/imgs/attrmap.png"  width = "100%" alt="icon"/> 
 
 ```
 @inproceedings{song2020depara,
@@ -134,6 +94,10 @@ Build a new multi-task model by combining & pruning weight matrixs from distinct
 }
 ```
 
+#### 6. DEPARA: Deep Attribution Graph for Deep Knowledge Transferability
+
+<img src="docs/imgs/attrgraph.png"  width = "100%" alt="icon"/> 
+
 ```
 @inproceedings{song2019deep,
   title={Deep model transferability from attribution maps},
@@ -143,5 +107,24 @@ Build a new multi-task model by combining & pruning weight matrixs from distinct
   year={2019}
 }
 ```
+
+## Transferability Graph
+
+This is an example for deep model transferability on 300 different classification models. see [examples/transferability](examples/transferability) for more details.
+
+<img src="docs/imgs/transgraph.png" width ="100%" alt="icon"/> 
+
+## Team
+
+This project is developed by [Zhejiang Lab](http://www.zhejianglab.com/) and [VIPA Lab](http://vipazoo.cn) from Zhejiang University
+
+<div>
+<img src="docs/zhejianglab-logo.png" width = "30%" height = "30%" alt="icon"/>  
+</div>
+
+<div>
+<img src="docs/vipa-logo.png" width = "30%" height = "30%" alt="icon"/>  
+</div>
+
 
 
