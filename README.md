@@ -131,6 +131,6 @@ This is an example for deep model transferability on 300 different classificatio
 
 ## Authors
 
-This project is developed by [VIPA Lab](http://vipazoo.cn) from Zhejiang University and [Zhejiang Lab](http://www.zhejianglab.com/) and
+This project is developed by [VIPA Lab](http://vipazoo.cn) from Zhejiang University and [Zhejiang Lab](http://www.zhejianglab.com/)
 
 
