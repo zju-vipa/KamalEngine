@@ -29,7 +29,7 @@ Features:
    * [Quick Start](#Quick-Start)
    * [Algorithms](#Algorithms)
    * [Transferability Graph](#Transferability-Graph)
-   * [Team](#Team)
+   * [Authors](#Authors)
 
 ## Installation
 
@@ -128,17 +128,8 @@ This is an example for deep model transferability on 300 different classificatio
 
 <img src="docs/imgs/transgraph.png" width ="100%" alt="icon"/> 
 
-## Team
+## Authors
 
 This project is developed by [Zhejiang Lab](http://www.zhejianglab.com/) and [VIPA Lab](http://vipazoo.cn) from Zhejiang University
-
-<div>
-<img src="docs/zhejianglab-logo.png" width = "30%" height = "30%" alt="icon"/>  
-</div>
-
-<div>
-<img src="docs/vipa-logo.png" width = "30%" height = "30%" alt="icon"/>  
-</div>
-
 
 
