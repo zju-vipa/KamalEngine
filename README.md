@@ -23,6 +23,12 @@ Features:
 <img src="docs/imgs/sbm_dep2.gif"  width = "30%" alt="icon"/>
 </div>
 
+## Installation
+
+```bash
+pip install kamal
+```
+
 ## Quick Start
 
 Please see [quick_start.md](docs/quick_start.md) for the basic usage of KAE. We also provide several examples under [examples](examples/), including [knowledge amalgamation](examples/knowledge_amalgamation), [model slimming](examples/model_slimming) and [transferability](examples/transferability).
