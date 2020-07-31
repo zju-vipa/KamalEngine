@@ -13,7 +13,7 @@ Features:
   * Algorithms for knowledge amalgamation and distillation 
   * Deep model transferability estimation based on attribution maps
   * Predefined callbacks & metrics for evaluation and visualization
-  * Easy-to-use tools for multi-tasking training, e.g. synchronized transform
+  * Easy-to-use tools for multi-tasking training, e.g. synchronized transformation
 
 <div  align="center">  
 <img src="docs/imgs/algorithm.png"  width = "91%" alt="icon"/> 
