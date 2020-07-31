@@ -1,3 +1,4 @@
+# Modified from https://github.com/TDeVries/cub2011_dataset/blob/master/cub2011.py
 import os
 import pandas as pd
 from torchvision.datasets.folder import default_loader

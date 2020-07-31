@@ -1,3 +1,4 @@
+# Modified from https://github.com/pytorch/vision
 import os
 import os.path
 import hashlib

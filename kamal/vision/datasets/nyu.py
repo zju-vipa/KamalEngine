@@ -1,4 +1,4 @@
-#coding:utf-8
+# Modified from https://github.com/VainF/nyuv2-python-toolkit
 import os
 import torch
 import torch.utils.data as data

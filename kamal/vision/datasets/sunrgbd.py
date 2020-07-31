@@ -5,17 +5,6 @@ from .utils import colormap
 from torchvision.datasets import VisionDataset
 
 class SunRGBD(VisionDataset):
-    """SUNRGBD dataset loader where the dataset is arranged as in https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid.
-    
-    **Parameters:**
-        - **root_dir** (string): Root directory path.
-        - **mode** (string): The type of dataset: 'train' for training set, 'val'. for validation set, and 'test' for test set.
-        - **transform** (callable, optional): A function/transform that  takes in an PIL image and returns a transformed version. Default: None.
-        - **label_transform** (callable, optional): A function/transform that takes in the target and transform it. Default: None.
-        - **loader** (callable, optional): A function to load an image given its path. By default ``default_loader`` is used.
-    """
-
-    # Default encoding for pixel value, class name, and class color
     cmap = colormap()
     def __init__(self,
                  root,

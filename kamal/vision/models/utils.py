@@ -1,3 +1,4 @@
+# A synchronized version modified from https://github.com/pytorch/vision
 import os, sys
 import torch
 import torch.nn as nn

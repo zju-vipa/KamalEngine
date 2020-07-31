@@ -1,3 +1,4 @@
+# Modified from https://github.com/pytorch/vision/blob/master/torchvision/datasets/cityscapes.py
 import json
 import os
 from collections import namedtuple
