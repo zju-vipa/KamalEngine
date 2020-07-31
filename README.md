@@ -2,8 +2,6 @@
 
 <img src="docs/kae-logo-light.png" width = "30%" height = "30%" alt="icon"/>  
 
-# KAmalEngine
-
 </div>
 
 ## Introduction
