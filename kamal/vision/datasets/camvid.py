@@ -1,3 +1,4 @@
+# Modified from https://github.com/davidtvs/PyTorch-ENet/blob/master/data/camvid.py
 import os
 import torch.utils.data as data
 from glob import glob

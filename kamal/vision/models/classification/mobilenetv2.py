@@ -1,3 +1,4 @@
+# Modified from https://github.com/pytorch/vision
 from torch import nn
 from torchvision.models.utils import load_state_dict_from_url
 import torch.nn.functional as F

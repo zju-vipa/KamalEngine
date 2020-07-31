@@ -1,3 +1,5 @@
+# Modified from https://github.com/meetshah1995/pytorch-semseg/blob/801fb20054/ptsemseg/models/segnet.py
+
 from .layer import SegnetDown, SegnetUp
 import torch.nn as nn 
 from ...classification import vgg

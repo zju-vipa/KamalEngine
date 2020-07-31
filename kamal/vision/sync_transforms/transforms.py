@@ -1,3 +1,4 @@
+# A synchronized version modified from https://github.com/pytorch/vision
 from __future__ import division
 import torch
 import math

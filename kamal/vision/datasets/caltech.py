@@ -1,3 +1,4 @@
+# Modified from https://github.com/pytorch/vision/blob/master/torchvision/datasets/caltech.py
 from __future__ import print_function
 from PIL import Image
 import os

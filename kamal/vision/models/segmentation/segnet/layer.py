@@ -1,6 +1,5 @@
+# Modified from https://github.com/meetshah1995/pytorch-semseg/blob/801fb20054/ptsemseg/models/segnet.py
 import torch.nn as nn
-
-# adapted from https://github.com/meetshah1995/pytorch-semseg/blob/801fb20054/ptsemseg/models/segnet.py
 
 class ConvBNRelu(nn.Sequential):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, bias=True, dilation=1, batch_norm=True, activation=True):

@@ -1,3 +1,4 @@
+#Modified from https://github.com/pytorch/vision/pull/467/files 
 from __future__ import print_function
 import torch.utils.data as data
 from torchvision.datasets.folder import pil_loader, accimage_loader, default_loader

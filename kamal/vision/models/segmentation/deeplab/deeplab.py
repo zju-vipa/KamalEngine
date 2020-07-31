@@ -1,3 +1,4 @@
+# modified from https://github.com/VainF/DeepLabV3Plus-Pytorch
 from .utils import IntermediateLayerGetter
 from .layer import DeepLabv3Head, DeepLabv3PlusHead
 from ...classification import mobilenetv2, resnet
