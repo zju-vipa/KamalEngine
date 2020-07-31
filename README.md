@@ -23,6 +23,14 @@ Features:
 <img src="docs/imgs/sbm_dep2.gif"  width = "30%" alt="icon"/>
 </div>
 
+## Table of contents
+   * [Introduction](#Introduction)
+   * [Installation](#Installation)
+   * [Quick Start](#Quick-Start)
+   * [Algorithms](#Algorithms)
+   * [Transferability Graph](#Transferability-Graph)
+   * [Team](#Team)
+
 ## Installation
 
 ```bash
@@ -33,7 +41,7 @@ pip install kamal
 
 Please see [quick_start.md](docs/quick_start.md) for the basic usage of KAE. We also provide several examples under [examples](examples/), including [knowledge amalgamation](examples/knowledge_amalgamation), [model slimming](examples/model_slimming) and [transferability](examples/transferability).
 
-## Algorithms Details
+## Algorithms
 
 #### 1. Task Branching
 [Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) (*CVPR 2019*)  
