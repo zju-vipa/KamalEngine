@@ -12,16 +12,13 @@ KAmalEngine (KAE) aims at building a lightweight algorithm package for Knowledge
 
 Features:
 
-  * Algorithms for knowledge amalgamation and distillation 
+  * Basic algorithms for knowledge amalgamation and distillation 
   * Deep model transferability estimation based on attribution maps
+  * Easy-to-use interface for multi-tasking amalgamation
   * Predefined callbacks & metrics for evaluation and visualization
 
 <div  align="center">  
-<img src="docs/introduction.png"  width = "91%" alt="icon"/> 
-
-<img src="docs/imgs/raw.gif"  width = "30%" alt="icon"/>
-<img src="docs/imgs/sbm_seg.gif"  width = "30%" alt="icon"/>
-<img src="docs/imgs/sbm_dep.gif"  width = "30%" alt="icon"/>
+<img src="docs/imgs/algorithm.png"  width = "91%" alt="icon"/> 
 
 <img src="docs/imgs/raw2.gif"  width = "30%" alt="icon"/>
 <img src="docs/imgs/sbm_seg2.gif"  width = "30%" alt="icon"/>
