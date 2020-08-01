@@ -1,92 +1,52 @@
 <div  align="center">  
+
 <img src="docs/kae-logo-light.png" width = "30%" height = "30%" alt="icon"/>  
+
 </div>
-
-# KAmalEngine
-
-KAmalEngine is a software system that implements Knowledge Amalgamation algorithms. In knowledge amalgamation, we use trained deep network models available online to do a model-reusing task. Given multiple pretrained teacher networks, which specializes in different vision problems, the goal of knowledge amalgamation is to learn a lightweight student model capable of handling the comprehensive tasks, without human-labeled annotations. It is written in Python and powered by the Pytorch deep learning framework.
-
-## Table of contents
-   * [Introduction](#Introduction)
-   * [Algorithms](#Algorithms)
-   * [Help](#help)
 
 ## Introduction
 
-The goal of KamalEngine is to provide a high-quality, high-performance code framework for Knowledge Amalgamation *research*. For more extensive discussions about Knowledge Amalgamation, please see the [AAAI 2019 paper](https://arxiv.org/abs/1811.02796v1). This respository focuses on designed a flexible code framework in order to support rapid implementation and evaluation of novel research. KamalEngine includes implementations of the following Knowledge Amalgamation algorithms:
-- [Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) -- *AAAI 2019*
-- [Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) -- *CVPR 2019*
-- [Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](http://arxiv.org/abs/1906.10546) -- *IJCAI 2019*
-- [Amalgamating Filtered Knowledge: Learning Task-customized Student from Multi-task Teachers](https://arxiv.org/abs/1905.11569) -- *IJCAI 2019*
-- [Customizing student networks from heterogeneous teachers via adaptive knowledge amalgamation]() (Comming soon) -- *ICCV 2019*
+KAmalEngine (KAE) aims at building a lightweight algorithm package for Knowledge Amalgamation and Model Transferability Estimation. 
 
+Features:
 
-## Algorithms
-This repo provides some algorithms of KA.
-
-
-### Student Becoming the Master
-Knowledge amalgamation for multiple teachers by feature projection.  
-[Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) -- *CVPR 2019*  
-![sbm-demo](examples/sbm/demo.png)
-
-### Common Feature Learning
-Extract common features from multiple teacher models.  
-[Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](http://arxiv.org/abs/1906.10546) -- *IJCAI 2019*
-
-Feature Space             |  Common Space
-:-------------------------:|:-------------------------:
-![cfl-feature-space](examples/cfl/tsne_results/feature_space_tsne_0.png)  |  ![cfl-feature-space](examples/cfl/tsne_results/common_space_tsne_0.png)
-
-### Amalgamating Knowledge towards Comprehensive Classification
-Layer-wise amalgamation  
-[Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) -- *AAAI 2019*  
-![layerwise-ka-framework](examples/layer_wise_ka/layerwise-ka-framework.png)
-
-### Customizing student networks from heterogeneous teachers via adaptive knowledge amalgamation (In Progress)
-![adaptive-ka-framework](examples/adaptive_ka/adaptive-ka-framework.jpg)
-
-### Recombination
-Build a new multi-task model by combining&pruning weight matrixs from distinct-task teachers.
-![recombination-framework](examples/recombination/recombination-framework.png)
-
-### Amalgamating Filtered Knowledge
-Amalgamate knowledge from a pool of multi- or single-task teachers working on different tasks. The TargetNet after training, at a reasonably compact size, handles multiple customized tasks.
+  * Algorithms for knowledge amalgamation and distillation 
+  * Deep model transferability estimation based on attribution maps
+  * Predefined callbacks & metrics for evaluation and visualization
+  * Easy-to-use tools for multi-tasking training, e.g. synchronized transformation
 
 <div  align="center">  
-<img src="examples/afk/targetnet.png" width = "400" alt="icon"/>  
+<img src="docs/imgs/algorithm.png"  width = "91%" alt="icon"/> 
+
+<img src="docs/imgs/raw2.gif"  width = "30%" alt="icon"/>
+<img src="docs/imgs/sbm_seg2.gif"  width = "30%" alt="icon"/>
+<img src="docs/imgs/sbm_dep2.gif"  width = "30%" alt="icon"/>
 </div>
 
-## Help
-For more information, see `docs` and `examples`
+## Table of contents
+   * [Introduction](#Introduction)
+   * [Installation](#Installation)
+   * [Quick Start](#Quick-Start)
+   * [Algorithms](#Algorithms)
+   * [Transferability Graph](#Transferability-Graph)
+   * [Authors](#Authors)
 
-## Authors
-| | |
-|:--------------:|:-----:|
-[Gongfan Fang](https://github.com/VainF) | fgfvain97@zju.edu.cn  
-[Yixin Ji](https://github.com/Ssssseason) | jiyixin@zju.edu.cn  
-[Yanling Yin](https://github.com/ylyinzju) | yanlingyin@zju.edu.cn  
-[Jingwen Ye]() | yejingwen@zju.edu.cn  
-[Sihui Luo]() | sihuiluo829@zju.edu.cn  
-[Chengchao Shen]() | chengchaoshen@zju.edu.cn  
-[Mengqi Xue]() | mqxue@zju.edu.cn  
+## Installation
 
-[Homepage of VIPA Group](https://www.vipazoo.cn/index_en.html), Zhejiang University, China
-
-<div  align="left">  
-<img src="docs/vipa-logo.png" width = "40%" height = "40%" alt="icon"/>  
-</div>
-
-## Citation
+```bash
+pip install kamal
 ```
-@inproceedings{shen2019amalgamating,
-  author={Shen, Chengchao and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
-  title={Amalgamating Knowledge towards Comprehensive Classification},
-  booktitle={AAAI Conference on Artificial Intelligence (AAAI)},
-  pages={3068--3075},
-  year={2019}
-}
-```
+
+## Quick Start
+
+Please see [quick_start.md](docs/quick_start.md) for the basic usage of KAE. We also provide several examples under [examples](examples/), including [knowledge amalgamation](examples/knowledge_amalgamation), [model slimming](examples/model_slimming) and [transferability](examples/transferability).
+
+## Algorithms
+
+#### 1. Task Branching
+[Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) (*CVPR 2019*)  
+
+<img src="docs/imgs/sbm_results.png"  width = "100%" alt="icon"/> 
 
 ```
 @inproceedings{ye2019student,
@@ -98,6 +58,13 @@ For more information, see `docs` and `examples`
 }
 ```
 
+#### 2. Common Feature Learning
+[Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](http://arxiv.org/abs/1906.10546) (*IJCAI 2019*)
+
+Feature Space             |  Common Space
+:-------------------------:|:-------------------------:
+![cfl-feature-space](docs/imgs/feature_space_tsne_0.png)  |  ![cfl-feature-space](docs/imgs/common_space_tsne_0.png)
+
 ```
 @inproceedings{luo2019knowledge,
   title={Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning},
@@ -107,21 +74,63 @@ For more information, see `docs` and `examples`
 }
 ```
 
+#### 3. Layerwise Amalgamation
+[Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) (*AAAI 2019*)  
+
+<img src="docs/imgs/layerwise.png"  width = "100%" alt="icon"/> 
+
 ```
-@inproceedings{shen2019customizing,
-  author={Shen, Chengchao and Xue, Mengqi and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
-  title={Customizing student networks from heterogeneous teachers via adaptive knowledge amalgamation},
-  booktitle={The IEEE International Conference on Computer Vision (ICCV)},
+@inproceedings{shen2019amalgamating,
+  author={Shen, Chengchao and Wang, Xinchao and Song, Jie and Sun, Li and Song, Mingli},
+  title={Amalgamating Knowledge towards Comprehensive Classification},
+  booktitle={AAAI Conference on Artificial Intelligence (AAAI)},
+  pages={3068--3075},
   year={2019}
 }
 ```
 
+#### 4. Recombination
+Build a new multi-task model by combining & pruning weight matrixs from distinct-task teachers.
+
+<img src="docs/imgs/recombination.png"  width = "100%" alt="icon"/> 
+
+#### 5. Deep model transferability from attribution maps
+
+<img src="docs/imgs/attrmap.png"  width = "100%" alt="icon"/> 
+
 ```
-@inproceedings{Ye_Amalgamating_2019,
-  year={2019},
-  author={Ye, Jingwen and Wang, Xinchao and Ji, Yixin and Ou, Kairi and Song, Mingli},
-  title={Amalgamating Filtered Knowledge: Learning Task-customized Student from Multi-task Teachers}
-  booktitle={Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI)},
-  year={2019},
+@inproceedings{song2019deep,
+  title={Deep model transferability from attribution maps},
+  author={Song, Jie and Chen, Yixin and Wang, Xinchao and Shen, Chengchao and Song, Mingli},
+  booktitle={Advances in Neural Information Processing Systems},
+  pages={6182--6192},
+  year={2019}
 }
 ```
+
+
+#### 6. DEPARA: Deep Attribution Graph for Deep Knowledge Transferability
+
+<img src="docs/imgs/attrgraph.png"  width = "100%" alt="icon"/> 
+
+```
+@inproceedings{song2020depara,
+  title={DEPARA: Deep Attribution Graph for Deep Knowledge Transferability},
+  author={Song, Jie and Chen, Yixin and Ye, Jingwen and Wang, Xinchao and Shen, Chengchao and Mao, Feng and Song, Mingli},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={3922--3930},
+  year={2020}
+}
+```
+
+## Transferability Graph
+
+This is an example for deep model transferability on 300 classification models. see [examples/transferability](examples/transferability) for more details.
+
+<img src="docs/imgs/transgraph.png" width ="100%" alt="icon"/> 
+
+## Authors
+
+This project is developed by [VIPA Lab](http://vipazoo.cn) from Zhejiang University and [Zhejiang Lab](http://www.zhejianglab.com/)
+
+

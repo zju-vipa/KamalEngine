@@ -1,0 +1,11 @@
+torch
+torchvision
+pandas
+termcolor
+hyperopt
+scikit-learn
+numpy
+captum
+ruamel.yaml
+torch-pruning
+networkx
