@@ -25,17 +25,11 @@ Features:
 
 ## Table of contents
    * [Introduction](#Introduction)
-   * [Installation](#Installation)
    * [Quick Start](#Quick-Start)
    * [Algorithms](#Algorithms)
    * [Transferability Graph](#Transferability-Graph)
    * [Authors](#Authors)
 
-## Installation
-
-```bash
-pip install kamal
-```
 
 ## Quick Start
 
