@@ -25,7 +25,6 @@ Features:
 
 ## Table of contents
    * [Introduction](#Introduction)
-   * [Installation](#Installation)
    * [Quick Start](#Quick-Start)
    * [Algorithms](#Algorithms)
    * [Transferability Graph](#Transferability-Graph)
