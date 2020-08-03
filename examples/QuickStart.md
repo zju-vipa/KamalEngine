@@ -1,16 +1,22 @@
 # Examples
 
-## 0. Data Preparation
+## 0. Preparation
 
 Please download and extract your dataset to *./data*, e.g. data/StanfordDogs
 
 Dataset list:
 
-* data/StanfordDogs
-* data/StanfordCars
-* data/CUB200
-* data/FGVC-Aircraft
-* data/NYUv2
+* data/StanfordDogs: http://vision.stanford.edu/aditya86/ImageNetDogs/
+* data/StanfordCars: https://ai.stanford.edu/~jkrause/cars/car_dataset.html
+* data/CUB200: http://www.vision.caltech.edu/visipedia/CUB-200.html
+* data/FGVC-Aircraft: http://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/
+* data/NYUv2: https://github.com/VainF/nyuv2-python-toolkit
+
+Visualize training with Tensorboard
+
+```bash
+tensorboard --logdir=run
+```
 
 ## 1. Scratch Training
 
