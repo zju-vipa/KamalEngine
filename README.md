@@ -31,15 +31,9 @@ Features:
    * [Transferability Graph](#Transferability-Graph)
    * [Authors](#Authors)
 
-## Installation
-
-```bash
-pip install kamal
-```
-
 ## Quick Start
 
-Please see [quick_start.md](docs/quick_start.md) for the basic usage of KAE. We also provide several examples under [examples](examples/), including [knowledge amalgamation](examples/knowledge_amalgamation), [model slimming](examples/model_slimming) and [transferability](examples/transferability).
+Please follow the instructions in [QuickStart.md](examples/QuickStart.md) for the basic usage of KAE. More examples can be found in [examples](examples/), including [knowledge amalgamation](examples/knowledge_amalgamation), [model slimming](examples/model_slimming) and [transferability](examples/transferability).
 
 ## Algorithms
 
