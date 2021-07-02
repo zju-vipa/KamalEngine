@@ -61,7 +61,6 @@ class CamVid(VisionDataset):
         A tuple of ``PIL.Image`` (image, label) where label is the ground-truth
         of the image.
         """
-
         img, label = Image.open(self.images[idx]), Image.open(self.labels[idx])
         if self.transforms is not None:
             img, label = self.transforms(img, label)
@@ -74,5 +73,7 @@ class CamVid(VisionDataset):
     @classmethod
     def decode_fn(cls, mask):
         """decode semantic mask to RGB image"""
+        if len(mask.shape)>3:
+            preds = mask.squeeze(1)
         mask[mask == 255] = 11
         return cls.cmap[mask]

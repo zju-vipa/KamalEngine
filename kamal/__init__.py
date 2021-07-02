@@ -1,5 +1,4 @@
-from .core import tasks, metrics, engine, callbacks, hub
+from .engine import metrics, callbacks, hub, trainer
+from .engine import load, save
+from . import amalgamation, vision, transferability, criterions, predefined
 
-from . import amalgamation, slim, vision, transferability
-
-from .core import load, save

@@ -6,7 +6,7 @@
 
 ## Introduction
 
-KAmalEngine (KAE) aims at building a lightweight algorithm package for Knowledge Amalgamation and Model Transferability Estimation. 
+A model-reusing toolbox for knowledge amalgamation, model compression and transfer learning.
 
 Features:
 

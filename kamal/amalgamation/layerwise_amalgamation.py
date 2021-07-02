@@ -17,9 +17,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from kamal.core.engine.engine import Engine
-from kamal.core.engine.hooks import FeatureHook
-from kamal.core import tasks
+from kamal.engine import Trainer
+from kamal.engine.hooks import FeatureHook
 
 from kamal.utils import set_mode
 import typing
@@ -41,7 +40,7 @@ class AmalBlock(nn.Module):
         _fs = self.fam( fs )
         return rep, _fs, _fts
 
-class LayerWiseAmalgamator(Engine):
+class LayerWiseAmalgamator(Trainer):
     
     def setup(
         self, 

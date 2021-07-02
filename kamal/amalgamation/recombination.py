@@ -20,13 +20,11 @@ from copy import deepcopy
 
 from typing import Callable
 
-from kamal.core.engine.engine import Engine
-from kamal.core.engine.trainer import KDTrainer
-from kamal.core.engine.hooks import FeatureHook
-from kamal.core import tasks
+from kamal.engine import Trainer, KDTrainer
+from kamal.engine.hooks import FeatureHook
 import math
 
-from kamal.slim.prunning import Pruner, strategy
+from kamal.model_compression.prunning import Pruner, strategy
 
 def _assert_same_type(layers, layer_type=None):
     if layer_type is None:
@@ -150,7 +148,7 @@ def combine_models(models):
 
 class CombinedModel(nn.Module):
     def __init__(self, models):
-        super( Combination, self ).__init__()
+        super( CombinedModel, self ).__init__()
         self.combined_model = combine_models( models )
         self.expand = len(models)
 

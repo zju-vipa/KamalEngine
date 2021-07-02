@@ -1,6 +1,8 @@
 import logging
-import os, sys
+import os
+import sys
 from termcolor import colored
+
 
 class _ColorfulFormatter(logging.Formatter):
     def __init__(self, *args, **kwargs):
@@ -15,20 +17,21 @@ class _ColorfulFormatter(logging.Formatter):
             prefix = colored("ERROR", "red", attrs=["blink", "underline"])
         else:
             return log
-        
+
         return prefix + " " + log
+
 
 def get_logger(name='Kamal', output=None, color=True):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
-    
-    # STDOUT
-    stdout_handler = logging.StreamHandler( stream=sys.stdout )
-    stdout_handler.setLevel( logging.DEBUG )
 
-    plain_formatter = logging.Formatter( 
-            "[%(asctime)s] %(name)s %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S" )
+    # STDOUT
+    stdout_handler = logging.StreamHandler(stream=sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+
+    plain_formatter = logging.Formatter(
+        "[%(asctime)s] %(name)s %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S")
     if color:
         formatter = _ColorfulFormatter(
             colored("[%(asctime)s %(name)s]: ", "green") + "%(message)s",
@@ -52,5 +55,3 @@ def get_logger(name='Kamal', output=None, color=True):
         file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
     return logger
-
-        

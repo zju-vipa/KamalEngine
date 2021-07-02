@@ -15,19 +15,22 @@
 
 import numpy as np
 import math
-import torch 
+import torch
 import random
 from copy import deepcopy
-import contextlib, hashlib
+import contextlib
+import hashlib
+
 
 def split_batch(batch):
     if isinstance(batch, (list, tuple)):
         inputs, *targets = batch
-        if len(targets)==1:
+        if len(targets) == 1:
             targets = targets[0]
         return inputs, targets
     else:
-        return [batch, None] 
+        return [batch, None]
+
 
 @contextlib.contextmanager
 def set_mode(model, training=True):
@@ -36,46 +39,50 @@ def set_mode(model, training=True):
     yield
     model.train(ori_mode)
 
+
 def move_to_device(obj, device):
     if isinstance(obj, torch.Tensor):
         return obj.to(device=device)
-    elif isinstance( obj, (list, tuple) ):
-        return [ o.to(device=device) for o in obj ]
+    elif isinstance(obj, (list, tuple)):
+        return [o.to(device=device) for o in obj]
     elif isinstance(obj, nn.Module):
         return obj.to(device=device)
 
 
 def pack_images(images, col=None, channel_last=False):
     # N, C, H, W
-    if isinstance(images, (list, tuple) ):
+    if isinstance(images, (list, tuple)):
         images = np.stack(images, 0)
     if channel_last:
-        images = images.transpose(0,3,1,2) # make it channel first
-    assert len(images.shape)==4
+        images = images.transpose(0, 3, 1, 2)  # make it channel first
+    assert len(images.shape) == 4
     assert isinstance(images, np.ndarray)
-    
-    N,C,H,W = images.shape
+
+    N, C, H, W = images.shape
     if col is None:
         col = int(math.ceil(math.sqrt(N)))
     row = int(math.ceil(N / col))
-    pack = np.zeros( (C, H*row, W*col), dtype=images.dtype )
+    pack = np.zeros((C, H*row, W*col), dtype=images.dtype)
     for idx, img in enumerate(images):
         h = (idx//col) * H
-        w = (idx% col) * W
+        w = (idx % col) * W
         pack[:, h:h+H, w:w+W] = img
     return pack
 
+
 def normalize(tensor, mean, std, reverse=False):
     if reverse:
-        _mean = [ -m / s for m, s in zip(mean, std) ]
-        _std = [ 1/s for s in std ]
+        _mean = [-m / s for m, s in zip(mean, std)]
+        _std = [1/s for s in std]
     else:
         _mean = mean
         _std = std
     _mean = torch.as_tensor(_mean, dtype=tensor.dtype, device=tensor.device)
     _std = torch.as_tensor(_std, dtype=tensor.dtype, device=tensor.device)
-    tensor = (tensor - _mean[None, :, None, None]) / (_std[None, :, None, None])
+    tensor = (tensor - _mean[None, :, None, None]) / \
+        (_std[None, :, None, None])
     return tensor
+
 
 class Normalizer(object):
     def __init__(self, mean, std, reverse=False):
@@ -88,12 +95,12 @@ class Normalizer(object):
             return self.denormalize(x)
         else:
             return self.normalize(x)
-            
+
     def normalize(self, x):
-        return normalize( x, self.mean, self.std )
-    
+        return normalize(x, self.mean, self.std)
+
     def denormalize(self, x):
-        return normalize( x, self.mean, self.std, reverse=True )
+        return normalize(x, self.mean, self.std, reverse=True)
 
 
 def colormap(N=256, normalized=False):
@@ -116,7 +123,6 @@ def colormap(N=256, normalized=False):
     cmap = cmap/255 if normalized else cmap
     return cmap
 
-DEFAULT_COLORMAP = colormap()
 
 def flatten_dict(dic):
     flattned = dict()
@@ -125,14 +131,15 @@ def flatten_dict(dic):
         for k, v in d.items():
             if isinstance(v, dict):
                 if prefix is None:
-                    _flatten( k, v )
+                    _flatten(k, v)
                 else:
-                    _flatten( prefix+'%s/'%k, v )
+                    _flatten(prefix+'%s/' % k, v)
             else:
-                flattned[ (prefix+'%s/'%k).strip('/') ] = v
-        
+                flattned[(prefix+'%s/' % k).strip('/')] = v
+
     _flatten('', dic)
     return flattned
+
 
 def setup_seed(seed):
     torch.manual_seed(seed)
@@ -140,8 +147,10 @@ def setup_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
 
+
 def count_parameters(model):
-    return sum( [ p.numel() for p in model.parameters() ] )
+    return sum([p.numel() for p in model.parameters()])
+
 
 def md5(fname):
     hash_md5 = hashlib.md5()
@@ -149,3 +158,18 @@ def md5(fname):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+class DataIter(object):
+    def __init__(self, dataloader):
+        self.dataloader = dataloader
+        self._iter = iter(self.dataloader)
+    
+    def next(self):
+        try:
+            data = next( self._iter )
+        except StopIteration:
+            self._iter = iter(self.dataloader)
+            data = next( self._iter )
+        return data
+        
+DEFAULT_COLORMAP = colormap()

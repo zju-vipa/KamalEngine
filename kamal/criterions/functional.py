@@ -1,0 +1,108 @@
+# Copyright 2020 Zhejiang Lab. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =============================================================
+
+import torch
+import torch.nn.functional as F
+import torch.nn as nn
+
+def kldiv(logits, targets, T=1.0):
+    """ Cross Entropy for soft targets
+    
+    Parameters:
+        - logits (Tensor): logits score (e.g. outputs of fc layer)
+        - targets (Tensor): logits of soft targets
+        - T (float): temperature　of distill
+        - reduction: reduction to the output
+    """
+    p_targets = F.softmax(targets/T, dim=1)
+    logp_logits = F.log_softmax(logits/T, dim=1)
+    kld = F.kl_div(logp_logits, p_targets, reduction='none') * (T**2)
+    return kld.sum(1).mean()
+
+def jsdiv( logits, targets, T=1.0, reduction='batchmean' ):
+    P = F.softmax(logits / T, dim=1)
+    Q = F.softmax(targets / T, dim=1)
+    M = 0.5 * (P + Q)
+    P = torch.clamp(P, 0.01, 0.99)
+    Q = torch.clamp(Q, 0.01, 0.99)
+    M = torch.clamp(M, 0.01, 0.99)
+    return 0.5 * F.kl_div(torch.log(P), M, reduction=reduction) + 0.5 * F.kl_div(torch.log(Q), M, reduction=reduction)
+
+def mmd_loss(f1, f2, sigmas, normalized=False):
+    if len(f1.shape) != 2:
+        N, C, H, W = f1.shape
+        f1 = f1.view(N, -1)
+        N, C, H, W = f2.shape
+        f2 = f2.view(N, -1)
+
+    if normalized == True:
+        f1 = F.normalize(f1, p=2, dim=1)
+        f2 = F.normalize(f2, p=2, dim=1)
+
+    return _mmd_rbf2(f1, f2, sigmas=sigmas)
+
+def psnr(img1, img2, size_average=True, data_range=255):
+    N = img1.shape[0]
+    mse = torch.mean(((img1-img2)**2).view(N, -1), dim=1)
+    psnr = torch.clamp(torch.log10(data_range**2 / mse) * 10, 0.0, 99.99)
+    if size_average == True:
+        psnr = psnr.mean()
+    return psnr
+
+def soft_cross_entropy(logits, targets, T=1.0, size_average=True):
+    """ Cross Entropy for soft targets
+    
+    **Parameters:**
+        - **logits** (Tensor): logits score (e.g. outputs of fc layer)
+        - **targets** (Tensor): logits of soft targets
+        - **T** (float): temperature　of distill
+        - **size_average**: average the outputs
+    """
+    p_targets = F.softmax(targets/T, dim=1)
+    logp_pred = F.log_softmax(logits/T, dim=1)
+    ce = torch.sum(-p_targets * logp_pred, dim=1)
+    if size_average:
+        return ce.mean() * T * T
+    else:
+        return ce * T * T
+
+def _mmd_rbf2(x, y, sigmas=None):
+    N, _ = x.shape
+    xx, yy, zz = torch.mm(x, x.t()), torch.mm(y, y.t()), torch.mm(x, y.t())
+
+    rx = (xx.diag().unsqueeze(0).expand_as(xx))
+    ry = (yy.diag().unsqueeze(0).expand_as(yy))
+
+    K = L = P = 0.0
+    XX2 = rx.t() + rx - 2*xx
+    YY2 = ry.t() + ry - 2*yy
+    XY2 = rx.t() + ry - 2*zz
+
+    if sigmas is None:
+        sigma2 = torch.mean((XX2.detach()+YY2.detach()+2*XY2.detach()) / 4)
+        sigmas2 = [sigma2/4, sigma2/2, sigma2, sigma2*2, sigma2*4]
+        alphas = [1.0 / (2 * sigma2) for sigma2 in sigmas2]
+    else:
+        alphas = [1.0 / (2 * sigma**2) for sigma in sigmas]
+
+    for alpha in alphas:
+        K += torch.exp(- alpha * (XX2.clamp(min=1e-12)))
+        L += torch.exp(- alpha * (YY2.clamp(min=1e-12)))
+        P += torch.exp(- alpha * (XY2.clamp(min=1e-12)))
+
+    beta = (1./(N*(N)))
+    gamma = (2./(N*N))
+
+    return F.relu(beta * (torch.sum(K)+torch.sum(L)) - gamma * torch.sum(P))

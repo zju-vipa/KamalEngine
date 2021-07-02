@@ -13,10 +13,10 @@
 # limitations under the License.
 # =============================================================
 
-from kamal.core.engine.engine import Engine
-from kamal.core.engine.hooks import FeatureHook
-from kamal.core import tasks
+from kamal.engine import Trainer
+from kamal.engine.hooks import FeatureHook
 from kamal.utils import set_mode, move_to_device
+import kamal
 
 import torch
 import torch.nn as nn
@@ -193,7 +193,7 @@ class CFL_ConvBlock(nn.Module):
         _fts = [self.dec_t[i](hts[i]) for i in range(len(hts))]
         return (hs, hts), (_fts, fts)
 
-class CommonFeatureAmalgamator(Engine):
+class CommonFeatureAmalgamator(Trainer):
     
     def setup(
         self, 
@@ -229,7 +229,7 @@ class CommonFeatureAmalgamator(Engine):
                 print("Building Conv Blocks")
             amal_blocks.append( (amal_block, hooks, C)  )
         self._amal_blocks = amal_blocks
-        self._cfl_criterion = tasks.loss.CFLLoss( sigmas=[0.001, 0.01, 0.05, 0.1, 0.2, 1, 2] )
+        self._cfl_criterion = kamal.criterions.CFLLoss( sigmas=[0.001, 0.01, 0.05, 0.1, 0.2, 1, 2] )
 
     @property
     def device(self):
@@ -265,7 +265,7 @@ class CommonFeatureAmalgamator(Engine):
             _loss_amal, _loss_recons = self._cfl_criterion( hs, hts, _fts, fts ) 
             loss_amal += _loss_amal
             loss_recons += _loss_recons
-        loss_kd = tasks.loss.kldiv( s_out, torch.cat( t_out, dim=1 ) )
+        loss_kd = kamal.criterions.functional.kldiv( s_out, torch.cat( t_out, dim=1 ) )
         loss_dict = { 
                 'loss_kd':     self._weights[0]*loss_kd,
                 'loss_amal':   self._weights[1]*loss_amal,

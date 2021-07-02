@@ -17,11 +17,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from kamal.core.engine.engine import Engine
-from kamal.core.engine.hooks import FeatureHook
-from kamal.core import tasks
+from kamal.engine import Trainer
+from kamal.engine.hooks import FeatureHook
 from kamal.utils import move_to_device, set_mode
-from kamal.core.hub import meta
+from kamal.engine.hub import meta
 from kamal import vision
 import kamal
 
@@ -185,7 +184,7 @@ class JointSegNet(nn.Module):
         return output_list
 
 
-class TaskBranchingAmalgamator(Engine):
+class TaskBranchingAmalgamator(Trainer):
     def setup(
         self, 
         joint_student: JointSegNet,

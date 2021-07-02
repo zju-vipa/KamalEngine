@@ -9,8 +9,7 @@ import torch
 import random
 
 def mkdir(dir):
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
+    os.makedirs(dir, exist_ok=True)
 
 def colormap(N=256, normalized=False):
     def bitget(byteval, idx):
