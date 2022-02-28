@@ -42,8 +42,8 @@ class NYUv2(VisionDataset):
         self.target_type = target_type
         self.num_classes = num_classes
         
-        split_mat = loadmat(os.path.join(self.root, 'splits.mat'))
-        idxs = split_mat[self.split+'Ndxs'].reshape(-1) - 1
+        #split_mat = loadmat(os.path.join(self.root, 'splits.mat'))
+        #idxs = split_mat[self.split+'Ndxs'].reshape(-1) - 1
 
         img_names = os.listdir( os.path.join(self.root, 'image', self.split) )
         img_names.sort()
