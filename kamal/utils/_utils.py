@@ -18,7 +18,10 @@ import math
 import torch 
 import random
 from copy import deepcopy
+import os
 import contextlib, hashlib
+from contextlib import contextmanager
+from PIL import Image
 
 def split_batch(batch):
     if isinstance(batch, (list, tuple)):
@@ -83,7 +86,7 @@ class Normalizer(object):
         self.std = std
         self.reverse = reverse
 
-    def __call__(self, x):
+    def __call__(self, x,reverse=False):
         if self.reverse:
             return self.denormalize(x)
         else:
@@ -149,3 +152,98 @@ def md5(fname):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+def save_image_batch(imgs, output, col=None, size=None, pack=True):
+    if isinstance(imgs, torch.Tensor):
+        imgs = (imgs.detach().clamp(0, 1).cpu().numpy()*255).astype('uint8')
+    base_dir = os.path.dirname(output)
+    if base_dir!='':
+        os.makedirs(base_dir, exist_ok=True)
+    if pack:
+        imgs = pack_images( imgs, col=col ).transpose( 1, 2, 0 ).squeeze()
+        imgs = Image.fromarray( imgs )
+        if size is not None:
+            if isinstance(size, (list,tuple)):
+                imgs = imgs.resize(size)
+            else:
+                w, h = imgs.size
+                max_side = max( h, w )
+                scale = float(size) / float(max_side)
+                _w, _h = int(w*scale), int(h*scale)
+                imgs = imgs.resize([_w, _h])
+        imgs.save(output)
+    else:
+        output_filename = output.strip('.png')
+        for idx, img in enumerate(imgs):
+            img = Image.fromarray( img.transpose(1, 2, 0) )
+            img.save(output_filename+'-%d.png'%(idx))
+
+def _collect_all_images(root, postfix=['png', 'jpg', 'jpeg', 'JPEG']):
+    images = []
+    if isinstance( postfix, str):
+        postfix = [ postfix ]
+    for dirpath, dirnames, files in os.walk(root):
+        for pos in postfix:
+            for f in files:
+                if f.endswith( pos ):
+                    images.append( os.path.join( dirpath, f ) )
+    return images
+    
+class UnlabeledImageDataset(torch.utils.data.Dataset):
+    def __init__(self, root, transform=None):
+        self.root = os.path.abspath(root)
+        self.images = _collect_all_images(self.root) #[ os.path.join(self.root, f) for f in os.listdir( root ) ]
+        self.transform = transform
+
+    def __getitem__(self, idx):
+        img = Image.open( self.images[idx] )
+        if self.transform:
+            img = self.transform(img)
+        return img
+
+    def __len__(self):
+        return len(self.images)
+
+    def __repr__(self):
+        return 'Unlabeled data:\n\troot: %s\n\tdata mount: %d\n\ttransforms: %s'%(self.root, len(self), self.transform)
+
+class ImagePool(object):
+    def __init__(self, root):
+        self.root = os.path.abspath(root)
+        os.makedirs(self.root, exist_ok=True)
+        self._idx = 0
+
+    def add(self, imgs, targets=None):
+        save_image_batch(imgs, os.path.join( self.root, "%d.png"%(self._idx) ), pack=False)
+        self._idx+=1
+
+    def get_dataset(self, transform=None, labeled=True):
+        return UnlabeledImageDataset(self.root, transform=transform)
+
+class DataIter(object):
+    def __init__(self, dataloader):
+        self.dataloader = dataloader
+        self._iter = iter(self.dataloader)
+    
+    def next(self):
+        try:
+            data = next( self._iter )
+        except StopIteration:
+            self._iter = iter(self.dataloader)
+            data = next( self._iter )
+        return data
+
+def clip_images(image_tensor, mean, std):
+    mean = np.array(mean)
+    std = np.array(std)
+    for c in range(3):
+        m, s = mean[c], std[c]
+        image_tensor[:, c] = torch.clamp(image_tensor[:, c], -m / s, (1 - m) / s)
+    return image_tensor
+
+@contextmanager
+def dummy_ctx(*args, **kwds):
+    try:
+        yield None
+    finally:
+        pass
