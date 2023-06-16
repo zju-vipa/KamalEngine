@@ -10,7 +10,8 @@ from .stanford_dogs import StanfordDogs
 from .sunrgbd import SunRGBD
 from .voc import VOCClassification, VOCSegmentation
 from .dataset import LabelConcatDataset
-
+from .CelebA import *
+from .customize_class_data import *
 from torchvision import datasets as torchvision_datasets
 
 from .unlabeled import UnlabeledDataset
