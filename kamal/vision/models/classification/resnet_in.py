@@ -1,4 +1,5 @@
-# Modified from https://github.com/pytorch/vision
+# ResNet for ImageNet (224x224)
+
 import torch
 import torch.nn as nn
 from torch.hub import load_state_dict_from_url
@@ -35,7 +36,7 @@ def conv1x1(in_planes, out_planes, stride=1):
 
 class BasicBlock(nn.Module):
     expansion = 1
-    
+
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
                  base_width=64, dilation=1, norm_layer=None):
         super(BasicBlock, self).__init__()
@@ -74,6 +75,12 @@ class BasicBlock(nn.Module):
 
 
 class Bottleneck(nn.Module):
+    # Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2)
+    # while original implementation places the stride at the first 1x1 convolution(self.conv1)
+    # according to "Deep residual learning for image recognition"https://arxiv.org/abs/1512.03385.
+    # This variant is also known as ResNet V1.5 and improves accuracy according to
+    # https://ngc.nvidia.com/catalog/model-scripts/nvidia:resnet_50_v1_5_for_pytorch.
+
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
@@ -193,7 +200,8 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def _forward_impl(self, x, return_features):
+        # See note [TorchScript super()]
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -205,21 +213,22 @@ class ResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.fc(x)
-
+        feat = torch.flatten(x, 1)
+        x = self.fc(feat)
+        if return_features:
+            return x, feat
         return x
+
+    def forward(self, x, return_features=False):
+        return self._forward_impl(x, return_features=return_features)
 
 
 def _resnet(arch, block, layers, pretrained, progress, **kwargs):
-    num_classes = kwargs.pop('num_classes', None)
     model = ResNet(block, layers, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch],
                                               progress=progress)
         model.load_state_dict(state_dict)
-    if num_classes is not None and num_classes!=1000:
-        model.fc = nn.Linear( model.fc.in_features, num_classes )
     return model
 
 

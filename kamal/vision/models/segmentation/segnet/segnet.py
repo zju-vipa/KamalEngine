@@ -3,7 +3,7 @@
 from .layer import SegnetDown, SegnetUp
 import torch.nn as nn 
 from ...classification import vgg
-from torchvision.models.utils import load_state_dict_from_url
+from torch.hub import load_state_dict_from_url
 
 __all__=[   'SegNet',
             'segnet_vgg11', 'segnet_vgg13','segnet_vgg16','segnet_vgg19',
