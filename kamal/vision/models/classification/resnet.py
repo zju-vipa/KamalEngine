@@ -1,7 +1,7 @@
 # Modified from https://github.com/pytorch/vision
 import torch
 import torch.nn as nn
-from torch.hub import load_state_dict_from_url
+from torchvision.models.utils import load_state_dict_from_url
 
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
