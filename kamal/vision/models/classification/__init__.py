@@ -4,5 +4,6 @@ from .resnet import *
 from .vgg import *
 from .gan import *
 from . import cifar
+from .vgg_block import *
 
 from .alexnet import alexnet
