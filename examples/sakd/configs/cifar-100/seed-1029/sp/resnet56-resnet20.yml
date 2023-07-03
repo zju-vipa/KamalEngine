@@ -1,0 +1,51 @@
+dataset:
+    name: CIFAR100
+    root: ../data/torchdata
+    img_w: 32
+    img_h: 32
+    num_classes: 100
+
+training:
+    optimizer:
+        name: SGD
+        lr: 0.05
+        weight_decay: 5.0e-4
+        weight_decay_stage2: 5.0e-4
+        momentum: 0.9
+        weight_decay_agent: 0.001
+
+    lr: 0.05
+    lr_agent: 0.025
+
+    lr_decay_epochs: [150,180,210]
+    lr_decay_rate: 0.1
+    batch_size: 64
+    # test_batch: 128
+    num_workers: 8
+    # num_workers: 8
+    epochs: 240
+    init_epoch: 0
+    seed: 1029
+    save_ep_freq: 30
+    print_iter_freq: 100
+
+validation:
+    batch_size: 64
+    num_workers: 8
+
+kd:
+    teacher:
+        name: resnet56
+        checkpoint: ./run/cifar-100/seed-1029/single/resnet56/ckpt/best.pth
+    student:
+        name: resnet20
+    loss_weights:
+        classify_weight: 1.0
+        kd_weight: 1.0
+        other_kd: 3000.0
+
+kd_loss:
+    KD_T: 4
+    name: SP
+    homo: True
+    T: 4

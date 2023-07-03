@@ -23,6 +23,7 @@ from torch.utils.tensorboard import SummaryWriter
 def main():
     # Pytorch Part
     model = vision.models.classification.cifar.wrn.wrn_40_2(num_classes=100)
+    # model = vision.models.classification.cifar.resnet_8x.ResNet34_8x(num_classes=100)
     train_dst = vision.datasets.torchvision_datasets.CIFAR100( 
         'data/torchdata', train=True, download=True, transform=sT.Compose([
             sT.RandomCrop(32, padding=4),

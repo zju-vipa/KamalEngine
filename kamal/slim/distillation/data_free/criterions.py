@@ -1,6 +1,7 @@
 import torch 
 import torch.nn.functional as F
 import torch.nn as nn
+
 def kldiv( logits, targets, T=1.0, reduction='batchmean'):
     q = F.log_softmax(logits/T, dim=1)
     p = F.softmax( targets/T, dim=1 )
@@ -36,6 +37,7 @@ def onehot_loss(logits, targets=None):
     if targets is None:
         targets = logits.max(1)[1]
     return cross_entropy(logits, targets)
+
 
 def get_image_prior_losses(inputs_jit):
     # COMPUTE total variation regularization loss
