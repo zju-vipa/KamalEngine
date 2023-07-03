@@ -1,7 +1,9 @@
 # Modified from https://github.com/pytorch/vision
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torchvision.models.utils import load_state_dict_from_url
+import math
 
 
 __all__ = [
@@ -93,6 +95,24 @@ def _vgg(arch, cfg, batch_norm, pretrained, progress, **kwargs):
         state_dict = load_state_dict_from_url(model_urls[arch],
                                               progress=progress)
         model.load_state_dict(state_dict)
+    return model
+
+
+def vgg8(**kwargs):
+    """VGG 8-layer model (configuration "S")
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = VGG(cfg['S'], **kwargs)
+    return model
+
+
+def vgg8_bn(**kwargs):
+    """VGG 8-layer model (configuration "S")
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = VGG(cfg['S'], batch_norm=True, **kwargs)
     return model
 
 
