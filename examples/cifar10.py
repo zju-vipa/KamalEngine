@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================
-import sys
-sys.path.append("../")
+import os
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 from kamal import vision, engine, callbacks
 from kamal.vision import sync_transforms as sT
 import kamal
@@ -22,24 +22,26 @@ import kamal
 import torch, time
 from torch.utils.tensorboard import SummaryWriter
 
-
 def main():
     # Pytorch Part
     model = vision.models.classification.cifar.wrn.wrn_40_2(num_classes=10)
     train_dst = vision.datasets.torchvision_datasets.CIFAR10( 
-        'data/torchdata', train=True, download=True, transform=sT.Compose([
+        'data/torch10', train=True, download=True, transform=sT.Compose([
             sT.RandomCrop(32, padding=4),
             sT.RandomHorizontalFlip(),
             sT.ToTensor(),
             sT.Normalize( mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010) )
         ]) )
     val_dst = vision.datasets.torchvision_datasets.CIFAR10( 
-        'data/torchdata', train=False, download=True, transform=sT.Compose([
+        'data/torch10', train=False, download=True, transform=sT.Compose([
             sT.ToTensor(),
             sT.Normalize( mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010) )
         ]) )
-    train_loader = torch.utils.data.DataLoader( train_dst, batch_size=128, shuffle=True, num_workers=4 )
-    val_loader = torch.utils.data.DataLoader( val_dst, batch_size=128, num_workers=4 )
+    # ==================================================
+    # ===================== Model ======================
+    # ==================================================
+    train_loader = torch.utils.data.DataLoader( train_dst, batch_size=256, shuffle=True, num_workers=4 )
+    val_loader = torch.utils.data.DataLoader( val_dst, batch_size=256, num_workers=4 )
     TOTAL_ITERS=len(train_loader) * 200
     device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
     optim = torch.optim.SGD( model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4 )
@@ -65,7 +67,7 @@ def main():
     # add callbacks
     trainer.add_callback( 
         engine.DefaultEvents.AFTER_EPOCH, 
-        callbacks=callbacks.EvalAndCkpt(model=model, evaluator=evaluator, metric_name='acc', ckpt_prefix='cifar10_SDB_student') )
+        callbacks=callbacks.EvalAndCkpt(model=model, evaluator=evaluator, metric_name='acc', ckpt_prefix='cifar10') )
     trainer.add_callback(
         engine.DefaultEvents.AFTER_STEP,
         callbacks=callbacks.LRSchedulerCallback(schedulers=[sched]))
