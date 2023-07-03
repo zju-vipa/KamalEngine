@@ -86,11 +86,13 @@ class DeepInversionHook():
         self.mmt = None
         self.tmp_val = None
 
+
     def hook_fn(self, module, input, output):
         # hook co compute deepinversion's feature distribution regularization
         nch = input[0].shape[1]
         mean = input[0].mean([0, 2, 3])
         var = input[0].permute(1, 0, 2, 3).contiguous().view([nch, -1]).var(1, unbiased=False)
+
         # forcing mean and variance to match between two distributions
         # other ways might work better, i.g. KL divergence
         if self.mmt is None:
@@ -115,3 +117,4 @@ class DeepInversionHook():
 
     def remove(self):
         self.hook.remove()
+
