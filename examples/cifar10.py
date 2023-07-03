@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================
+import sys
+sys.path.append("../")
 
 from kamal import vision, engine, callbacks
 from kamal.vision import sync_transforms as sT
@@ -20,18 +22,18 @@ import kamal
 import torch, time
 from torch.utils.tensorboard import SummaryWriter
 
+
 def main():
     # Pytorch Part
-    model = vision.models.classification.cifar.wrn.wrn_40_2(num_classes=100)
-    # model = vision.models.classification.cifar.resnet_8x.ResNet34_8x(num_classes=100)
-    train_dst = vision.datasets.torchvision_datasets.CIFAR100( 
+    model = vision.models.classification.cifar.wrn.wrn_40_2(num_classes=10)
+    train_dst = vision.datasets.torchvision_datasets.CIFAR10( 
         'data/torchdata', train=True, download=True, transform=sT.Compose([
             sT.RandomCrop(32, padding=4),
             sT.RandomHorizontalFlip(),
             sT.ToTensor(),
             sT.Normalize( mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010) )
         ]) )
-    val_dst = vision.datasets.torchvision_datasets.CIFAR100( 
+    val_dst = vision.datasets.torchvision_datasets.CIFAR10( 
         'data/torchdata', train=False, download=True, transform=sT.Compose([
             sT.ToTensor(),
             sT.Normalize( mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010) )
@@ -51,8 +53,8 @@ def main():
     # prepare trainer
     task = kamal.tasks.StandardTask.classification()
     trainer = engine.trainer.BasicTrainer( 
-        logger=kamal.utils.logger.get_logger('cifar100'), 
-        tb_writer=SummaryWriter( log_dir='run/cifar100-%s'%( time.asctime().replace( ' ', '_' ) ) ) 
+        logger=kamal.utils.logger.get_logger('cifar10'), 
+        tb_writer=SummaryWriter( log_dir='run/cifar10-%s'%( time.asctime().replace( ' ', '_' ) ) ) 
     )
     trainer.setup( model=model, 
                    task=task, 
@@ -63,7 +65,7 @@ def main():
     # add callbacks
     trainer.add_callback( 
         engine.DefaultEvents.AFTER_EPOCH, 
-        callbacks=callbacks.EvalAndCkpt(model=model, evaluator=evaluator, metric_name='acc', ckpt_prefix='cifar100') )
+        callbacks=callbacks.EvalAndCkpt(model=model, evaluator=evaluator, metric_name='acc', ckpt_prefix='cifar10_SDB_student') )
     trainer.add_callback(
         engine.DefaultEvents.AFTER_STEP,
         callbacks=callbacks.LRSchedulerCallback(schedulers=[sched]))

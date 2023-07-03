@@ -19,6 +19,7 @@ import torch
 import random
 from copy import deepcopy
 import contextlib, hashlib
+import torch.nn as nn
 from contextlib import contextmanager
 import os
 from PIL import Image
@@ -78,6 +79,15 @@ def normalize(tensor, mean, std, reverse=False):
     _mean = torch.as_tensor(_mean, dtype=tensor.dtype, device=tensor.device)
     _std = torch.as_tensor(_std, dtype=tensor.dtype, device=tensor.device)
     tensor = (tensor - _mean[None, :, None, None]) / (_std[None, :, None, None])
+    return tensor
+
+def denormalize(tensor, mean, std):
+    _mean = [ -m / s for m, s in zip(mean, std) ]
+    _std = [ 1/s for s in std ]
+
+    _mean = torch.as_tensor(_mean, dtype=tensor.dtype, device=tensor.device)
+    _std = torch.as_tensor(_std, dtype=tensor.dtype, device=tensor.device)
+    tensor.sub_(_mean[None, :, None, None]).div_(_std[None, :, None, None])
     return tensor
 
 class Normalizer(object):
@@ -158,6 +168,22 @@ def md5(fname):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+def fix_seed(seed=0):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+def init_conv(module):
+    if isinstance(module, nn.Conv2d):
+        nn.init.kaiming_normal_(module.weight, mode='fan_out',
+                                nonlinearity='relu')
+        if module.bias is not None:
+            nn.init.constant_(module.bias, 0)
 
 class DataIter(object):
     def __init__(self, dataloader):
