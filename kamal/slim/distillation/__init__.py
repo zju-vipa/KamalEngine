@@ -9,5 +9,6 @@ from .svd import SVDDistiller
 from .cc import *
 from .vid import *
 from .fskd import *
+from .fastkd import *
 
 from . import data_free

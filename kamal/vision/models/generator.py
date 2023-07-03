@@ -13,7 +13,8 @@ class Flatten(nn.Module):
 class Generator(nn.Module):
     def __init__(self, nz=100, ngf=64, img_size=32, nc=3):
         super(Generator, self).__init__()
-
+        
+        self.params = (nz, ngf, img_size, nc)
         self.init_size = img_size // 4
         self.l1 = nn.Sequential(nn.Linear(nz, ngf * 4 * self.init_size ** 2))
 
@@ -40,6 +41,12 @@ class Generator(nn.Module):
         out = out.view(out.shape[0], -1, self.init_size, self.init_size)
         img = self.conv_blocks(out)
         return img
+    
+    # return a copy of its own
+    def clone(self):
+        clone = Generator(self.params[0], self.params[1], self.params[2], self.params[3])
+        clone.load_state_dict(self.state_dict())
+        return clone.cuda()
 
 class CondGenerator(nn.Module):
     def __init__(self, nz=100, ngf=64, img_size=32, nc=3, num_classes=100):
@@ -240,4 +247,4 @@ class DeepPatchDiscriminator(nn.Module):
     
     def forward(self, input):
         return self.main(input)
-
+    
