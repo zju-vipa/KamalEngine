@@ -1,0 +1,37 @@
+dataset:
+    name: CIFAR100
+    root: ../data/torchdata
+    img_w: 32
+    img_h: 32
+    num_classes: 100
+
+training:
+    optimizer:
+        name: SGD
+        lr: 0.05
+        weight_decay: 5.0e-4
+        momentum: 0.9
+    gpu_preserve: 0.75
+
+    lr_decay_epochs: [150, 180, 210]
+    lr_decay_rate: 0.1
+    batch_size: 64
+    # test_batch: 128
+    num_workers: 8
+    # num_workers: 8
+    epochs: 240
+    init_epoch: 0
+    seed: 1029
+    save_ep_freq: 50
+    print_iter_freq: 100
+
+validation:
+    batch_size: 128
+    num_workers: 8
+
+model:
+    name: resnet56
+
+kd:
+    loss_weights:
+        classify_weight: 1.0

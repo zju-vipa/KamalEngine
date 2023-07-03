@@ -37,29 +37,26 @@ class Accuracy(Metric):
     
     def reset(self):
         self._correct = self._cnt = 0.0
-
-
+        
 class TopkAccuracy(Metric):
-    def __init__(self, topk=5, attach_to=None):
-        super(TopkAccuracy, self).__init__(attach_to=attach_to)
+    def __init__(self, topk=(1, 5)):
         self._topk = topk
         self.reset()
     
     @torch.no_grad()
     def update(self, outputs, targets):
-        outputs, targets = self._attach(outputs, targets)
-        _, outputs = outputs.topk(self._topk, dim=1, largest=True, sorted=True)
-        correct = outputs.eq( targets.view(-1, 1).expand_as(outputs) )
-        self._correct += correct[:, :self._topk].view(-1).float().sum(0).item()
+        for k in self._topk:
+            _, topk_outputs = outputs.topk(k, dim=1, largest=True, sorted=True)
+            correct = topk_outputs.eq( targets.view(-1, 1).expand_as(topk_outputs) )
+            self._correct[k] += correct[:, :k].view(-1).float().sum(0).item()
         self._cnt += len(targets)
-    
+
     def get_results(self):
-        return self._correct / self._cnt
+        return tuple( self._correct[k] / self._cnt * 100. for k in self._topk )
 
     def reset(self):
-        self._correct = 0.0
+        self._correct = {k: 0 for k in self._topk}
         self._cnt = 0.0
-
 
 class StreamCEMAPMetrics():
     @property
