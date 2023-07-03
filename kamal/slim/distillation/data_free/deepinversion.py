@@ -3,8 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import random
 
+import time
+
 from .base import BaseSynthesis
 from .hooks import DeepInversionHook
+from kamal.core import tasks
 from .criterions import jsdiv, get_image_prior_losses
 from kamal import utils
 # from utils import ImagePool, DataIter, clip_images
@@ -22,6 +25,7 @@ def jitter_and_flip(inputs_jit, lim=1./8., do_flip=True):
     if flip and do_flip:
         inputs_jit = torch.flip(inputs_jit, dims=(3,))
     return inputs_jit
+
 
 class DeepInvSyntheiszer(BaseSynthesis):
     def __init__(self, teacher, student, num_classes, img_size, 
@@ -45,7 +49,7 @@ class DeepInvSyntheiszer(BaseSynthesis):
         self.transform = transform
         self.synthesis_batch_size = synthesis_batch_size
         self.sample_batch_size = sample_batch_size
-        
+
         # Scaling factors
         self.adv = adv
         self.bn = bn
@@ -59,33 +63,41 @@ class DeepInvSyntheiszer(BaseSynthesis):
         self.progressive_scale = progressive_scale
         self.use_fp16 = use_fp16
         self.autocast = autocast # for FP16
+
         self.device = device
 
         # setup hooks for BN regularization
         self.hooks = []
         for m in teacher.modules():
             if isinstance(m, nn.BatchNorm2d):
-                self.hooks.append( DeepInversionHook(m) )
-        assert len(self.hooks)>0, 'input model should contains at least one BN layer for DeepInversion'
+                self.hooks.append(DeepInversionHook(m, 0))
+        self.s_hooks = []
+        for m in student.modules():
+            if isinstance(m, nn.BatchNorm2d):
+                self.s_hooks.append(DeepInversionHook(m, 0))
+        assert len(self.hooks) > 0, 'input model should contains at least one BN layer for DeepInversion'
 
     def synthesize(self, targets=None):
-        #kld_loss = nn.KLDivLoss(reduction='batchmean').cuda()
+        start = time.time()
+        # kld_loss = nn.KLDivLoss(reduction='batchmean').cuda()
         self.student.eval()
         best_cost = 1e6
-        inputs = torch.randn( size=[self.synthesis_batch_size, *self.img_size], device=self.device ).requires_grad_()
+        inputs = torch.randn(size=[self.synthesis_batch_size, *self.img_size], device=self.device).requires_grad_()
         if targets is None:
             targets = torch.randint(low=0, high=self.num_classes, size=(self.synthesis_batch_size,))
-            targets = targets.sort()[0] # sort for better visualization
+            targets = targets.sort()[0]  # sort for better visualization
         targets = targets.to(self.device)
 
         optimizer = torch.optim.Adam([inputs], self.lr_g, betas=[0.5, 0.99])
-        #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR( optimizer, T_max=self.iterations )
+        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR( optimizer, T_max=self.iterations )
 
         best_inputs = inputs.data
         for it in range(self.iterations):
             inputs_aug = jitter_and_flip(inputs)
             t_out = self.teacher(inputs_aug)
+
             loss_bn = sum([h.r_feature for h in self.hooks])
+            # loss_bn = sum([h.r_feature for h in self.hooks]) - 0.001 * sum([h.r_feature for h in self.s_hooks])
             loss_oh = F.cross_entropy( t_out, targets )
             if self.adv>0:
                 s_out = self.student(inputs_aug)
@@ -95,20 +107,25 @@ class DeepInvSyntheiszer(BaseSynthesis):
             loss_tv = get_image_prior_losses(inputs)
             loss_l2 = torch.norm(inputs, 2)
             loss = self.bn * loss_bn + self.oh * loss_oh + self.adv * loss_adv + self.tv * loss_tv + self.l2 * loss_l2
-            
+
             if best_cost > loss.item():
                 best_cost = loss.item()
                 best_inputs = inputs.data
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            #scheduler.step()
-            inputs.data = clip_images(inputs.data, self.normalizer.mean, self.normalizer.std)
+            
+            # scheduler.step()
+            inputs.data = utils._utils.clip_images(inputs.data, self.normalizer.mean, self.normalizer.std)
+
         self.student.train()
         # save best inputs and reset data loader
         if self.normalizer:
             best_inputs = self.normalizer(best_inputs, True)
-        self.data_pool.add( best_inputs )
+
+        end = time.time()
+        self.data_pool.add(best_inputs)
+
         dst = self.data_pool.get_dataset(transform=self.transform)
         if self.distributed:
             train_sampler = torch.utils.data.distributed.DistributedSampler(dst) if self.distributed else None
@@ -117,8 +134,10 @@ class DeepInvSyntheiszer(BaseSynthesis):
         loader = torch.utils.data.DataLoader(
             dst, batch_size=self.sample_batch_size, shuffle=(train_sampler is None),
             num_workers=4, pin_memory=True, sampler=train_sampler)
-        self.data_iter = DataIter(loader)
-        return {'synthetic': best_inputs}
-        
+
+        self.data_iter = utils._utils.DataIter(loader)
+        return {'synthetic': best_inputs}, end - start
+
+
     def sample(self):
         return self.data_iter.next()

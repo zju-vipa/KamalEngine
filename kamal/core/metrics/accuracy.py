@@ -37,8 +37,7 @@ class Accuracy(Metric):
     
     def reset(self):
         self._correct = self._cnt = 0.0
-
-
+        
 class TopkAccuracy(Metric):
     def __init__(self, topk=(1, 5)):
         self._topk = topk
