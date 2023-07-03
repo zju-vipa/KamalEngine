@@ -77,6 +77,15 @@ def normalize(tensor, mean, std, reverse=False):
     tensor = (tensor - _mean[None, :, None, None]) / (_std[None, :, None, None])
     return tensor
 
+def denormalize(tensor, mean, std):
+    _mean = [ -m / s for m, s in zip(mean, std) ]
+    _std = [ 1/s for s in std ]
+
+    _mean = torch.as_tensor(_mean, dtype=tensor.dtype, device=tensor.device)
+    _std = torch.as_tensor(_std, dtype=tensor.dtype, device=tensor.device)
+    tensor.sub_(_mean[None, :, None, None]).div_(_std[None, :, None, None])
+    return tensor
+
 class Normalizer(object):
     def __init__(self, mean, std, reverse=False):
         self.mean = mean
