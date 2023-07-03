@@ -20,7 +20,9 @@ import random
 from copy import deepcopy
 import os
 import contextlib, hashlib
+import torch.nn as nn
 from contextlib import contextmanager
+import os
 from PIL import Image
 
 def split_batch(batch):
@@ -80,6 +82,15 @@ def normalize(tensor, mean, std, reverse=False):
     tensor = (tensor - _mean[None, :, None, None]) / (_std[None, :, None, None])
     return tensor
 
+def denormalize(tensor, mean, std):
+    _mean = [ -m / s for m, s in zip(mean, std) ]
+    _std = [ 1/s for s in std ]
+
+    _mean = torch.as_tensor(_mean, dtype=tensor.dtype, device=tensor.device)
+    _std = torch.as_tensor(_std, dtype=tensor.dtype, device=tensor.device)
+    tensor.sub_(_mean[None, :, None, None]).div_(_std[None, :, None, None])
+    return tensor
+
 class Normalizer(object):
     def __init__(self, mean, std, reverse=False):
         self.mean = mean
@@ -93,10 +104,10 @@ class Normalizer(object):
             return self.normalize(x)
             
     def normalize(self, x):
-        return normalize( x, self.mean, self.std )
+        return normalize( x, self.mean, self.std)
     
     def denormalize(self, x):
-        return normalize( x, self.mean, self.std, reverse=True )
+        return normalize( x, self.mean, self.std)
 
 
 def colormap(N=256, normalized=False):
@@ -121,6 +132,12 @@ def colormap(N=256, normalized=False):
 
 DEFAULT_COLORMAP = colormap()
 
+@contextmanager
+def dummy_ctx(*args, **kwds):
+    try:
+        yield None
+    finally:
+        pass
 def flatten_dict(dic):
     flattned = dict()
 
@@ -152,6 +169,80 @@ def md5(fname):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+def fix_seed(seed=0):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+def init_conv(module):
+    if isinstance(module, nn.Conv2d):
+        nn.init.kaiming_normal_(module.weight, mode='fan_out',
+                                nonlinearity='relu')
+        if module.bias is not None:
+            nn.init.constant_(module.bias, 0)
+
+class DataIter(object):
+    def __init__(self, dataloader):
+        self.dataloader = dataloader
+        self._iter = iter(self.dataloader)
+    
+    def next(self):
+        try:
+            data = next( self._iter )
+        except StopIteration:
+            self._iter = iter(self.dataloader)
+            data = next( self._iter )
+        return data
+
+def save_image_batch(imgs, output, col=None, size=None, pack=True):
+    if isinstance(imgs, torch.Tensor):
+        imgs = (imgs.detach().clamp(0, 1).cpu().numpy()*255).astype('uint8')
+    base_dir = os.path.dirname(output)
+    if base_dir!='':
+        os.makedirs(base_dir, exist_ok=True)
+    if pack:
+        imgs = pack_images( imgs, col=col ).transpose( 1, 2, 0 ).squeeze()
+        imgs = Image.fromarray( imgs )
+        if size is not None:
+            if isinstance(size, (list,tuple)):
+                imgs = imgs.resize(size)
+            else:
+                w, h = imgs.size
+                max_side = max( h, w )
+                scale = float(size) / float(max_side)
+                _w, _h = int(w*scale), int(h*scale)
+                imgs = imgs.resize([_w, _h])
+        imgs.save(output)
+    else:
+        output_filename = output.strip('.png')
+        for idx, img in enumerate(imgs):
+            img = Image.fromarray( img.transpose(1, 2, 0) )
+            img.save(output_filename+'-%d.png'%(idx))
+
+def prepare_ood_subset(ood_dst, ood_size, teachers):
+    ood_loader = torch.utils.data.DataLoader(ood_dst, batch_size=2048, shuffle=False, num_workers=4)
+    entropy_list = []
+
+    with set_mode(teachers, training=False):
+        with torch.no_grad():
+            for image, _ in tqdm(ood_loader):
+                image = image.cuda()
+
+                t_out = [teacher(image) for teacher in teachers]
+                pyx = [F.softmax(i, dim=1) for i in t_out]
+                entropy = sum([-(i * torch.log(i)).sum(dim=1) for i in pyx])
+
+                entropy_list.append(entropy)
+
+    entropy_list = torch.cat(entropy_list, dim=0)
+    ood_index = torch.argsort(entropy_list, descending=True)[:ood_size].cpu().tolist()
+
+    return ood_index
 
 def save_image_batch(imgs, output, col=None, size=None, pack=True):
     if isinstance(imgs, torch.Tensor):

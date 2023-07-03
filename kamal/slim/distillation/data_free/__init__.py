@@ -1,3 +1,5 @@
+from .zskt import ZSKTDistiller
+from .dfad import DFADistiller
 # from . import synthesis
 from . import hooks
 from . import criterions
