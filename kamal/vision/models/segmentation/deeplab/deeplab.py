@@ -6,7 +6,7 @@ from ...classification import mobilenetv2, resnet
 import torch.nn as nn 
 import torch.nn.functional as F
 
-from torchvision.models.utils import load_state_dict_from_url
+from torch.hub import load_state_dict_from_url
 
 __all__=['DeepLabV3', 
         'deeplabv3_mobilenetv2', 'deeplabv3_resnet50', 'deeplabv3_resnet101',
