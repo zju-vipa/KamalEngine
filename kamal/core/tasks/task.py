@@ -20,7 +20,7 @@ import torch.nn.functional as F
 import sys
 import typing
 from typing import Callable, Dict, List, Any
-from collections import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from . import loss
 from kamal.core import metrics, exceptions
 from kamal.core.attach import AttachTo
