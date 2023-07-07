@@ -71,7 +71,7 @@ def main():
     aircraft_evaluator = engine.evaluator.BasicEvaluator( aircraft_loader, aircraft_metric )
 
     if args.ckpt is not None:
-        student.load_state_dict( torch.load( args.ckpt ) )
+        student.load_2( torch.load( args.ckpt ) )
         print("Load student model from %s"%args.ckpt)
     if args.test_only:
         results_car = car_evaluator.eval( student )
@@ -88,7 +88,6 @@ def main():
         logger=utils.logger.get_logger('layerwise-ka'), 
         tb_writer=SummaryWriter( log_dir='run/layerwise_ka-%s'%( time.asctime().replace( ' ', '_' ) ) ) 
     )
-    
     trainer.add_callback( 
         engine.DefaultEvents.AFTER_STEP(every=10), 
         callbacks=callbacks.MetricsLogging(keys=('total_loss', 'loss_kd', 'loss_amal', 'loss_recons', 'lr')))

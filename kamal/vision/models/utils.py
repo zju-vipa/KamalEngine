@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
-from torch.hub import *
+from torchvision.models.utils import *
 
 def _get_torch_home():
     torch_home = os.path.expanduser(
