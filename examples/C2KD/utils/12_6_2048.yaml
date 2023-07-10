@@ -1,0 +1,49 @@
+# data
+dataset: 'LRS2'
+visual_feature_dir: '/nfs4-p1/zy/data/LRS2/TransformerKD/VisualFeatures/'
+teacher_dir: '/nfs4-p1/zy/data/LRS2/TransformerKD/TransformerAttnsPred_char/'
+
+train_filename: '/nfs4-p1/zy/data/LRS2/TransformerKD/pretrain_train_len.txt'
+val_filename: '/nfs4-p1/zy/data/LRS2/TransformerKD/preval_val_len.txt'
+
+# model
+d_model: 256
+d_word_vec: 256
+tgt_emb_prj_weight_sharing: False
+
+dropout: 0.1
+attention_dropout: 0.1
+fc_dropout: 0.1
+
+encoder_input_dim: 512
+encoder_layers: 12
+encoder_attention_heads: 4
+encoder_ffn_dim: 2048
+
+decoder_layers: 6
+decoder_attention_heads: 4
+decoder_ffn_dim: 2048
+
+#max_length:
+max_source_positions: 2000
+max_target_positions: 1024
+
+
+# experiment
+cal_DSA: true
+cal_ESA: true
+alpha: 0.3
+gamma: 1
+experiment_dir: '../experiments/ablations/12_6_2048/1'
+checkpoint: # '../experiments/ablations/8_4_2048/1/checkpoints/epoch_16.pth'
+curriculum: false
+epochs: 1000
+# 100, 150, 200, 4, 5, 6,
+# 42, 40, 16
+num_chs: 100
+batch_size: 48
+learning_rate: 0.0001
+label_smoothing: 0.1
+print_times_every_epoch: 20
+eval_times_every_epoch: 1
+lr_scheduler_wait: 15
