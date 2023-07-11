@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================
+import json
+import logging
+from typing import Dict, List
 
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
+from torch.nn import Module, ModuleDict
 import numpy as np
 #from pytorch_msssim import ssim, ms_ssim, MS_SSIM, SSIM
 
@@ -27,7 +31,17 @@ class KLDiv(object):
     
     def __call__(self, logits, targets):
         return kldiv( logits, targets, T=self.T )
+class DistillKL(nn.Module):
+    """Distilling the Knowledge in a Neural Network"""
+    def __init__(self, T):
+        super(DistillKL, self).__init__()
+        self.T = T
 
+    def forward(self, y_s, y_t):
+        p_s = F.log_softmax(y_s / self.T, dim=1)
+        p_t = F.softmax(y_t / self.T, dim=1)
+        loss = F.kl_div(p_s, p_t, reduction="batchmean") * (self.T**2)
+        return loss
 class KDLoss(nn.Module):
     """ KD Loss Function
     """
@@ -379,6 +393,221 @@ class SVDLoss(nn.Module):
         a = torch.matmul(a, mask)
         return a, b
         
+class ABLoss(nn.Module):
+    """Knowledge Transfer via Distillation of Activation Boundaries Formed by Hidden Neurons
+    code: https://github.com/bhheo/AB_distillation
+    """
+    def __init__(self, feat_num, margin=1.0):
+        super(ABLoss, self).__init__()
+        self.w = [2**(i - feat_num + 1) for i in range(feat_num)]
+        self.margin = margin
+
+    def forward(self, g_s, g_t):
+        bsz = g_s[0].shape[0]
+        losses = [self.criterion_alternative_l2(s, t) for s, t in zip(g_s, g_t)]
+        losses = [w * l for w, l in zip(self.w, losses)]
+        # loss = sum(losses) / bsz
+        # loss = loss / 1000 * 3
+        losses = [l / bsz for l in losses]
+        losses = [l / 1000 * 3 for l in losses]
+        return losses
+
+    def criterion_alternative_l2(self, source, target):
+        loss = ((source + self.margin) ** 2 * ((source > -self.margin) & (target <= 0)).float() +
+                (source - self.margin) ** 2 * ((source <= self.margin) & (target > 0)).float())
+        return torch.abs(loss).sum()
+    
+
+
+class Correlation(nn.Module):
+    """Correlation Congruence for Knowledge Distillation, ICCV 2019.
+    The authors nicely shared the code with me. I restructured their code to be
+    compatible with my running framework. Credits go to the original author"""
+    def __init__(self):
+        super(Correlation, self).__init__()
+
+    def forward(self, f_s, f_t):
+        delta = torch.abs(f_s - f_t)
+        loss = torch.mean((delta[:-1] * delta[1:]).sum(1))
+        return loss
+
+class HintLoss(nn.Module):
+    """Fitnets: hints for thin deep nets, ICLR 2015"""
+    def __init__(self, conv_reg, hint_layer):
+        super(HintLoss, self).__init__()
+        self.crit = nn.MSELoss()
+        self.conv_reg = conv_reg
+        self.hint_layer = hint_layer
+
+    def forward(self, f_s, f_t):
+        f_s = self.conv_reg(f_s[self.hint_layer])
+        f_t = f_t[self.hint_layer]
+        loss = self.crit(f_s, f_t)
+        return loss    
+
+class FeatureClassify(Module):
+    def __init__(self, input_channels: int, num_classes: int):
+        super().__init__()
+        self.input_channels = input_channels
+        self.num_classes = num_classes
+
+        self.global_avg_pool = nn.AdaptiveAvgPool2d(output_size=1)
+        self.fc = nn.Linear(self.input_channels, self.num_classes)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.global_avg_pool(x)
+        x = x.squeeze()
+        x = self.fc(x)
+        return x 
+class HierarchicalLoss(Module):
+    def __init__(self, layer_cluster_info: Dict[str, str], feat_s: List[torch.Tensor]):
+        """
+        Args:
+            layer_cluster_info: cluster info filepath by layer name
+        """
+        self.logger = logging.getLogger("HierarchicalLoss")
+
+        super().__init__()
+
+        # loading cluster info from merge.json files
+        self.cluster_info: Dict[str, List[List[int]]] = dict()
+        for name, info_file in layer_cluster_info.items():
+            with open(info_file, "r") as f:
+                info: List[List[int]] = json.load(f)["merged_classes"]
+            self.cluster_info[name] = info
+
+        # for each extracted layer, create classifier
+        self.layer_cls_loss_fn: ModuleDict[str, nn.CrossEntropyLoss] = ModuleDict()
+        layer_cls_dict: Dict[str, FeatureClassify] = dict()
+        for name, info in self.cluster_info.items():
+            idx = int(name[-1])
+            self.logger.warning(
+                "Mapping teacher layer: %s to the %d-th part of student output feature with shape: %s!!!",
+                name, idx, feat_s[idx].shape
+            )
+            layer_cls_dict[name] = FeatureClassify(
+                input_channels=feat_s[idx].shape[1],
+                num_classes=len(info)
+            )
+            self.layer_cls_loss_fn[name] = nn.CrossEntropyLoss(weight=self._get_cluster_weight(info))
+
+        self.feature_classifiers = ModuleDict(layer_cls_dict)
+        self.layer_cluster_map = self._layer_cluster_class_map()
+
+    def _get_cluster_weight(self, info: List[List[int]]):
+        weight = torch.empty(len(info))
+        for idx, cluster in enumerate(info):
+            num = len(cluster)
+            weight[idx] = 1 / num
+        return weight
+
+    def _layer_cluster_class_map(self) -> Dict[str, Dict[int, int]]:
+        layer_cluster_map = dict()
+        for name, info in self.cluster_info.items():
+            cluster_map = dict()
+            for cluster_id, cluster in enumerate(info):
+                for fine_id in cluster:
+                    cluster_map[fine_id] = cluster_id
+            layer_cluster_map[name] = cluster_map
+        return layer_cluster_map
+
+    def cluster_cls_loss(
+        self,
+        layer_name: str,
+        pred: torch.Tensor,
+        target: torch.Tensor
+    ):
+        cluster_map = self.layer_cluster_map[layer_name]
+        t = torch.empty_like(target)
+        assert target.dim() == 1, "target dim {} is not equal to 1"
+        for i, x in enumerate(target):
+            t[i] = cluster_map[x.item()]
+        loss = self.layer_cls_loss_fn[layer_name](pred, t)
+        return loss
+
+    def forward(self, feat_s: List[torch.Tensor], logit_t: torch.Tensor):
+        losses: List[torch.Tensor] = list()
+        for name, classifier in self.feature_classifiers.items():
+            idx = int(name[-1])
+            pred = classifier(feat_s[idx])
+            losses.append(self.cluster_cls_loss(name, pred, logit_t))
+        return sum(losses)
+
+class VIDLoss(nn.Module):
+    """Variational Information Distillation for Knowledge Transfer (CVPR 2019),
+    code from author: https://github.com/ssahn0215/variational-information-distillation"""
+    def __init__(
+        self,
+        num_input_channels,
+        num_mid_channel,
+        num_target_channels,
+        init_pred_var=5.0,
+        eps=1e-5
+    ):
+        super(VIDLoss, self).__init__()
+
+        def conv1x1(in_channels, out_channels, stride=1):
+            return nn.Conv2d(
+                in_channels, out_channels,
+                kernel_size=1, padding=0,
+                bias=False, stride=stride)
+
+        self.regressor = nn.Sequential(
+            conv1x1(num_input_channels, num_mid_channel),
+            nn.ReLU(),
+            conv1x1(num_mid_channel, num_mid_channel),
+            nn.ReLU(),
+            conv1x1(num_mid_channel, num_target_channels),
+        )
+        self.log_scale = torch.nn.Parameter(
+            np.log(np.exp(init_pred_var - eps) - 1.0) * torch.ones(num_target_channels)
+        )
+        self.eps = eps
+
+    def forward(self, input, target):
+        # pool for dimentsion match
+        s_H, t_H = input.shape[2], target.shape[2]
+        if s_H > t_H:
+            input = F.adaptive_avg_pool2d(input, (t_H, t_H))
+        elif s_H < t_H:
+            target = F.adaptive_avg_pool2d(target, (s_H, s_H))
+        else:
+            pass
+        pred_mean = self.regressor(input)
+        pred_var = torch.log(1.0 + torch.exp(self.log_scale)) + self.eps
+        pred_var = pred_var.view(1, -1, 1, 1)
+        neg_log_prob = 0.5 * (
+            (pred_mean - target)**2 / pred_var + torch.log(pred_var)
+        )
+        loss = torch.mean(neg_log_prob)
+        return loss
+
+class MidClsLoss(Module):
+    def __init__(self, num_classes: int, mid_layer_T: Dict[str, float], feat_s: List[torch.Tensor]):
+        self.logger = logging.getLogger("HierarchicalLoss")
+        super().__init__()
+
+        self.layer_classifier: ModuleDict[str, FeatureClassify] = ModuleDict()
+        self.layer_loss: ModuleDict[str, DistillKL] = ModuleDict()
+        for name, T in mid_layer_T.items():
+            idx = int(name[-1])
+            self.logger.warning(
+                "Mapping teacher layer: %s to the %d-th part of student output feature with shape: %s!!!",
+                name, idx, feat_s[idx].shape
+            )
+            self.layer_classifier[name] = FeatureClassify(
+                input_channels=feat_s[idx].shape[1],
+                num_classes=num_classes
+            )
+            self.layer_loss[name] = DistillKL(T)
+
+    def forward(self, feat_s: List[torch.Tensor], target: torch.Tensor):
+        losses: List[torch.Tensor] = list()
+        for name in self.layer_classifier.keys():
+            idx = int(name[-1])
+            pred = self.layer_classifier[name](feat_s[idx])
+            losses.append(self.layer_loss[name](pred, target))
+        return sum(losses)    
 
 
     
