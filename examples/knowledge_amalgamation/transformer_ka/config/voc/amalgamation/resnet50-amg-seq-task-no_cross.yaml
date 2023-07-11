@@ -1,0 +1,103 @@
+dataset:
+  name: VOC2012
+  root: ../../data/voc
+  train:
+    split: trainval
+  val:
+    split: test
+    keep_difficult: true
+  resize: null
+
+training:
+  optimizer:
+    name: AdamW
+    lr: 1.0e-4
+    weight_decay: 1.0e-4
+  lr_backbone: 1.0e-5
+  freeze_backbone: false
+  lr_schedule:
+    name: multi_step
+    milestones: [150]
+    gamma: 0.1
+  train_epochs: 200
+  print_interval: 20
+  val_interval: 1000
+  batch_size: 32
+  num_workers: 8
+  sync_bn: False
+  clip_max_norm: 0.1
+  decay_strategy: true
+  decay_epoch: 200
+  decay_task: false
+
+validation:
+  batch_size: 64
+  num_workers: 8
+
+teachers:
+  t1:
+    cfg_fp: config/voc/multitask/resnet50-t1.yaml
+    weights_fp: /path/to/teacher1.pth
+  t2:
+    cfg_fp: config/voc/multitask/resnet50-t2.yaml
+    weights_fp: /path/to/teacher2.pth
+
+student:
+  backbone:
+    backbone_name: resnet50
+    train_backbone: true
+    dilation: false
+  position_encoding:
+    name: sine
+  transformer:
+    embed_dim: 256
+    num_heads: 8
+    num_encoder_layers: 6
+    num_decoder_layers: 6
+    dim_feedforward: 2048
+    dropout: 0.1
+    activation: relu
+    return_intermediate_dec: true
+    pre_norm: true
+  detr:
+    num_queries: 100
+    aux_loss: true
+    return_mask: true
+    num_proj: 2
+
+loss:
+  mid_layers:
+    - proj_identity
+    - transformer.encoder.layers.0
+    - transformer.encoder.layers.1
+    - transformer.encoder.layers.2
+    - transformer.encoder.layers.3
+    - transformer.encoder.layers.4
+    - transformer.encoder.layers.5
+  matcher:
+    cost_class: 1.0
+    cost_bbox: 5.0
+    cost_giou: 2.0
+  set_criterion:
+    eos_coef: 0.1
+    kd_temp: 4.0
+    loss_items: [labels, boxes, cardinality, kd]
+
+  task_amg:
+    threshold: 0.1
+    n_max: 50
+
+  seq_hint_v2:
+    emb_dim: 256
+    use_layer_norm: False
+  weight_dict:
+    loss_ce: 1.0
+    loss_bbox: 5.0
+    loss_giou: 2.0
+    task_amg_loss_kd: 1.0
+    task_amg_loss_bbox: 5.0
+    task_amg_loss_giou: 2.0
+    seq_amg_hint_loss: 1.0
+  task_weights:
+    task: 1.0
+    amg: 1.0

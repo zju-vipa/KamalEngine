@@ -1,0 +1,68 @@
+dataset:
+  name: VOC2012
+  root: ../../data/voc
+  train:
+    split: trainval
+  val:
+    split: test
+    keep_difficult: true
+  resize: null
+  make_partial: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+training:
+  optimizer:
+    name: AdamW
+    lr: 1.0e-4
+    weight_decay: 1.0e-4
+  lr_backbone: 1.0e-5
+  freeze_backbone: false
+  lr_schedule:
+    name: multi_step
+    milestones: [150]
+    gamma: 0.1
+  train_epochs: 200
+  print_interval: 20
+  val_interval: 2000
+  batch_size: 32
+  num_workers: 8
+  sync_bn: False
+  clip_max_norm: 0.1
+
+validation:
+  batch_size: 64
+  num_workers: 8
+
+model:
+  backbone:
+    backbone_name: resnet50
+    train_backbone: true
+    dilation: false
+  position_encoding:
+    name: sine
+  transformer:
+    embed_dim: 256
+    num_heads: 8
+    num_encoder_layers: 6
+    num_decoder_layers: 6
+    dim_feedforward: 2048
+    dropout: 0.1
+    activation: relu
+    return_intermediate_dec: true
+    pre_norm: true
+  detr:
+    num_queries: 100
+    aux_loss: true
+  pre_train: weights/up-detr-pre-training-60ep-imagenet.pth
+
+loss:
+  matcher:
+    cost_class: 1.0
+    cost_bbox: 5.0
+    cost_giou: 2.0
+  set_criterion:
+    eos_coef: 0.1
+    loss_items: [labels, boxes, cardinality]
+  weight_dict:
+    loss_ce: 1.0
+    loss_bbox: 5.0
+    loss_giou: 2.0
