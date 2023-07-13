@@ -7,7 +7,7 @@ import random
 from torch.autograd import Variable
 from .base import BaseSynthesis
 from .hooks import DeepInversionHook, InstanceMeanHook
-from .criterions import kldiv_m
+from .criterions import kldiv
 from kamal import utils
 # from datafree.criterions import jsdiv, get_image_prior_losses, kldiv
 # from datafree.utils import ImagePool, DataIter, clip_images
@@ -146,7 +146,7 @@ class FastMetaSynthesizer(BaseSynthesis):
             if self.adv>0 and (self.ep >= self.ep_start):
                 s_out = self.student(inputs_aug)
                 mask = (s_out.max(1)[1]==t_out.max(1)[1]).float()
-                loss_adv = -(kldiv_m(s_out, t_out, reduction='none').sum(1) * mask).mean() # decision adversarial distillation
+                loss_adv = -(kldiv(s_out, t_out, reduction='none').sum(1) * mask).mean() # decision adversarial distillation
             else:
                 loss_adv = loss_oh.new_zeros(1)
             loss = self.bn * loss_bn + self.oh * loss_oh + self.adv * loss_adv

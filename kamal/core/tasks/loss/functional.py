@@ -17,7 +17,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 
-def kldiv(logits, targets, T=1.0):
+def kldiv(logits, targets, T=1.0, reduction='none', calc_mean=True):
     """ Cross Entropy for soft targets
     
     Parameters:
@@ -26,10 +26,13 @@ def kldiv(logits, targets, T=1.0):
         - T (float): temperature　of distill
         - reduction: reduction to the output
     """
-    p_targets = F.softmax(targets/T, dim=1)
-    logp_logits = F.log_softmax(logits/T, dim=1)
-    kld = F.kl_div(logp_logits, p_targets, reduction='none') * (T**2)
-    return kld.sum(1).mean()
+    p_targets = F.softmax(targets / T, dim=1)
+    logp_logits = F.log_softmax(logits / T, dim=1)
+    kld = F.kl_div(logp_logits, p_targets, reduction=reduction) * (T ** 2)
+    if calc_mean:
+        return kld.sum(1).mean()
+    else:
+        return kld
 
 def jsdiv(logits, targets, T=1.0, reduction='mean'):
     p = F.softmax(logits, dim=1)

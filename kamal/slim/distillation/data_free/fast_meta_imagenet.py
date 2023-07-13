@@ -11,7 +11,7 @@ from kamal import utils
 from .base import BaseSynthesis
 from kamal.core import tasks
 from .hooks import DeepInversionHook, InstanceMeanHook
-from .criterions import get_image_prior_losses, kldiv_m
+from .criterions import get_image_prior_losses, kldiv
 # from data_free.utils import ImagePool, DataIter, clip_images
 import collections
 from torchvision import transforms
