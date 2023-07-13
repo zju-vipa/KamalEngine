@@ -5,3 +5,5 @@ from .recombination import RecombinationAmalgamator, CombinedModel
 from .fedsa import LocalTrainer,AverageMeter,FEDSATrainer,TestTrainer
 from .safe_distillation_box import AdversTeacher,AdversTEvaluator,KD_SDB_Stuednt
 from .OOD_KA_amal import *
+from .customize_attribute import CUSTOMIZE_COMPONENT_Amalgamator,CUSTOMIZE_TARGET_Amalgamator
+from .customize_class import CUSTOMIZE_COMPONENT_Amalgamator, CUSTOMIZE_TARGET_Amalgamator
