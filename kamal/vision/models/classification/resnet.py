@@ -193,6 +193,9 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
+    def get_channel_num(self):
+        return [64,64,64,128,256,512]
+        
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)

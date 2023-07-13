@@ -3,6 +3,7 @@ import os, sys
 import torch
 import torch.nn as nn
 import numpy as np
+import torch.nn.functional as F
 
 from torch.hub import *
 
@@ -113,3 +114,16 @@ def load_darknet_weights( model, darknet_file):
                 offset+=num_weight
                 linear.bias.data.copy_( linear_bias )
                 linear.weight.data.copy_( linear_weight )
+
+class Hint(nn.Module):
+	'''
+	FitNets: Hints for Thin Deep Nets
+	https://arxiv.org/pdf/1412.6550.pdf
+	'''
+	def __init__(self):
+		super(Hint, self).__init__()
+
+	def forward(self, fm_s, fm_t):
+		loss = F.mse_loss(fm_s, fm_t)
+
+		return loss
