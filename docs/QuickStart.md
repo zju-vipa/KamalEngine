@@ -24,4 +24,4 @@ KamalEngine
 
 ## Examples for Quick Deployment
 
-**More detailed scripts can be found in the [example](examples/) folder.**
+**More detailed scripts can be found in the [example](../examples/) folder.**
