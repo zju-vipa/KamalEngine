@@ -1,4 +1,4 @@
-from . import classification, segmentation
+from . import classification, segmentation, taskonomy
 
 from torchvision import models as torchvision_models
 from . import paraphraser
