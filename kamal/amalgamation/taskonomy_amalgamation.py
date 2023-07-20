@@ -69,17 +69,6 @@ class TaskonomyAmalgamation(Engine):
         self._student.weight_rep.requires_grad = True
         self._optimizer = optimizer
         self.alpha = alpha
-        # self.compe_optimizer = torch.optim.SGD( list(self._student.decoder1.parameters())+list(self._student.decoder2.parameters()), lr=self._optimizer.param_groups[0]['lr'], momentum=0.9, weight_decay=1e-4 )
-        # # self.col_optimizer = torch.optim.SGD( list(self._student.encoder.parameters())+list(self._student.weight_fea) + list(self._student.weight_rep), lr=self._optimizer.param_groups[0]['lr'], momentum=0.9, weight_decay=1e-4 )
-        # params_col=[
-        # # 获取self.encoder中的所有参数
-        # {"params": self._student.encoder.parameters()},
-        # # 获取self.weight_fea这个参数
-        # {"params": self._student.weight_fea},
-        # {"params": self._student.weight_rep},
-        # ]
-        # self.col_optimizer = torch.optim.SGD(params_col , lr=self._optimizer.param_groups[0]['lr'], momentum=0.9, weight_decay=1e-4 )
-        # self.ada_optimizer = torch.optim.SGD([{"params": self._student.weights}], lr=self._optimizer.param_groups[0]['lr'], momentum=0.9, weight_decay=1e-2)
         self.initial_task_loss = []
 
     @property
@@ -190,45 +179,7 @@ class TaskonomyAmalgamation(Engine):
         })
         return metrics
     
-    # def init_step_fn(self, engine, batch, iter_num):
-    #     start_time = time.perf_counter()
-    #     # batch = move_to_device(batch, self._device)
-    #     data, t_data = batch
-    #     data = move_to_device(data, self._device)
-    #     t_data = move_to_device(t_data, self._device)
-    
-    #     t_out1, t_out2, t_enc_fea1, t_enc_fea2, t_enc_rep1, t_enc_rep2 = t_data
-    #     s_out1, s_out2, s_enc_fea, s_enc_rep = self._student.forward_te( data )
-   
-    #     mse_loss = nn.MSELoss()
-    #     loss_kd1 = mse_loss(s_out1, t_out1)
-    #     loss_kd2 = mse_loss(s_out2, t_out2)
-    #     loss_kd_sum = self._student.weights[0] * loss_kd1 + self._student.weights[1] * loss_kd2
 
-    #     self._student.weights.requires_grad = False
-    #     self._student.weight_fea.requires_grad = False
-    #     self._student.weight_rep.requires_grad = False
-    #     # for param in self._student.weights.parameters():
-    #     #     param.requires_grad = False
-    #     # for param in self._student.weight_fea.parameters():
-    #     #     param.requires_grad = False
-    #     # for param in self._student.weight_rep.parameters():
-    #     #     param.requires_grad = False
-    #     # ipdb.set_trace()
-  
-    #     self._optimizer.zero_grad()
-    #     loss_kd_sum.backward()
-    #     self._optimizer.step()
-    #     step_time = time.perf_counter() - start_time
-    #     # ipdb.set_trace()
-    #     metrics = {'loss_kd1': loss_kd1.item(), 'loss_kd2': loss_kd2.item()}
-    #     metrics.update({
-    #         'total_loss_kd': loss_kd_sum.item(),
-    #         'step_time': step_time,
-    #         'lr': float( self._optimizer.param_groups[0]['lr'] )
-    #     })
-      
-    #     return metrics
     
     def col_step_fn(self, engine, batch):
         start_time = time.perf_counter()
@@ -304,11 +255,11 @@ class TaskonomyAmalgamation(Engine):
             param.requires_grad = True
         for param in self._student.encoder.parameters():
             param.requires_grad = True
-        # ipdb.set_trace()
+
         # do the backward pass to compute the gradients for the whole set of weights
         # This is equivalent to compute each \nabla_W L_i(t)
         loss.backward(retain_graph=True)
-        # ipdb.set_trace()
+
         # initial_task_loss = self.initial_task_loss.cpu().detach().numpy()
         # set the gradients of w_i(t) to zero because these gradients have to be updated using the GradNorm loss
         #print('Before turning to 0: {}'.format(model.weights.grad))
@@ -339,7 +290,7 @@ class TaskonomyAmalgamation(Engine):
             mean_norm = np.mean(norms.data.cpu().numpy())
         else:
             mean_norm = np.mean(norms.data.numpy())
-                #print('tilde G_w(t): {}'.format(mean_norm))
+             
 
         # compute the GradNorm loss 
         # this term has to remain constant
