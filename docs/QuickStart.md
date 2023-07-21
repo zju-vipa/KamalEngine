@@ -16,6 +16,7 @@ KamalEngine
 └─ kamal
    ├─ amalgamation
    ├─ core
+   ├─ distillation
    ├─ slim
    ├─ transferability
    ├─ utils
