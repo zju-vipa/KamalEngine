@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =============================================================
+import argparse
 
 import numpy as np
 import math
@@ -21,12 +22,14 @@ from copy import deepcopy
 import os
 import contextlib, hashlib
 
+from ruamel.yaml import YAML
 from torch.utils.data import ConcatDataset, Dataset
 from PIL import Image
 import os
 from contextlib import contextmanager
 import torch.nn as nn
-
+from tqdm import tqdm
+import torch.nn.functional as F
 
 def split_batch(batch):
     if isinstance(batch, (list, tuple)):
@@ -458,3 +461,107 @@ def dummy_ctx(*args, **kwds):
         yield None
     finally:
         pass
+
+def make_deterministic(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
+import logging
+import threading
+from typing import Optional
+
+def str2bool(v):
+    if v.lower() in ("true", "yes", "t", "y"):
+        return True
+    elif v.lower() in ("false", "no", "f", "n"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Unsupported value encountered.")
+
+def preserve_gpu_with_id(gpu_id: int, preserve_percent: float = 0.95):
+        logger = logging.getLogger("preserve_gpu_with_id")
+        if not torch.cuda.is_available():
+            logger.warning("no gpu avaliable exit...")
+            return
+        try:
+            import cupy
+            device = cupy.cuda.Device(gpu_id)
+            avaliable_mem = device.mem_info[0] - 700 * 1024 * 1024
+            logger.info("{}MB memory avaliable, trying to preserve {}MB...".format(
+                int(avaliable_mem / 1024.0 / 1024.0),
+                int(avaliable_mem / 1024.0 / 1024.0 * preserve_percent)
+            ))
+            if avaliable_mem / 1024.0 / 1024.0 < 100:
+                cmd = os.popen("nvidia-smi")
+                outputs = cmd.read()
+                pid = os.getpid()
+
+                logger.warning("Avaliable memory is less than 100MB, skiping...")
+                logger.info("program pid: %d, current environment:\n%s", pid, outputs)
+                raise Exception("Memory Not Enough")
+            alloc_mem = int(avaliable_mem * preserve_percent / 4)
+            x = torch.empty(alloc_mem).to(torch.device("cuda:{}".format(gpu_id)))
+            del x
+        except ImportError:
+            logger.warning("No cupy found, memory cannot be perserved")
+
+def preserve_memory(preserve_percent: float = 0.99):
+    logger = logging.getLogger("preserve_memory")
+    if not torch.cuda.is_available():
+        logger.warning("no gpu avaliable exit...")
+        return
+    thread_pool = list()
+    for i in range(torch.cuda.device_count()):
+        thread = threading.Thread(
+            target=preserve_gpu_with_id,
+            kwargs=dict(
+                gpu_id=i,
+                preserve_percent=preserve_percent
+            ),
+            name="Preserving GPU {}".format(i)
+        )
+        logger.info("Starting to preserve GPU: {}".format(i))
+        thread.start()
+        thread_pool.append(thread)
+    for t in thread_pool:
+        t.join()
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
+def accuracy(output, target, topk=(1,)):
+    """Computes the accuracy over the k top predictions for the specified values of k"""
+    with torch.no_grad():
+        maxk = max(topk)
+        batch_size = target.size(0)
+
+        _, pred = output.topk(maxk, 1, True, True)
+        pred = pred.t()
+        x = target.view(1, -1).expand_as(pred)
+        correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+        res = []
+        for k in topk:
+            correct_k = correct[:k].flatten().float().sum(0, keepdim=True)
+            res.append(correct_k.mul_(1 / batch_size))
+        return res

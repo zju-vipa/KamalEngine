@@ -1,0 +1,46 @@
+{
+    "merged_classes": [
+        [
+            4
+        ],
+        [
+            2
+        ],
+        [
+            6
+        ],
+        [
+            5
+        ],
+        [
+            3
+        ],
+        [
+            7
+        ],
+        [
+            8
+        ],
+        [
+            0
+        ],
+        [
+            9
+        ],
+        [
+            1
+        ]
+    ],
+    "fine_grained_classes": [
+        "airplane",
+        "automobile",
+        "bird",
+        "cat",
+        "deer",
+        "dog",
+        "frog",
+        "horse",
+        "ship",
+        "truck"
+    ]
+}
