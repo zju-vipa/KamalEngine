@@ -59,6 +59,35 @@ def get_cifar_10(root: str, loss_method: str, split: str = "train") -> Dataset:
 
     return dataset
 
+def get_cifar_10_(root: str, split: str = "train") -> Dataset:
+    normalize = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    train_transform = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize,
+    ])
+    test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize,
+    ])
+    if split == "train":
+        transform = train_transform
+        is_train = True
+    else:
+        transform = test_transform
+        is_train = False
+
+    dataset = CIFAR10(
+        root=root,
+        train=is_train,
+        transform=transform,
+        download=True
+    )
+
+    return dataset
+
+
 
 class CIFAR100InstanceSample(datasets.CIFAR100):
     """

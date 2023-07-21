@@ -225,6 +225,39 @@ def _resnet(arch, block, layers, pretrained, progress, **kwargs):
         model.fc = nn.Linear( model.fc.in_features, num_classes )
     return model
 
+def resnet8(**kwargs):
+    return ResNet(8, [16, 16, 32, 64], 'basicblock', **kwargs)
+
+
+def resnet14(**kwargs):
+    return ResNet(14, [16, 16, 32, 64], 'basicblock', **kwargs)
+
+def resnet20(**kwargs):
+    return ResNet(20, [16, 16, 32, 64], 'basicblock', **kwargs)
+
+
+def resnet32(**kwargs):
+    return ResNet(32, [16, 16, 32, 64], 'basicblock', **kwargs)
+
+def resnet44(**kwargs):
+    return ResNet(44, [16, 16, 32, 64], 'basicblock', **kwargs)
+
+
+def resnet56(**kwargs):
+    return ResNet(56, [16, 16, 32, 64], 'basicblock', **kwargs)
+
+
+def resnet110(**kwargs):
+    return ResNet(110, [16, 16, 32, 64], 'basicblock', **kwargs)
+
+
+def resnet8x4(**kwargs):
+    return ResNet(8, [32, 64, 128, 256], 'basicblock', **kwargs)
+
+
+def resnet32x4(**kwargs):
+    return ResNet(32, [32, 64, 128, 256], 'basicblock', **kwargs)
+
 
 def resnet18(pretrained=False, progress=True, **kwargs):
     r"""ResNet-18 model from

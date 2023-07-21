@@ -1,5 +1,7 @@
 import logging
 import os, sys
+from typing import Optional
+
 from termcolor import colored
 
 class _ColorfulFormatter(logging.Formatter):
@@ -51,6 +53,27 @@ def get_logger(name='Kamal', output=None, color=True):
         file_handler.setFormatter(plain_formatter)
         file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
+    return logger
+
+def get_logger_(
+    level: int,
+    logger_fp: str,
+    name: Optional[str] = None,
+    mode: str = "w",
+    format: str = "%(asctime)s - %(funcName)s - %(levelname)s - %(message)s"
+):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    file_handler = logging.FileHandler(logger_fp, "w")
+    file_handler.setLevel(level)
+    formatter = logging.Formatter(format)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.propagate = False
+    console = logging.StreamHandler()
+    console.setLevel(level)
+    console.setFormatter(formatter)
+    logger.addHandler(console)
     return logger
 
 
