@@ -1,4 +1,3 @@
-
 import os
 from kamal.utils import set_mode, move_to_device
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
