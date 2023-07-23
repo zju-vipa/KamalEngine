@@ -1,11 +1,15 @@
-# Date-Free Knowledge Distillation
+# Contrastive Model Inversion for Data-Free Knowledge Distillation
 
-## Pre-trained Teacher Models
+## Preparation
 
 You can download pretrained teacher models from [Dropbox-Models (266 MB)](https://www.dropbox.com/sh/w8xehuk7debnka3/AABhoazFReE_5mMeyvb4iUWoa?dl=0) and extract them to `checkpoints/pretrained`
 
 You can download a pre-inverted data set with ~50k samples available for wrn-40-2 teacher on CIFAR-10 from [Dropbox-Data-Preinverted (133 MB)](https://www.dropbox.com/s/enaj6c63heq5n4j/cmi-preinverted-wrn402.zip?dl=0) and extract them to `run/cmi-preinverted-wrn402/`
 
+## Scripts
+```
+Scripts can be found in examples/kd/cmi
+```
 
 ## Scratch Training
 
