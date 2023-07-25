@@ -15,7 +15,7 @@ Dataset list for class training propress:
 * data/cub: http://www.vision.caltech.edu/visipedia/CUB-200.html
 * data/airplane: http://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/
 
-To preprocess *dog/car/cub/aiplane dataset*, run this command:
+To preprocess *dog/car/cub/airplane dataset*, run this command:
 ```python
 python split_data_class.py
 ```

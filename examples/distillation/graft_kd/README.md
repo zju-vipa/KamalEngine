@@ -26,10 +26,10 @@ To train the model(s) in the paper, run this command:
 
 ```python
 # ----------- Run on CIFAR10 -----------
-python train_fskd.py --dataset CIFAR10 # Training [1~10, 20, 50]-Shot Distillation 
+python train_graft_kd.py --dataset CIFAR10 # Training [1~10, 20, 50]-Shot Distillation 
 
 # ----------- Run on CIFAR100 -----------
-python train_fskd.py --dataset CIFAR100 # Training [1~10, 20, 50]-Shot Distillation 
+python train_graft_kd.py --dataset CIFAR100 # Training [1~10, 20, 50]-Shot Distillation 
 ```
 **Note**: put the pre-trained teacher models in the directory: `./ckpt/teacher/`
 
