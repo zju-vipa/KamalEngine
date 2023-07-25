@@ -158,6 +158,9 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   publisher={IEEE}
 }
 ```
+
+**Scripts can be found in [examples/amalgamation/transformer_ka](examples/amalgamation/transformer_ka)**
+
 </details>
 
 <details>
@@ -324,6 +327,9 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2019}
 }
 ```
+
+**Scripts can be found in [examples/distillation/dfkd](examples/distillation/dfkd)**
+
 </details>
 
 <details>
@@ -368,6 +374,9 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   publisher={IEEE}
 }
 ```
+
+**Scripts can be found in [examples/distillation/sakd](examples/distillation/sakd)**
+
 </details>
 
 <details>
