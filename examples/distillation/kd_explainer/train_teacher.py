@@ -268,8 +268,8 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default = '/home/yxy/kacode_pr2/KamalEngine/examples/kd/KDExplainer/config/train_ResNet50.yml')
-    parser.add_argument("--logdir", type=str, default = '/home/yxy/kacode_pr2/KamalEngine/examples/kd/KDExplainer/log_teacher')
+    parser.add_argument("--config", type=str, default = './config/teacher/train_ResNet50.yml')
+    parser.add_argument("--logdir", type=str, default = './log_teacher')
     parser.add_argument("--file_name_cfg", type=str,default = 'train_ResNet50.yml' )
     parser.add_argument("--gpu_preserve", type=str2bool, default=False)
     parser.add_argument("--debug", type=str2bool, default=False)

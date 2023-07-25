@@ -80,6 +80,8 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2019}
 }
 ```
+**Scripts can be found in [examples/amalgamation/customize_ka](examples/amalgamation/customize_ka)**
+
 </details>
 
 <details>
@@ -224,6 +226,8 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2021}
 }
 ```
+**Scripts can be found in [/examples/distillation/graft_kd](/examples/distillation/graft_kd)**
+
 </details>
 
 <details>
@@ -243,6 +247,8 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2021}
 }
 ```
+**Scripts can be found in [/examples/distillation/kd_explainer](/examples/distillation/kd_eplainer)**
+
 </details>
 
 <details>

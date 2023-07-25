@@ -39,14 +39,14 @@ model:
     name: TLB
     loss_method: nce
     task: mc
-    pretrained: /KamalEngine/examples/kd/KDExplainer/log_LTB_kd_c100_s1/ckpt/best.pth
+    pretrained: ./log_LTB_kd_c100_s1/ckpt/best.pth
 
 kd:
     student:
         name: LTB
     teacher:
         name: ResNet50
-        checkpoint: /KamalEngine/examples/kd/KDExplainer/log_teacher/ckpt/best.pth
+        checkpoint: ./log_teacher/ckpt/best.pth
     loss_weights:
         classify_weight: 0.1
         kd_weight: 0.9

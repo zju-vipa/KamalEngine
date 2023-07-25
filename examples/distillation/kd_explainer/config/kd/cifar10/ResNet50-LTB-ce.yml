@@ -1,9 +1,9 @@
 dataset:
-    name: CIFAR100
-    root: ./data/CIFAR100
+    name: CIFAR10
+    root: ./data/CIFAR10
     img_w: 32
     img_h: 32
-    num_classes: 100
+    num_classes: 10
     loss_method: ce
 
 training:
@@ -39,14 +39,13 @@ model:
     name: TLB
     loss_method: ce
     task: mc
-    pretrained: /KamalEngine/examples/kd/KDExplainer/log_LTB_kd_c100_s1/ckpt/best.pth
-
+    pretrained: ./log_LTB_kd_c10_ce_s1/ckpt/best.pth
 kd:
     student:
         name: LTB
     teacher:
         name: ResNet50
-        checkpoint: /KamalEngine/examples/kd/KDExplainer/log_teacher/ckpt/best.pth
+        checkpoint: ./log_teacher/ckpt/best.pth
     loss_weights:
         classify_weight: 0.1
         kd_weight: 0.9

@@ -23,7 +23,7 @@ def parse(dataset,flag,num_per_class):
     if dataset == 'CIFAR10':
         args.dataset = 'CIFAR10'
         args.num_class = 10
-        args.ckpt = './KamalEngine/examples/kd/fskd/ckpt/teacher/vgg16-blockwise-cifar10.pth'
+        args.ckpt = './ckpt/teacher/vgg16-blockwise-cifar10.pth'
         args.dataset_mean = [0.4914, 0.4822, 0.4465]
         args.dataset_std = [0.2023, 0.1994, 0.2010]
                
@@ -40,7 +40,7 @@ def parse(dataset,flag,num_per_class):
     else:
         args.dataset = 'CIFAR100'
         args.num_class = 100
-        args.ckpt = './KamalEngine/examples/kd/fskd/ckpt/teacher/vgg16-blockwise-cifar100.pth'
+        args.ckpt = './ckpt/teacher/vgg16-blockwise-cifar100.pth'
         args.dataset_mean = [0.5071, 0.4867, 0.4408]
         args.dataset_std = [0.2675, 0.2565, 0.2761]
         if flag == 'block':
@@ -70,8 +70,8 @@ def main():
     parser.add_argument('--epochs', type=int, default=240)
     parser.add_argument('--num_workers', type=int,
                         default=8, help='num of workers to use')
-    parser.add_argument('--distill', type=str, default='fskd', choices=[
-                        'kd', 'hint', 'attention', 'sp', 'cc', 'vid', 'svd', 'pkt', 'nst', 'rkd','fskd'])
+    parser.add_argument('--distill', type=str, default='graft_kd', choices=[
+                        'kd', 'hint', 'attention', 'sp', 'cc', 'vid', 'svd', 'pkt', 'nst', 'rkd','graft_kd'])
     # dataset
     parser.add_argument('--data_root', type=str, default='./data/')
     parser.add_argument('--dataset', type=str, default='CIFAR10', choices=['CIFAR10', 'CIFAR100'],
@@ -86,16 +86,16 @@ def main():
     logger_acc = Logger('log/accuracy-for-various-num_sample.txt')
  
     # distiller setup
-    if args.distill == 'fskd':
+    if args.distill == 'graft_kd':
         logger = utils.logger.get_logger('distill_%s' % (args.distill))
         tb_writer = SummaryWriter(log_dir='./run/distill_%s-%s' %
                         (args.distill, time.asctime().replace(' ', '_')))
-        distiller_block = slim.FSKD_BLOCK_Distiller(logger, tb_writer)
+        distiller_block = slim.GRAFT_BLOCK_Distiller(logger, tb_writer)
         distiller_block.add_callback( 
             engine.DefaultEvents.AFTER_STEP(every=10), 
             callbacks=callbacks.MetricsLogging(keys=('total_loss', 'loss_kld', 'loss_ce', 'loss_additional', 'lr')))
         
-        distiller_net = slim.FSKD_NET_Distiller(logger, tb_writer)
+        distiller_net = slim.GRAFT_NET_Distiller(logger, tb_writer)
         distiller_net.add_callback( 
                     engine.DefaultEvents.AFTER_STEP(every=10), 
                     callbacks=callbacks.MetricsLogging(keys=('total_loss', 'loss_kld', 'loss_ce', 'loss_additional', 'lr')))
@@ -118,7 +118,7 @@ def main():
         train_transform = T.Compose([T.RandomCrop(32, padding=4),T.RandomHorizontalFlip(),T.ToTensor(),T.Normalize(mean=arg_parse.dataset_mean,std=arg_parse.dataset_std)])
         test_transform = T.Compose([T.ToTensor(),T.Normalize(mean=arg_parse.dataset_mean,std=arg_parse.dataset_std)])
         train_loader = torch.utils.data.DataLoader(
-        vision.datasets.fskd_cifarfew.CIFARFew(args.data_root,train_entry,transform=train_transform),
+        vision.datasets.graftkd_cifarfew.CIFARFew(args.data_root,train_entry,transform=train_transform),
         batch_size=arg_parse.batch_size, num_workers=4, shuffle=True)
         test_loader = torch.utils.data.DataLoader(torchvision.datasets.__dict__[arg_parse.dataset](root=arg_parse.data_path, train=False,
                     transform=test_transform,download=True),
@@ -183,7 +183,7 @@ def main():
         test_transform = T.Compose([T.ToTensor(),T.Normalize(mean=arg_parse.dataset_mean,std=arg_parse.dataset_std)])
         #prepare data
         train_loader = torch.utils.data.DataLoader(
-        vision.datasets.fskd_cifarfew.CIFARFew(args.data_root,train_entry,transform=train_transform),
+        vision.datasets.graft_kd_cifarfew.CIFARFew(args.data_root,train_entry,transform=train_transform),
         batch_size=arg_parse.batch_size, num_workers=4, shuffle=True)
         test_loader = torch.utils.data.DataLoader(torchvision.datasets.__dict__[args.dataset](root=arg_parse.data_path, train=False,
                     transform=test_transform,download=True),
