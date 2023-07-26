@@ -20,7 +20,7 @@ import os
 import os.path as osp
 # os.environ['CUDA_VISIBLE_DEVICES']='1'
 cur_dir = osp.dirname( __file__ )
-main_path = osp.join( cur_dir, '..', '..')
+main_path = osp.join( cur_dir, '..', '..','..')
 sys.path.insert( 0, main_path )
 # sys.path.insert(0, "/home/yyc/KA_task/06_27_kamal")
 print(sys.path)
