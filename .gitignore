@@ -27,3 +27,4 @@ test_zoo
 exported_metrics
 export*
 tests
+*.idea/

@@ -380,6 +380,28 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 </details>
 
 <details>
+<summary>Tree-like Decision Distillation</summary>
+
+[Tree-like Decision Distillation](https://ieeexplore.ieee.org/document/9577817) (*CVPR 2021*)
+
+<div align='center'>
+<img src="docs/imgs/distillation/tdd.png"  width = "100%" alt="icon"/> 
+</div>
+
+```
+@inproceedings{song2021tree,
+  title={Tree-like decision distillation},
+  author={Song, Jie and Zhang, Haofei and Wang, Xinchao and Xue, Mengqi and Chen, Ying and Sun, Li and Tao, Dacheng and Song, Mingli},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={13488--13497},
+  year={2021}
+}
+```
+
+**Script can be found in [examples/distillation/tdd](./examples/distillation/tdd)**
+</details>
+
+<details>
 <summary>Context Correlation Distillation for Lip Reading</summary>
 
 [Context Correlation Distillation for Lip Reading](https://www.jcad.cn/cn/article/doi/10.3724/SP.J.1089.2022.19723) (*China MM 2022*)

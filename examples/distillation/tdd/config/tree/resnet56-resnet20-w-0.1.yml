@@ -1,0 +1,46 @@
+dataset:
+    name: cifar10
+    root: ./datasets/cifar
+    img_w: 32
+    img_h: 32
+
+training:
+    optimizer:
+        name: SGD
+        lr: 0.05
+        weight_decay: 5.0e-4
+        momentum: 0.9
+
+    lr_decay_epochs: [150, 180, 210]
+    lr_decay_rate: 0.1
+    batch_size: 64
+    num_workers: 8
+    epochs: 240
+    seed: 1029
+    save_ep_freq: 1
+    print_iter_freq: 10
+
+validation:
+    batch_size: 128
+    num_workers: 8
+
+kd:
+    student:
+        name: resnet20
+    teacher:
+        name: resnet56
+        checkpoint: logdir/teacher/resnet56/cifar10/ckpt/epoch_240.pth
+    loss_weights:
+        classify_weight: 0.1
+        kd_weight: 0.9
+        other_loss_weight: 0.1
+
+kd_loss:
+    KD_T: 4
+
+    name: HierarchicalLoss
+    layer_cluster_info:
+        layer1: save/json/layer1.2.bn2-merge.json
+        layer2: save/json/layer2.2.bn2-merge.json
+        layer3: save/json/layer3.2.bn2-merge.json
+
