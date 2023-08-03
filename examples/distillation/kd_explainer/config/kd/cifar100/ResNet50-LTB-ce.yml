@@ -1,0 +1,58 @@
+dataset:
+    name: CIFAR100
+    root: ./data/CIFAR100
+    img_w: 32
+    img_h: 32
+    num_classes: 100
+    loss_method: ce
+
+training:
+    optimizer:
+        name: Adam
+        # lr: 0.05
+        weight_decay: 5.0e-4
+        weight_decay_stage2: 5.0e-4
+        momentum: 0.9
+
+    lr_global: 5.0e-2
+    lr_branch: 1.0e-2
+    lr_stage2: 0.05
+    
+    t: 10
+    lr_decay_epochs: [300]
+    lr_decay_rate: 0.1
+    batch_size: 128
+    # test_batch: 128
+    num_workers: 8
+    # num_workers: 8
+    epochs: 300
+    init_epoch: 0
+    seed: 1029
+    save_ep_freq: 50
+    print_iter_freq: 100
+
+validation:
+    batch_size: 128
+    num_workers: 8
+
+model:
+    name: TLB
+    loss_method: ce
+    task: mc
+    pretrained: ./log_LTB_kd_c100_s1/ckpt/best.pth
+
+kd:
+    student:
+        name: LTB
+    teacher:
+        name: ResNet50
+        checkpoint:./log_teacher/ckpt/best.pth
+    loss_weights:
+        classify_weight: 0.1
+        kd_weight: 0.9
+        other_loss_weight: 0.0
+
+kd_loss:
+    KD_T: 4
+    name: DistillKL
+    T: 4

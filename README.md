@@ -80,6 +80,8 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2019}
 }
 ```
+**Scripts can be found in [examples/amalgamation/customize_ka](examples/amalgamation/customize_ka)**
+
 </details>
 
 <details>
@@ -138,6 +140,9 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   organization={Springer}
 }
 ```
+
+**Scripts can be found in [examples/knowledge_amalgamation/soka](examples/knowledge_amalgamation/soka)**
+
 </details>
 
 <details>
@@ -205,6 +210,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2020}
 }
 ```
+**Scripts can be found in [examples/distillation/libs](examples/distillation/libs)**
 </details>
 
 <details>
@@ -227,6 +233,8 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2021}
 }
 ```
+**Scripts can be found in [/examples/distillation/graft_kd](/examples/distillation/graft_kd)**
+
 </details>
 
 <details>
@@ -246,6 +254,8 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2021}
 }
 ```
+**Scripts can be found in [/examples/distillation/kd_explainer](/examples/distillation/kd_eplainer)**
+
 </details>
 
 <details>
@@ -265,6 +275,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2021}
 }
 ```
+**Scripts can be found in [examples/distillation/cmi](examples/distillation/cmi)**
 </details>
 
 <details>
@@ -352,6 +363,8 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2022}
 }
 ```
+
+**Scripts can be found in [examples/distillation/sdb](examples/distillation/sdb)**
 </details>
 
 <details>
@@ -425,6 +438,8 @@ url = "https://www.jcad.cn/article/doi/10.3724/SP.J.1089.2022.19723",
 author = "赵雅","冯尊磊","王慧琼","宋明黎",keywords = "唇语识别","知识蒸馏","跨模态",
 }
 ```
+
+**Scripts can be found in [examples/distillation/c2kd](examples/distillation/c2kd)**
 </details>
 
 

@@ -13,10 +13,10 @@ import numpy as np
 import os
 from kamal.utils import move_to_device, set_mode
 
-class CUSTOMIZE_COMPONENT_Amalgamator(Engine):
+class CUSTOMIZE_COMPONENT_Amalgamator_attribute(Engine):
 
     def __init__(self, logger=None, tb_writer=None ):
-        super(CUSTOMIZE_COMPONENT_Amalgamator, self).__init__( logger, tb_writer )
+        super(CUSTOMIZE_COMPONENT_Amalgamator_attribute, self).__init__( logger, tb_writer )
 
     def setup(self,args, component_net, source_nets, teacher_select,target_idxs,target_no,distill_teachers, distill_students, dataloader, test_loader,  layer_names,special_module_idxs,
                                     criterion, optimizer, device=None ):
@@ -286,10 +286,10 @@ class CUSTOMIZE_COMPONENT_Amalgamator(Engine):
 
 
 
-class CUSTOMIZE_TARGET_Amalgamator(Engine):
+class CUSTOMIZE_TARGET_Amalgamator_attribute(Engine):
 
     def __init__(self, logger=None, tb_writer=None ):
-        super(CUSTOMIZE_TARGET_Amalgamator, self).__init__( logger, tb_writer )
+        super(CUSTOMIZE_TARGET_Amalgamator_attribute, self).__init__( logger, tb_writer )
 
     def setup(self,args, target_net, component_nets, target_idxs,component_attributes,distill_target, dataloader, test_loader,  layer_names, special_module_idxs,
                                     criterion, optimizer, device=None ):
