@@ -23,8 +23,8 @@ from models.encoder import Encoder
 from models.decoder import Decoder
 from models.video_net import Transformer
 
-from kamal.slim.distillation.C2KD.C2KD_trainer import C2KDTrainer
-from kamal.slim.distillation.C2KD.C2KD_task import C2KDTask
+from kamal.distillation.c2kd.c2kd_trainer import C2KDTrainer
+from kamal.distillation.c2kd.c2kd_task import C2KDTask
 
 def init_env():
     torch.manual_seed(531)
