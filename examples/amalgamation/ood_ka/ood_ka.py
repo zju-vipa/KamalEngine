@@ -11,7 +11,6 @@ import warnings
 
 from kamal import vision, amalgamation, engine, utils, metrics, callbacks ,tasks
 from kamal.core.engine import split_cifar100
-# from kamal.amalgamation import OOD_KA_amal
 from kamal.vision import sync_transforms as sT
 from kamal.vision.models import generator
 from tqdm import tqdm

@@ -35,3 +35,17 @@ Train the student:
 ```bash
 sh KA.sh
 ```
+
+## Citation
+
+```
+@article{zhang2023knowledge,
+  title={Knowledge Amalgamation for Object Detection With Transformers},
+  author={Zhang, Haofei and Mao, Feng and Xue, Mengqi and Fang, Gongfan and Feng, Zunlei and Song, Jie and Song, Mingli},
+  journal={IEEE Transactions on Image Processing},
+  volume={32},
+  pages={2093--2106},
+  year={2023},
+  publisher={IEEE}
+}
+```

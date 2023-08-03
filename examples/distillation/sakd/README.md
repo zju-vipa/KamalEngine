@@ -1,4 +1,5 @@
 # Spot-adaptive Knowledge Distillation
+
 ## Introduction
 
 This repo contains the code of the work. We benchmark 11 state-of-the-art knowledge distillation methods with spot-adaptive KD in PyTorch, including: 
@@ -16,6 +17,7 @@ This repo contains the code of the work. We benchmark 11 state-of-the-art knowle
 - (CRD) - Contrastive Representation Distillation
 
 ## Running
+
 1.Fetch the pretrained teacher models by: 
 ```
 sh train_single.sh 
@@ -30,8 +32,21 @@ The flags in <code>train_single.sh</code> can be explained as:
 
 Note: the default setting can be seen in config files from <code>'configs/$dataset/seed-$seed/single/$model.yml'</code>. 
 
-
-
 2.Run our spot-adaptive KD by:
 ```
 sh train.sh
+```
+
+## Citation
+
+```
+@article{song2022spot,
+  title={Spot-adaptive knowledge distillation},
+  author={Song, Jie and Chen, Ying and Ye, Jingwen and Song, Mingli},
+  journal={IEEE Transactions on Image Processing},
+  volume={31},
+  pages={3359--3370},
+  year={2022},
+  publisher={IEEE}
+}
+```
