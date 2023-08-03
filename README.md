@@ -210,6 +210,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2020}
 }
 ```
+**Scripts can be found in [examples/distillation/libs](examples/distillation/libs)**
 </details>
 
 <details>
@@ -274,6 +275,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   year={2021}
 }
 ```
+**Scripts can be found in [examples/distillation/cmi](examples/distillation/cmi)**
 </details>
 
 <details>

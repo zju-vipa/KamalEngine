@@ -1,6 +1,6 @@
-# Date-Free Knowledge Distillation
+# Contrastive Model Inversion for Data-Free Knowledge Distillation
 
-## Pre-trained Teacher Models
+## Preparation
 
 You can download pretrained teacher models from [Dropbox-Models (266 MB)](https://www.dropbox.com/sh/w8xehuk7debnka3/AABhoazFReE_5mMeyvb4iUWoa?dl=0) and extract them to `checkpoints/pretrained`
 
