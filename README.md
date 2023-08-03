@@ -140,6 +140,9 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
   organization={Springer}
 }
 ```
+
+**Scripts can be found in [examples/knowledge_amalgamation/soka](examples/knowledge_amalgamation/soka)**
+
 </details>
 
 <details>

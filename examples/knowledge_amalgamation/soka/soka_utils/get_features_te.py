@@ -1,7 +1,7 @@
 import os.path as osp
 import sys
 cur_dir = osp.dirname( __file__ )
-main_path = osp.join( cur_dir, '..', '..', '..')
+main_path = osp.join( cur_dir, '..', '..', '..', '..')
 sys.path.insert( 0, main_path )
 import argparse
 import lmdb
@@ -24,10 +24,10 @@ parser.add_argument('--img', dest='im_name')
 parser.set_defaults(im_name='NONE')
 
 parser.add_argument('--save_dir', dest='save_dir')
-parser.set_defaults(save_dir='/home/yyc/KA_task/competition/data/database')
+parser.set_defaults(save_dir='/KamalEngine/examples/knowledge_amalgamation/soka')
 
 parser.add_argument('--img_dir', dest='img_dir')
-parser.set_defaults(img_dir='/home/yyc/KA_task/competition/data/wiconisco/rgb/train')
+parser.set_defaults(img_dir='/KamalEngine/examples/knowledge_amalgamation/soka/wiconisco/rgb/train')
 
 parser.add_argument('--store', dest='store_name')
 parser.set_defaults(store_name='./rsa_test_ihlen_200_features_crap')
