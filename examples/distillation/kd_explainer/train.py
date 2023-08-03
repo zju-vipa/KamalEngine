@@ -32,10 +32,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default = '/home/yxy/kacode_pr2/KamalEngine/examples/kd/KDExplainer/config/cifar10/ResNet50-LTB-nce.yml')
-    parser.add_argument("--logdir", type=str, default = '/home/yxy/kacode_pr2/KamalEngine/examples/kd/KDExplainer/log_LTB_kd_c10_nce')
+    parser.add_argument("--config", type=str, default = './config/kd/cifar10/ResNet50-LTB-ce.yml')
+    parser.add_argument("--logdir", type=str, default = './log_LTB_kd_c10_ce')
     parser.add_argument("--file_name_cfg", type=str,default = 'ResNet50-LTB-ce.yml')
-    parser.add_argument("--stage", type=str,default = 's2')
+    parser.add_argument("--stage", type=str,default = 's1')
     parser.add_argument("--gpu_preserve", type=str2bool, default=False)
     parser.add_argument("--debug", type=str2bool, default=False)
     parser.add_argument("--preserve_percent", type=float, default=0.95)

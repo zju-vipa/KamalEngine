@@ -10,10 +10,10 @@ from collections import OrderedDict
 from  kamal.utils import logger
 import torch.optim as optim
 
-class FSKD_BLOCK_Distiller(KDDistiller):
+class GRAFT_BLOCK_Distiller(KDDistiller):
 
     def __init__(self, logger=None, tb_writer=None ):
-        super(FSKD_BLOCK_Distiller, self).__init__( logger, tb_writer )
+        super(GRAFT_BLOCK_Distiller, self).__init__( logger, tb_writer )
 
     def setup(self,args, s_blocks, teacher, dataloader,test_loader,s_blocks_graft_ids, s_blocks_len,adaptions, optimizers, device=None ):
         self.blocks_s = s_blocks
@@ -28,7 +28,7 @@ class FSKD_BLOCK_Distiller(KDDistiller):
         self.blocks_graft_ids = s_blocks_graft_ids
         self.blocks_len = s_blocks_len
         self.params_s_best = OrderedDict()
-        self.logger_block = logger.Logger('/home/yxy/kacode/KamalEngine/examples/kd/log/graft_block_{}_{}_num_per_class_{}.txt'.\
+        self.logger_block = logger.Logger('./log/graft_block_{}_{}_num_per_class_{}.txt'.\
                 format(self.args.dataset, time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()), 
                        self.args.num_per_class))
 
@@ -103,7 +103,7 @@ class FSKD_BLOCK_Distiller(KDDistiller):
                 self.logger_block.write('Test-Best-Accuracy-B{}'.format(block_id), accuracy)
         if self.logger_block:
             self.logger_block.close()
-        with open('/home/yxy/kdcode/NetGraft/ckpt/student/vgg16-student-graft-block-{}-{}perclass.pth'.\
+        with open('./ckpt/student/vgg16-student-graft-block-{}-{}perclass.pth'.\
                 format(self.args.dataset, self.args.num_per_class), 'bw') as f:
             torch.save(self.params_s_best, f)
 
@@ -183,10 +183,10 @@ class FSKD_BLOCK_Distiller(KDDistiller):
             block_s = nn.Sequential(adaption_t2s, block_s)
         return block_s
 
-class FSKD_NET_Distiller(KDDistiller):
+class GRAFT_NET_Distiller(KDDistiller):
 
     def __init__(self, logger=None, tb_writer=None ):
-        super(FSKD_NET_Distiller, self).__init__( logger, tb_writer )
+        super(GRAFT_NET_Distiller, self).__init__( logger, tb_writer )
 
     def setup(self,args, s_blocks, teacher, dataloader,test_loader,s_blocks_graft_ids, s_blocks_len,adaptions, device=None ):
         self.adaptions_t2s, self.adaptions_s2t = adaptions
@@ -197,7 +197,7 @@ class FSKD_NET_Distiller(KDDistiller):
             self.blocks_s.append(
                 self.warp_block(s_blocks, block_id, self.adaptions_t2s, self.adaptions_s2t).cuda()
             )
-        params = torch.load('/home/yxy/kdcode/NetGraft/ckpt/student/vgg16-student-graft-block-{}-{}perclass.pth'.\
+        params = torch.load('./ckpt/student/vgg16-student-graft-block-{}-{}perclass.pth'.\
                         format(args.dataset, args.num_per_class))
         for block_id in range(self.num_block):
             self.blocks_s[block_id].load_state_dict(
@@ -212,7 +212,7 @@ class FSKD_NET_Distiller(KDDistiller):
         self.blocks_len = s_blocks_len
         self.device = device
         self.params_s_best = OrderedDict()
-        self.logger_net = logger.Logger('/home/yxy/kacode/KamalEngine/examples/kd/log/graft_net_{}_{}_{}perclass.txt'.\
+        self.logger_net = logger.Logger('./log/graft_net_{}_{}_{}perclass.txt'.\
                     format(args.dataset, time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()),
                            args.num_per_class))
 
@@ -267,7 +267,7 @@ class FSKD_NET_Distiller(KDDistiller):
         if self.logger_net:
             self.logger_net.write('Student Best Accuracy', accuracy_best_block)
 
-        with open('/home/yxy/kacode/KamalEngine/examples/kd/ckpt/student/vgg16-student-graft-net-{}-{}perclass.pth'\
+        with open('./ckpt/student/vgg16-student-graft-net-{}-{}perclass.pth'\
                             .format(self.args.dataset, self.args.num_per_class), 'wb') as f:
             torch.save(self.block.state_dict(), f)
         if self.logger_net:

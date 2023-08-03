@@ -353,7 +353,7 @@ def get_transform(img_set):
     return transform
 
 
-def get_dataloader(root_path, img_set, batch_size, shuffle, part_num=0, is_part=False):
+def get_dataloader_class(root_path, img_set, batch_size, shuffle, part_num=0, is_part=False):
     whole_path = os.path.join(root_path, 'images_whole')
     if is_part:
         path = os.path.join(root_path, 'image_part{}'.format(part_num), img_set)
@@ -371,7 +371,7 @@ def get_dataloader(root_path, img_set, batch_size, shuffle, part_num=0, is_part=
                            shuffle=shuffle, num_workers=6)
 
     return dataloder
-def get_dataloader_path(root_path, img_set, batch_size, shuffle,
+def get_dataloader_path_class(root_path, img_set, batch_size, shuffle,
                         part_num=0, is_part=False):
     whole_path = os.path.join(root_path, 'images_whole')
     if is_part:
@@ -392,7 +392,7 @@ def get_dataloader_path(root_path, img_set, batch_size, shuffle,
     return dataloder
 
 
-def get_dataloader_multi_set(dataset_roots, img_set, batch_size, shuffle):
+def get_dataloader_multi_set_class(dataset_roots, img_set, batch_size, shuffle):
 
     print('Dataset pathes: {}'.format(dataset_roots))
 
@@ -409,7 +409,7 @@ def get_dataloader_multi_set(dataset_roots, img_set, batch_size, shuffle):
     return dataloder
 
 
-def get_dataloader_txt(dataset_name, txt, img_set, batch_size, shuffle,
+def get_dataloader_txt_class(dataset_name, txt, img_set, batch_size, shuffle,
                        part_num=0):
     root_path = '/nfs/yxy/data/{}/'.format(dataset_name)
     path = os.path.join(root_path, 'image_part{}'.format(part_num), img_set)
@@ -424,7 +424,7 @@ def get_dataloader_txt(dataset_name, txt, img_set, batch_size, shuffle,
 
     return dataloder
 
-def get_divided_dataloader(data_dir,path,component_part,aux_parts, batch_size,img_set, shuffle):
+def get_divided_dataloader_class(data_dir,path,component_part,aux_parts, batch_size,img_set, shuffle):
     num_teacher = len(aux_parts)
     datasets = []
     len_datasets = []

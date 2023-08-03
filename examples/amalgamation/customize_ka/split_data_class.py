@@ -117,13 +117,13 @@ def split_whole_train_test(data_root,dataset):
         
     elif dataset =='dog':
         # --------------- 读取train/test的split---------------
-        train_list = loadmat('/home/yxy/kacode_pr1/KamalEngine/kamal/vision/datasets/preprocess/prepare_customize/train_list.mat')
+        train_list = loadmat('./data/dog/train_list.mat')
         train_file_list = train_list['file_list']
         train_file_list = [i[0][0] for i in train_file_list]
         train_categories = [i[0][0][:i[0][0].index('/')] for i in train_file_list]  
         # print train_file_list
 
-        test_list = loadmat('/home/yxy/kacode_pr1/KamalEngine/kamal/vision/datasets/preprocess/prepare_customize/test_list.mat')
+        test_list = loadmat('./data/dog/test_list.mat')
         test_file_list = test_list['file_list']
         test_file_list = [i[0][0][i[0][0].index('/'):] for i in test_file_list]
         test_categories = [i[0][0][:i[0][0].index('/')] for i in test_file_list]
@@ -186,10 +186,11 @@ def split_part_train_test(data_root,n_parts,train_file_list,train_categories,tes
 if __name__ == '__main__':
     dataset = 'car'
     n_parts = 4
-    data_root = '/nfs/yxy/data/'+dataset
+    data_root = './data/'+dataset
     # 将原数据划分到 'images_whole/train'和'images_whole/test',train和test文件夹下是各category的子文件夹
     train_file_list,train_categories,test_file_list,test_categories = split_whole_train_test(data_root,dataset)
 
     # train、test 下的文件划分为 'partxx/train'和'partxx/test',train和test文件夹下是相应part下category的子文件夹
     split_part_train_test(data_root,n_parts,train_file_list,train_categories,test_file_list,test_categories)
+
    
