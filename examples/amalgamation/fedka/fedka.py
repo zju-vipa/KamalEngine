@@ -1,4 +1,3 @@
-
 import copy
 import torch.nn as nn
 import argparse
@@ -93,7 +92,7 @@ def load_teachers_files(args):
     files = os.listdir(args.teachers_dir)
     files = sorted(files)
     dict_users=[]
-    cache_path=os.path.join('/home/by/FedSA/FedKA-arch/FedKA-arch/cache',args.local_dataset)
+    cache_path=os.path.join('/home/by/FedKA/FedKA-arch/FedKA-arch/cache',args.local_dataset)
     for file in files:
         t_path=os.path.join(args.teachers_dir,file)
         data_range=torch.load(t_path,map_location={'cuda:2':'cuda:0'})['data_range']
@@ -125,7 +124,7 @@ def select_random(args,files,base_model,student,sample_loader):
     return selected_idx,weights
 
 def train_student_with_probe_data(args,device,model,probe_data_loader,test_loader,epoches=30,save_path=None):
-    logger = utils.logger.get_logger('fedsa_train_student_with_probe_data')
+    logger = utils.logger.get_logger('fedka_train_student_with_probe_data')
     optimizer=optim.Adam(model.parameters(),lr=args.probe_lr,weight_decay=1e-4)
     if epoches>20:
         scheduler=optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=epoches)
@@ -148,7 +147,7 @@ def train_student_with_probe_data(args,device,model,probe_data_loader,test_loade
         if epoches>20:
             scheduler.step()
         if(best_recorder.update(acc1)):
-            torch.save(model.state_dict(),"/home/by/FedSA/FedKA-arch/FedKA-arch/ckpt/best_student.ckpt")
+            torch.save(model.state_dict(),"/home/by/FedKA/FedKA-arch/FedKA-arch/ckpt/best_student.ckpt")
 
     # print("best acc {}, best idx {}".format(best_recorder.best_val,best_recorder.best_idx))
     logger.info( "[Eval %s] Epoch %d/%d: {'best_acc':%.4f,'best_idx':%d}"%('model', epoches, epoches, best_recorder.best_val,best_recorder.best_idx) )
@@ -277,7 +276,7 @@ def main():
     args = parser.parse_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     #dataset
-    dataset_train, dataset_test = utils.dataset_utils.getCIFAR100('/home/by/FedSA/FedKA-arch/FedKA-arch/dataset/cifar')
+    dataset_train, dataset_test = utils.dataset_utils.getCIFAR100('/home/by/FedKA/FedKA-arch/FedKA-arch/dataset/cifar')
     probe_data=utils.dataset_utils.DatasetSplit(dataset_train,utils.dataset_utils.get_sample_dataset(dataset_train,5))
         # probe_data=dataset_train
     # print(utils.dataset_utils.getDistributionInfo(probe_data))
@@ -317,12 +316,12 @@ def main():
 
     local_update=utils.center_train_utils.LocalUpdate(args,unlabeled_loader,device)
     best_recorder=utils.train_val_utils.Recorder()
-    logger0 = utils.logger.get_logger('fedsa_cifar100')
+    logger0 = utils.logger.get_logger('fedka_cifar100')
             
-    tb_writer0 = SummaryWriter(log_dir='run/fedsacifar100-%s' %
+    tb_writer0 = SummaryWriter(log_dir='run/fedkacifar100-%s' %
                                    (time.asctime().replace(' ', '_')))
-    logger1 = utils.logger.get_logger('fedsa_cifar100_test')
-    tb_writer1 = SummaryWriter(log_dir='run/fedsacifar100_test-%s' %
+    logger1 = utils.logger.get_logger('fedka_cifar100_test')
+    tb_writer1 = SummaryWriter(log_dir='run/fedkacifar100_test-%s' %
                                   (time.asctime().replace(' ', '_')))
     for i in range(args.epochs):
         local_losses = {}
@@ -342,7 +341,7 @@ def main():
             local_nets=nets['student']
             local_translators=nets['translator']
             kd_loss_memter=amalgamation.AverageMeter("kd_loss")
-            trainer = amalgamation.FEDSATrainer(logger0, tb_writer0)
+            trainer = amalgamation.FEDKATrainer(logger0, tb_writer0)
             TOTAL_ITERS = len(local_unlabel_loader) * 10
             trainer.setup(teacher=teacher,
                       student=local_nets,
@@ -360,7 +359,7 @@ def main():
             trainer.run(start_iter=0, max_iter=TOTAL_ITERS)
             local_losses[str(user_idx)]=kd_loss_memter.avg
             local_students.append(local_nets)
-            torch.save(local_nets.state_dict(),'/home/by/FedSA/FedKA-arch/FedKA-arch/ckpt/temp/{}.pth'.format(user_idx))
+            torch.save(local_nets.state_dict(),'/home/by/FedKA/FedKA-arch/FedKA-arch/ckpt/temp/{}.pth'.format(user_idx))
         writer.add_scalars("local loss",local_losses,global_step=i)
         
         avg_weights=FedAvg(local_students,weights)
@@ -388,7 +387,7 @@ def main():
                 callbacks=callbacks.MetricsLogging(keys=('loss', 'lr')))
             trainer.add_callback( 
                 engine.DefaultEvents.AFTER_EPOCH, 
-                callbacks=callbacks.EvalAndCkpt(model=tnet, evaluator=evaluator, metric_name='acc', ckpt_prefix='fedsa_cifar100_test') )
+                callbacks=callbacks.EvalAndCkpt(model=tnet, evaluator=evaluator, metric_name='acc', ckpt_prefix='fedka_cifar100_test') )
             trainer.add_callback(
                 engine.DefaultEvents.AFTER_STEP,
                 callbacks=callbacks.LRSchedulerCallback(schedulers=[scheduler]))

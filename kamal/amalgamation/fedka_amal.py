@@ -136,11 +136,11 @@ class LocalTrainer(Engine):
             self.logger.info( "[Eval %s] Iter %d/%d: {'acc':%.4f}"%('model', self.state.iter , self.state.max_iter, top1.avg) )
         return top1.avg 
 
-class FEDSATrainer(Engine):
+class FEDKATrainer(Engine):
     def __init__( self, 
                   logger=None,
                   tb_writer=None):
-        super(FEDSATrainer, self).__init__(logger=logger, tb_writer=tb_writer)
+        super(FEDKATrainer, self).__init__(logger=logger, tb_writer=tb_writer)
 
     def setup(self, 
               teacher, 

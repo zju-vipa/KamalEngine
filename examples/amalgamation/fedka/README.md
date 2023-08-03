@@ -2,7 +2,7 @@
 ## 0. Preparation
 Dataset will be automatically downloaded to *./data/imagenet32*
 
-A set of Teacher can be trained in the */examples/knowledge_amalgamation/FedSA/local_main.py*
+A set of Teacher can be trained in the *examples/amalgamation/fedka/local_main.py*
 
 ```bash
 python local_main.py
@@ -23,4 +23,8 @@ If you found this work useful for your research, please cite our paper:
 	journal={arXiv preprint arXiv:2207.13309},
 	year={2022}
 }
+```
+## Scripts
+```
+Scripts can be found in examples/amalgamation/fed_ka
 ```
