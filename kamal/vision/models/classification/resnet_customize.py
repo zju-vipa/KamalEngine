@@ -157,7 +157,7 @@ def resnet18(pretrained=False, **kwargs):
     if pretrained:
         # model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
         # params = torch.load('models/resnet50-19c8e357.pth')
-        pretrained_model = '/home/yxy/kacode_pr1/KamalEngine/examples/knowledge_amalgamation/customize_class/weights/resnet/resnet18-5c106cde.pth'
+        pretrained_model = '/examples/amalgamation/customize_ka/weights/resnet/resnet18-5c106cde.pth'
         print('load pretrained model from: {}'.format(pretrained_model))
         params = torch.load(pretrained_model)
         del params['fc.weight']
@@ -274,7 +274,7 @@ def resnet18_multitask(channel_nums, pretrained=False, **kwargs):
     if pretrained:
         # model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
         # params = torch.load('models/resnet50-19c8e357.pth')
-        pretrained_model = 'weights/resnet/resnet18-5c106cde.pth'
+        pretrained_model = './weights/resnet/resnet18-5c106cde.pth'
         print('load pretrained model from: {}'.format(pretrained_model))
         params = torch.load(pretrained_model)
         del params['fc.weight']

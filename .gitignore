@@ -2,6 +2,7 @@ __pycache__
 *.pyc
 *.log
 *.pth
+*.npy
 checkpoints*
 *checkpoints/
 *.txt

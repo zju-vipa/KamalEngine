@@ -10,7 +10,7 @@ from .stanford_dogs import StanfordDogs
 from .sunrgbd import SunRGBD
 from .voc import VOCClassification, VOCSegmentation
 from .dataset import LabelConcatDataset
-from .fskd_cifarfew import *
+from .graftkd_cifarfew import *
 from .CelebA import *
 from .customize_class_data import *
 from .taskonomy import Taskonomy
@@ -18,4 +18,4 @@ from .taskonomy import Taskonomy
 from torchvision import datasets as torchvision_datasets
 
 from .unlabeled import UnlabeledDataset
-from .preprocess import build_dataset
+from .preprocess import *

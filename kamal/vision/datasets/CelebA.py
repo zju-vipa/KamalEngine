@@ -295,7 +295,7 @@ def get_transform(img_set):
     return transform
 
 
-def get_dataloader(root_path,img_set, batch_size, shuffle, part=None, part_num=None, is_part=False, **kwargs):
+def get_dataloader_attribute(root_path,img_set, batch_size, shuffle, part=None, part_num=None, is_part=False, **kwargs):
     # part_path = '6-parts/list_eval_partition_part1.txt'
     whole_path = 'list_eval_partition.txt'
     if is_part:
@@ -319,7 +319,7 @@ def get_dataloader(root_path,img_set, batch_size, shuffle, part=None, part_num=N
     return dataloder
 
 
-def get_divided_dataloader(root_path, batch_size, teacher_select, img_set, shuffle):
+def get_divided_dataloader_attribute(root_path, batch_size, teacher_select, img_set, shuffle):
     # root_path = 'data/teacher/' + 'teacher-' + target_attribute
     num_teacher = len(teacher_select)
 
@@ -365,7 +365,7 @@ def get_divided_dataloader(root_path, batch_size, teacher_select, img_set, shuff
     return dataloders
 
 
-def get_component_dataloader(root_path,batch_size, component_attributes,  img_set, shuffle):
+def get_component_dataloader_attribute(root_path,batch_size, component_attributes,  img_set, shuffle):
     
 
     num_teacher = len(component_attributes)
