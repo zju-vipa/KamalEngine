@@ -45,7 +45,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Amalgamating Knowledge towards Comprehensive Classification</summary>
 
-[Amalgamating Knowledge towards Comprehensive Classification](https://arxiv.org/abs/1811.02796v1) (*AAAI 2019*)  
+[Amalgamating Knowledge towards Comprehensive Classification](https://ojs.aaai.org/index.php/AAAI/article/view/4165) (*AAAI 2019*)  
 
 <img src="docs/imgs/amalgamation/layerwise.png"  width = "100%" alt="icon"/> 
 
@@ -66,7 +66,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Customizing Student Networks From Heterogeneous Teachers via Adaptive Knowledge Amalgamation</summary>
 
-[Customizing Student Networks From Heterogeneous Teachers via Adaptive Knowledge Amalgamation](https://arxiv.org/abs/1908.07121) (*ICCV 2019*)  
+[Customizing Student Networks From Heterogeneous Teachers via Adaptive Knowledge Amalgamation](https://openaccess.thecvf.com/content_ICCV_2019/papers/Shen_Customizing_Student_Networks_From_Heterogeneous_Teachers_via_Adaptive_Knowledge_Amalgamation_ICCV_2019_paper.pdf) (*ICCV 2019*)  
 <div  align="center">
 <img src="docs/imgs/amalgamation/adaptive.png" width = "75%" alt="icon"/> 
 </div>
@@ -87,7 +87,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More</summary>
 
-[Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://arxiv.org/abs/1904.10167) (*CVPR 2019*)  
+[Student Becoming the Master: Knowledge Amalgamation for Joint Scene Parsing, Depth Estimation, and More](https://openaccess.thecvf.com/content_CVPR_2019/papers/Ye_Student_Becoming_the_Master_Knowledge_Amalgamation_for_Joint_Scene_Parsing_CVPR_2019_paper.pdf) (*CVPR 2019*)  
 
 <img src="docs/imgs/amalgamation/sbm_results.png"  width = "100%" alt="icon"/> 
 
@@ -105,7 +105,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning</summary>
 
-[Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](http://arxiv.org/abs/1906.10546) (*IJCAI 2019*)
+[Knowledge Amalgamation from Heterogeneous Networks by Common Feature Learning](https://www.ijcai.org/proceedings/2019/0428.pdf) (*IJCAI 2019*)
 
 |                             Feature Space                             |                             Common Space                             |
 | :-------------------------------------------------------------------: | :------------------------------------------------------------------: |
@@ -148,7 +148,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Knowledge Amalgamation for Object Detection With Transformers</summary>
 
-[Knowledge Amalgamation for Object Detection With Transformers](https://arxiv.org/abs/2203.03187) (*TIP 2021*)
+[Knowledge Amalgamation for Object Detection With Transformers](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=10091778) (*TIP 2021*)
 
 <img src="docs/imgs/amalgamation/transformer.png"  width = "100%" alt="icon"/> 
 
@@ -171,18 +171,24 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>FedKA: Federated Selective Aggregation for Knowledge Amalgamation</summary>
 
-[Federated Selective Aggregation for Knowledge Amalgamation](https://arxiv.org/abs/2207.13309) (*CHIP 2022*)
+[Federated Selective Aggregation for Knowledge Amalgamation](https://www.sciencedirect.com/science/article/pii/S2709472323000163) (*CHIP 2022*)
 
 <div align="center">
 <img src="docs/imgs/amalgamation/fedka.png"  width = "75%" alt="icon"/> 
 </div>
 
 ```
-@article{xie2022federated,
-  title={Federated Selective Aggregation for Knowledge Amalgamation},
-  author={Xie, Donglin and Yu, Ruonan and Fang, Gongfan and Song, Jie and Feng, Zunlei and Wang, Xinchao and Sun, Li and Song, Mingli},
-  journal={arXiv preprint arXiv:2207.13309},
-  year={2022}
+@article{XIE2023100053,
+  title = {Federated selective aggregation for on-device knowledge amalgamation},
+  journal = {Chip},
+  volume = {2},
+  number = {3},
+  pages = {100053},
+  year = {2023},
+  issn = {2709-4723},
+  doi = {https://doi.org/10.1016/j.chip.2023.100053},
+  url = {https://www.sciencedirect.com/science/article/pii/S2709472323000163},
+  author = {Donglin Xie and Ruonan Yu and Gongfan Fang and Jiaqi Han and Jie Song and Zunlei Feng and Li Sun and Mingli Song}
 }
 ```
 </details>
@@ -193,7 +199,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Hearing Lips: Improving Lip Reading by Distilling Speech Recognizers</summary>
 
-[Hearing Lips: Improving Lip Reading by Distilling Speech Recognizers](https://arxiv.org/abs/1911.11502) (*AAAI 2020*)
+[Hearing Lips: Improving Lip Reading by Distilling Speech Recognizers](https://ojs.aaai.org/index.php/AAAI/article/view/6174) (*AAAI 2020*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/libs.png"  width = "75%" alt="icon"/> 
@@ -216,7 +222,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Progressive Network Grafting for Few-Shot Knowledge Distillation</summary>
 
-[Progressive Network Grafting for Few-Shot Knowledge Distillation](https://arxiv.org/abs/2012.04915) (*AAAI 2021*)
+[Progressive Network Grafting for Few-Shot Knowledge Distillation](https://ojs.aaai.org/index.php/AAAI/article/view/16356) (*AAAI 2021*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/grafting.png"  width = "100%" alt="icon"/> 
@@ -240,18 +246,26 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>KDExplainer: A Task-oriented Attention Model for Explaining Knowledge Distillation</summary>
 
-[KDExplainer: A Task-oriented Attention Model for Explaining Knowledge Distillation](https://arxiv.org/abs/2105.04181) (*IJCAI 2021*)
+[KDExplainer: A Task-oriented Attention Model for Explaining Knowledge Distillation](https://www.ijcai.org/proceedings/2021/0444.pdf) (*IJCAI 2021*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/kde.png"  width = "100%" alt="icon"/> 
 </div>
 
 ```
-@article{xue2021kdexplainer,
-  title={Kdexplainer: A task-oriented attention model for explaining knowledge distillation},
-  author={Xue, Mengqi and Song, Jie and Wang, Xinchao and Chen, Ying and Wang, Xingen and Song, Mingli},
-  journal={arXiv preprint arXiv:2105.04181},
-  year={2021}
+@inproceedings{ijcai2021p444,
+  title     = {KDExplainer: A Task-oriented Attention Model for Explaining Knowledge Distillation},
+  author    = {Xue, Mengqi and Song, Jie and Wang, Xinchao and Chen, Ying and Wang, Xingen and Song, Mingli},
+  booktitle = {Proceedings of the Thirtieth International Joint Conference on
+               Artificial Intelligence, {IJCAI-21}},
+  publisher = {International Joint Conferences on Artificial Intelligence Organization},
+  editor    = {Zhi-Hua Zhou},
+  pages     = {3228--3234},
+  year      = {2021},
+  month     = {8},
+  note      = {Main Track},
+  doi       = {10.24963/ijcai.2021/444},
+  url       = {https://doi.org/10.24963/ijcai.2021/444},
 }
 ```
 **Scripts can be found in [/examples/distillation/kd_explainer](/examples/distillation/kd_eplainer)**
@@ -261,18 +275,26 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>CMI: Contrastive Model Inversion for Data-Free Knowledge Distillation</summary>
 
-[Contrastive Model Inversion for Data-Free Knowledge Distillation](https://arxiv.org/abs/2105.08584) (*IJCAI 2021*)
+[Contrastive Model Inversion for Data-Free Knowledge Distillation](https://www.ijcai.org/proceedings/2021/0327.pdf) (*IJCAI 2021*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/cmi.png"  width = "100%" alt="icon"/> 
 </div>
 
 ```
-@article{fang2021contrastive,
-  title={Contrastive model inversion for data-free knowledge distillation},
-  author={Fang, Gongfan and Song, Jie and Wang, Xinchao and Shen, Chengchao and Wang, Xingen and Song, Mingli},
-  journal={arXiv preprint arXiv:2105.08584},
-  year={2021}
+@inproceedings{ijcai2021p327,
+  title     = {Contrastive Model Invertion for Data-Free Knolwedge Distillation},
+  author    = {Fang, Gongfan and Song, Jie and Wang, Xinchao and Shen, Chengchao and Wang, Xingen and Song, Mingli},
+  booktitle = {Proceedings of the Thirtieth International Joint Conference on
+               Artificial Intelligence, {IJCAI-21}},
+  publisher = {International Joint Conferences on Artificial Intelligence Organization},
+  editor    = {Zhi-Hua Zhou},
+  pages     = {2374--2380},
+  year      = {2021},
+  month     = {8},
+  note      = {Main Track},
+  doi       = {10.24963/ijcai.2021/327},
+  url       = {https://doi.org/10.24963/ijcai.2021/327},
 }
 ```
 **Scripts can be found in [examples/distillation/cmi](examples/distillation/cmi)**
@@ -281,7 +303,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>MosaicKD: Mosaicking to Distill: Knowledge Distillation from Out-of-Domain Data</summary>
 
-[Mosaicking to Distill: Knowledge Distillation from Out-of-Domain Data](https://arxiv.org/abs/2110.15094) (*NeurIPS 2021*)
+[Mosaicking to Distill: Knowledge Distillation from Out-of-Domain Data](https://proceedings.neurips.cc/paper_files/paper/2021/file/63dc7ed1010d3c3b8269faf0ba7491d4-Paper.pdf) (*NeurIPS 2021*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/mosaic_kd.png"  width = "100%" alt="icon"/> 
@@ -302,7 +324,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>FastDFKD: Up to 100× Faster Data-free Knowledge Distillation</summary>
 
-[Up to 100× Faster Data-free Knowledge Distillation](https://arxiv.org/abs/2112.06253) (*AAAI 2022*)
+[Up to 100× Faster Data-free Knowledge Distillation](https://ojs.aaai.org/index.php/AAAI/article/view/20613) (*AAAI 2022*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/fast_dfkd.png"  width = "100%" alt="icon"/> 
@@ -346,7 +368,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Safe Distillation Box</summary>
 
-[Safe Distillation Box](https://arxiv.org/abs/2112.03695) (*AAAI 2022*)
+[Safe Distillation Box](https://ojs.aaai.org/index.php/AAAI/article/view/20219) (*AAAI 2022*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/sdb.png"  width = "75%" alt="icon"/> 
@@ -370,7 +392,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Spot-adaptive Knowledge Distillation</summary>
 
-[Spot-adaptive Knowledge Distillation](https://arxiv.org/abs/2205.02399) (*TIP 2022*)
+[Spot-adaptive Knowledge Distillation](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9767610) (*TIP 2022*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/spot_kd.png"  width = "75%" alt="icon"/> 
@@ -395,7 +417,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Tree-like Decision Distillation</summary>
 
-[Tree-like Decision Distillation](https://ieeexplore.ieee.org/document/9577817) (*CVPR 2021*)
+[Tree-like Decision Distillation](https://openaccess.thecvf.com/content/CVPR2021/papers/Song_Tree-Like_Decision_Distillation_CVPR_2021_paper.pdf) (*CVPR 2021*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/tdd.png"  width = "100%" alt="icon"/> 
@@ -417,7 +439,7 @@ Please follow the instructions in [QuickStart.md](docs/QuickStart.md) for the ba
 <details>
 <summary>Context Correlation Distillation for Lip Reading</summary>
 
-[Context Correlation Distillation for Lip Reading](https://www.jcad.cn/cn/article/doi/10.3724/SP.J.1089.2022.19723) (*China MM 2022*)
+[Context Correlation Distillation for Lip Reading](https://www.jcad.cn/cn/article/doi/10.3724/SP.J.1089.2022.19723) (*计算机辅助设计与图形学学报*)
 
 <div align='center'>
 <img src="docs/imgs/distillation/c2kd.png"  width = "75%" alt="icon"/> 
@@ -448,7 +470,7 @@ author = "赵雅","冯尊磊","王慧琼","宋明黎",keywords = "唇语识别",
 <details>
 <summary>Deep model transferability from attribution maps</summary>
 
-[Deep model transferability from attribution maps](https://arxiv.org/abs/1909.11902) (*NeurIPS 2019*)
+[Deep model transferability from attribution maps](https://proceedings.neurips.cc/paper_files/paper/2019/file/e94fe9ac8dc10dd8b9a239e6abee2848-Paper.pdf) (*NeurIPS 2019*)
 
 <div align='center'>
 <img src="docs/imgs/transferability/attrmap.png"  width = "100%" alt="icon"/> 
@@ -466,9 +488,9 @@ author = "赵雅","冯尊磊","王慧琼","宋明黎",keywords = "唇语识别",
 </details>
 
 <details>
-<summary>DEPARA: Deep model transferability from attribution maps</summary>
+<summary>DEPARA: Deep Attribution Graph for Deep Knowledge Transferability</summary>
 
-[Deep model transferability from attribution maps](https://arxiv.org/abs/1909.11902) (*CVPR 2020*)
+[DEPARA: Deep Attribution Graph for Deep Knowledge Transferability](https://openaccess.thecvf.com/content_CVPR_2020/papers/Song_DEPARA_Deep_Attribution_Graph_for_Deep_Knowledge_Transferability_CVPR_2020_paper.pdf) (*CVPR 2020*)
 
 <div align='center'>
 <img src="docs/imgs/transferability/attrgraph.png"  width = "100%" alt="icon"/> 
